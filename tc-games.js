@@ -66,12 +66,12 @@ var WOF_SEGS=[
   {l:'5x',v:5,c:'#e67e22'},{l:'10x',v:10,c:'#f6c90e'},
 ];
 
-// ── WIN RATES — 15% all games ──
+// ── WIN RATES — 30% all games ──
 var _streak = 0;
 function wc(crash) {
   if (_streak > 0) { _streak--; return false; }
-  var won = Math.random() < 0.15;  // 15% win chance
-  if (won) _streak = rnd(3,6);     // after win, 3-6 forced losses
+  var won = Math.random() < 0.30;  // 30% win chance
+  if (won) _streak = rnd(1,3);     // after win, 1-3 forced losses
   return won;
 }
 
@@ -375,28 +375,16 @@ function execGame(g, bet, won, btn) {
     payout = won ? Math.floor(bet*winMult) : 0;
     // Animate spinning
     var reels=area.querySelectorAll('.slreel'), c=0;
+    reels.forEach(function(r){r.classList.add('spinning');});
     var iv=setInterval(function(){
       reels.forEach(function(r){r.textContent=pick(syms);});
       if(++c>15){clearInterval(iv);
+        reels.forEach(function(r){r.classList.remove('spinning');});
         if(reels[0])reels[0].textContent=f1;if(reels[1])reels[1].textContent=f2;if(reels[2])reels[2].textContent=f3;
-        if(won)reels.forEach(function(r){r.style.color='#27ae60';r.style.borderColor='#27ae60';});
-        finishGame(g,bet,won,payout,won?f1+' '+f1+' '+f1+' — '+winMult+'x':'No match',btn);
+        if(won)reels.forEach(function(r){r.classList.add('win');});
+        finishGame(g,bet,won,payout,won?f1+' '+f1+' '+f1+' '+winMult+'x':'No match',btn);
       }
-    },80);
-    return;
-
-  } else if (t === 'dice') {
-    var nd=g.nd||2;var vals=[];for(var i=0;i<nd;i++)vals.push(rnd(1,6));
-    var total=vals.reduce(function(a,v){return a+v;},0);
-    // Dice: win pays 2.04x (house edge ~2%)
-    payout=won?Math.floor(bet*2.04):0;
-    var diefs=area.querySelectorAll('.dief'),c=0;
-    var iv=setInterval(function(){
-      diefs.forEach(function(d){d.textContent=rnd(1,6);});
-      if(++c>15){clearInterval(iv);diefs.forEach(function(d,i){if(vals[i])d.textContent=vals[i];if(won)d.style.background='#27ae60';});
-        finishGame(g,bet,won,payout,'Total: '+total,btn);}
     },80);return;
-
   } else if (t === 'bigsmall') {
     if(!gState.choice){alert('Pick Big or Small!');refundBet(bet);btn.disabled=false;btn.textContent='Play';return;}
     var shouldWin=wc(false);
@@ -409,7 +397,8 @@ function execGame(g, bet, won, btn) {
     // Stake Big/Small: 1.96x payout
     payout=actualWin?Math.floor(bet*1.96):0;
     var diefs=area.querySelectorAll('.dief'),c=0;
-    var iv=setInterval(function(){diefs.forEach(function(d){d.textContent=rnd(1,6);});if(++c>15){clearInterval(iv);diefs.forEach(function(d,i){d.textContent=vals[i];if(actualWin)d.style.background='#27ae60';else d.style.background='var(--accent)';});finishGame(g,bet,actualWin,payout,'Total '+total+' = '+res.toUpperCase()+' ('+gState.choice.toUpperCase()+')',btn);}},80);return;
+    diefs.forEach(function(d){d.classList.add('rolling');});
+    var iv=setInterval(function(){diefs.forEach(function(d){d.textContent=rnd(1,6);});if(++c>15){clearInterval(iv);diefs.forEach(function(d,i){d.classList.remove('rolling');d.textContent=vals[i];d.classList.add(actualWin?'win':'lose');});finishGame(g,bet,actualWin,payout,'Total '+total+' = '+res.toUpperCase()+' ('+gState.choice.toUpperCase()+')',btn);}},80);return;
 
   } else if (t === 'oddeven') {
     if(!gState.choice){alert('Pick Odd or Even!');refundBet(bet);btn.disabled=false;btn.textContent='Play';return;}
@@ -423,7 +412,8 @@ function execGame(g, bet, won, btn) {
     // Stake Odd/Even: 1.96x
     payout=actualWin?Math.floor(bet*1.96):0;
     var diefs=area.querySelectorAll('.dief'),c=0;
-    var iv=setInterval(function(){diefs.forEach(function(d){d.textContent=rnd(1,6);});if(++c>15){clearInterval(iv);diefs.forEach(function(d,i){d.textContent=vals[i];if(actualWin)d.style.background='#27ae60';else d.style.background='var(--accent)';});finishGame(g,bet,actualWin,payout,'Total '+total+' = '+res.toUpperCase()+' ('+gState.choice.toUpperCase()+')',btn);}},80);return;
+    diefs.forEach(function(d){d.classList.add('rolling');});
+    var iv=setInterval(function(){diefs.forEach(function(d){d.textContent=rnd(1,6);});if(++c>15){clearInterval(iv);diefs.forEach(function(d,i){d.classList.remove('rolling');d.textContent=vals[i];d.classList.add(actualWin?'win':'lose');});finishGame(g,bet,actualWin,payout,'Total '+total+' = '+res.toUpperCase()+' ('+gState.choice.toUpperCase()+')',btn);}},80);return;
 
   } else if (t === 'roulette') {
     if(!gState.choice){alert('Pick a color!');refundBet(bet);btn.disabled=false;btn.textContent='Play';return;}
@@ -434,7 +424,7 @@ function execGame(g, bet, won, btn) {
     else{r=pick(['red','black','green'].filter(function(x){return x!==gState.choice;}));}
     var ball=$('roulball');
     var c=0,iv=setInterval(function(){var rc=['red','black','green'][c%3];if(ball)ball.style.background=clrMap[rc];c++;
-      if(c>18){clearInterval(iv);if(ball){ball.style.background=clrMap[r];ball.style.transform='scale(1.2)';setTimeout(function(){ball.style.transform='scale(1)';},200);}
+      if(c>20){clearInterval(iv);if(ball){ball.style.background=clrMap[r];ball.className=r+'-result';}
         var actualWin=r===gState.choice;payout=actualWin?Math.floor(bet*(r==='green'?14:2)):0;finishGame(g,bet,actualWin,payout,r.toUpperCase()+(actualWin?' — '+(r==='green'?'14x':'2x'):''),btn);}
     },80);return;
 
@@ -489,13 +479,20 @@ function execGame(g, bet, won, btn) {
     var shouldWin=wc(false);
     var res=shouldWin?gState.choice:(gState.choice===g.c1?g.c2:g.c1);
     var coin=$('coinface');
-    var c=0,iv=setInterval(function(){if(coin)coin.style.background=c%2===0?'#f6c90e':'#a0aec0';c++;
-      if(c>10){clearInterval(iv);if(coin){coin.textContent=res;coin.style.background=res===g.c1?'#f6c90e':'#a0aec0';}
+    if(coin)coin.classList.add('flipping');
+    var c=0,iv=setInterval(function(){
+      if(coin){coin.style.background=c%2===0?'#f6c90e':'#a0aec0';coin.textContent=c%2===0?g.c1:g.c2;}c++;
+      if(c>12){clearInterval(iv);
+        if(coin){
+          coin.classList.remove('flipping');
+          coin.textContent=res;
+          coin.className='coinface';
+          coin.classList.add(res===g.c1?'heads':'tails');
+        }
         var actualWin=res===gState.choice;
-        // Real coin flip: 1.98x (1% house edge)
         payout=actualWin?Math.floor(bet*1.98):0;
         finishGame(g,bet,actualWin,payout,'Result: '+res+(actualWin?' — 1.98x':''),btn);}
-    },100);return;
+    },80);return;
 
   } else if (t === 'lucky') {
     if(!gState.choice){alert('Pick a number!');refundBet(bet);btn.disabled=false;btn.textContent='Play';return;}
@@ -517,7 +514,7 @@ function execGame(g, bet, won, btn) {
     var r=shouldWin?gState.choice:pick(clrs.filter(function(x){return x!==gState.choice;}));
     payout=r===gState.choice?Math.floor(bet*(r==='violet'?3:2)):0;
     var bl=$('cpickball'),c=0,iv=setInterval(function(){if(bl)bl.style.background=cmap[clrs[c%3]];c++;
-      if(c>18){clearInterval(iv);if(bl){bl.style.background=cmap[r];bl.style.transform='scale(1.15)';setTimeout(function(){bl.style.transform='scale(1)';},200);}
+      if(c>18){clearInterval(iv);if(bl){bl.style.background=cmap[r];bl.classList.add('result');setTimeout(function(){bl.classList.remove('result');},500);}
         var actualWin=r===gState.choice;finishGame(g,bet,actualWin,actualWin?payout:0,r.toUpperCase(),btn);}
     },80);return;
 
@@ -528,8 +525,10 @@ function execGame(g, bet, won, btn) {
     var r=shouldWinCB?gState.choice:pick(clrs.filter(function(x){return x!==gState.choice;}));
     // 1 of 3: 2.97x (1% house edge)
     var bl=$('cballball'),c=0,iv=setInterval(function(){if(bl)bl.style.background=cmap[clrs[c%3]];c++;
-      if(c>18){clearInterval(iv);if(bl){bl.style.background=cmap[r];bl.style.transform='scale(1.15)';setTimeout(function(){bl.style.transform='scale(1)';},200);}
-        var aw=r===gState.choice;var py=aw?Math.floor(bet*2.97):0;finishGame(g,bet,aw,py,r.toUpperCase()+(aw?' — 2.97x':''),btn);}
+      if(c>18){clearInterval(iv);if(bl){bl.style.background=cmap[r];bl.classList.add('result');setTimeout(function(){bl.classList.remove('result');},500);}
+        var aw=r===gState.choice;var py=aw?Math.floor(bet*2.97):0;
+        if(bl){bl.classList.add('result');setTimeout(function(){if(bl)bl.classList.remove('result');},500);}
+        finishGame(g,bet,aw,py,r.toUpperCase()+(aw?' — 2.97x':''),btn);}
     },80);return;
 
   } else if (t === 'keno') {
@@ -841,19 +840,19 @@ function startMines(g,bet){
   for(var i=0;i<TOTAL;i++){
     (function(idx){
       var cell=document.createElement('div');cell.className='mcell';
-      cell.style.fontSize='12px';cell.textContent='?';
+      cell.innerHTML='<span class="mcell-q">?</span>';
       cell.addEventListener('click',function(){
         if(!mState.active||mState.revealed.indexOf(idx)>=0)return;
         mState.revealed.push(idx);
         if(mState.mines.indexOf(idx)>=0){
           // Hit mine
           cell.className='mcell boom';
-          cell.innerHTML='<div style="font-size:16px;font-weight:900;color:#e74c3c;">X</div>';
+          cell.innerHTML='<span class="bomb-icon">💣</span>';
           mState.active=false;co.disabled=true;
           grid.querySelectorAll('.mcell').forEach(function(c,i){
             if(mState.mines.indexOf(i)>=0&&mState.revealed.indexOf(i)<0){
               c.className='mcell boom';
-              c.innerHTML='<div style="font-size:16px;font-weight:900;color:#e74c3c;">X</div>';
+              c.innerHTML='<span class="bomb-icon">💣</span>';
             }
           });
           fbPush('/playerTxns',{playerKey:CK,uid:CD.uid,game:'Mines',bet:bet,win:false,payout:0,time:new Date().toISOString()});
@@ -865,7 +864,7 @@ function startMines(g,bet){
           var mult=calcMinesMult(TOTAL,mc,mState.safeCount);
           var payout=Math.floor(bet*mult);
           cell.className='mcell gem';
-          cell.innerHTML='<div style="font-size:14px;font-weight:900;color:#27ae60;">*</div><div style="font-size:9px;color:#27ae60;">'+mult.toFixed(2)+'x</div>';
+          cell.innerHTML='<span class="gem-icon">💎</span><span class="mcell-mult">'+mult.toFixed(2)+'x</span>';
           st('minemult',mult.toFixed(2)+'x');
           var pot=$('minepot');if(pot)pot.textContent='Cash out for '+fmt(payout);
           co.disabled=false;
@@ -971,13 +970,13 @@ function startTower(g,bet){
             if(!tState.active||tState.floor!==floor)return;
             row.querySelectorAll('.tcell').forEach(function(tc){tc.style.pointerEvents='none';tc.style.opacity='0.5';});
             if(col===tState.traps[floor]){
-              cell.textContent='BOMB';cell.style.background='rgba(231,76,60,0.2)';cell.style.borderColor='#e74c3c';cell.style.opacity='1';
+              cell.className='tcell trap';cell.innerHTML='<span style="font-size:22px;">💣</span>';cell.style.opacity='1';
               tState.active=false;co.disabled=true;
               fbPush('/playerTxns',{playerKey:CK,uid:CD.uid,game:'Tower',bet:tState.bet,win:false,payout:0,time:new Date().toISOString()});
               showGRes('gres','grt','grs',false,'Trap! Lost '+fmt(tState.bet),'');
               $('gpbtn').disabled=false;$('gpbtn').textContent='Play Again';
             } else {
-              cell.textContent='OK';cell.style.background='rgba(39,174,96,0.1)';cell.style.borderColor='#27ae60';cell.style.opacity='1';
+              cell.className='tcell safe';cell.innerHTML='<span style="font-size:22px;">💎</span>';cell.style.opacity='1';
               tState.floor++;
               // Stake tower multipliers (3 cols): 1.46, 2.12, 3.09, 4.50, 6.56, 9.56
               var towerMults=[1,1.46,2.12,3.09,4.50,6.56,9.56];
