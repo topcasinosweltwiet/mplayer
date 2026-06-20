@@ -214,10 +214,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--tx
 .cwrap{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;min-height:74px;margin:8px 0;}
 /* Mines */
 .mines-grid{display:grid;gap:5px;margin:8px 0;}
-.mcell{background:var(--bg2);border:2px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;aspect-ratio:1;}
-.mcell:active{border-color:var(--accent);}
-.mcell.gem{background:rgba(39,174,96,0.1);border-color:#27ae60;}
-.mcell.boom{background:rgba(231,76,60,0.1);border-color:#e74c3c;}
+
 /* Scratch */
 .scratch-grid{display:grid;gap:8px;margin:8px 0;}
 .stile{background:var(--accent);border-radius:10px;height:68px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;cursor:pointer;color:#fff;transition:all 0.3s;}
@@ -225,7 +222,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--tx
 .stile.wt{background:rgba(39,174,96,0.1);border:2px solid #27ae60;color:#1a7a4a;}
 .stile.lt{background:rgba(231,76,60,0.1);border:2px solid #e74c3c;color:#e74c3c;}
 /* Tower */
-.tcell{background:var(--bg2);border:2px solid var(--border);border-radius:8px;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;font-weight:700;color:var(--txt2);transition:all 0.15s;}
+
 
 /* ── CRASH ── */
 #ccanvas{width:100%;height:185px;border-radius:12px;display:block;background:#0a1020;margin-bottom:0.75rem;}

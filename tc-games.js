@@ -85,6 +85,9 @@ function loadHotGames() {
 
 function renderHotGames(games) {
   var wrap = $('hotscroll'); if(!wrap)return; wrap.innerHTML = '';
+  // Show/hide the hot section label
+  var lbl = $('hot-section-label');
+  if (lbl) lbl.style.display = games.length ? 'flex' : 'none';
   games.forEach(function(g) {
     var card = document.createElement('div'); card.className = 'hotcard';
     card.innerHTML = '<div class="hico">'+g.icon+'</div><div class="hname">'+g.name+'</div>'+
@@ -811,82 +814,137 @@ function calcMinesMult(total, mines, safeRevealed) {
   return Math.round(mult * 100) / 100;
 }
 
-function startMines(g,bet){
-  var nb=bal()-bet;CD.balance=nb;fbUp('/players/'+CK,{balance:nb});ub();
-  var TOTAL=25,mc=g.mines||3,mines=[];
-  while(mines.length<mc){var m=rnd(0,TOTAL-1);if(mines.indexOf(m)<0)mines.push(m);}
-  var mState={bet:bet,mines:mines,revealed:[],active:true,safeCount:0};
-  var area=$('gma');area.innerHTML='';
+function startMines(g, bet) {
+  var nb = bal() - bet; CD.balance = nb; fbUp('/players/' + CK, {balance: nb}); ub();
+  var TOTAL = 25, mc = g.mines || 3, mines = [];
+  while (mines.length < mc) { var m = rnd(0, TOTAL-1); if (mines.indexOf(m) < 0) mines.push(m); }
+  var mState = { bet: bet, mines: mines, revealed: [], active: true, safeCount: 0 };
 
-  var info=document.createElement('div');
-  info.style.cssText='display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--txt2);margin-bottom:6px;';
-  info.innerHTML='<span>'+mc+' mines | '+(TOTAL-mc)+' gems</span><span style="font-size:16px;font-weight:800;color:var(--accent);" id="minemult">1.00x</span>';
+  var area = $('gma'); area.innerHTML = '';
+
+  // Header info
+  var info = document.createElement('div');
+  info.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:8px 12px;background:var(--bg2);border-radius:10px;border:1px solid var(--border);';
+  info.innerHTML =
+    '<div style="font-size:12px;color:var(--txt2);">' + mc + ' mines · ' + (TOTAL-mc) + ' gems</div>' +
+    '<div style="font-size:16px;font-weight:900;color:var(--accent);" id="minemult">1.00x</div>';
   area.appendChild(info);
 
-  var potDiv=document.createElement('div');
-  potDiv.style.cssText='text-align:center;font-size:12px;color:var(--txt2);margin-bottom:6px;';
-  potDiv.id='minepot';potDiv.textContent='Reveal a gem to start';
+  // Payout display
+  var potDiv = document.createElement('div');
+  potDiv.style.cssText = 'text-align:center;font-size:12px;color:var(--txt2);margin-bottom:8px;';
+  potDiv.id = 'minepot'; potDiv.textContent = 'Click any tile to start';
   area.appendChild(potDiv);
 
-  var co=document.createElement('button');
-  co.style.cssText='width:100%;padding:9px;background:rgba(39,174,96,0.1);color:#1a7a4a;border:1px solid rgba(39,174,96,0.3);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;';
-  co.textContent='Cash Out';co.id='mineco';co.disabled=true;
+  // Cash out button
+  var co = document.createElement('button');
+  co.style.cssText = 'width:100%;padding:10px;background:rgba(39,174,96,0.12);color:#1a7a4a;border:2px solid rgba(39,174,96,0.3);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;transition:all 0.2s;';
+  co.textContent = 'Cash Out'; co.id = 'mineco'; co.disabled = true;
   area.appendChild(co);
 
-  var grid=document.createElement('div');
-  grid.className='mines-grid';grid.style.gridTemplateColumns='repeat(5,1fr)';
+  // Grid - 5x5
+  var grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(5,1fr);gap:6px;';
   area.appendChild(grid);
 
-  for(var i=0;i<TOTAL;i++){
-    (function(idx){
-      var cell=document.createElement('div');cell.className='mcell';
-      cell.innerHTML='<span class="mcell-q">?</span>';
-      cell.addEventListener('click',function(){
-        if(!mState.active||mState.revealed.indexOf(idx)>=0)return;
-        mState.revealed.push(idx);
-        if(mState.mines.indexOf(idx)>=0){
-          // Hit mine
-          cell.className='mcell boom';
-          cell.innerHTML='<span class="bomb-icon">💣</span>';
-          mState.active=false;co.disabled=true;
-          grid.querySelectorAll('.mcell').forEach(function(c,i){
-            if(mState.mines.indexOf(i)>=0&&mState.revealed.indexOf(i)<0){
-              c.className='mcell boom';
-              c.innerHTML='<span class="bomb-icon">💣</span>';
-            }
-          });
-          fbPush('/playerTxns',{playerKey:CK,uid:CD.uid,game:'Mines',bet:bet,win:false,payout:0,time:new Date().toISOString()});
-          showGRes('gres','grt','grs',false,'Mine hit! Lost '+fmt(bet),'You revealed '+mState.safeCount+' gems');
-          $('gpbtn').disabled=false;$('gpbtn').textContent='Play Again';
-        } else {
-          // Safe
-          mState.safeCount++;
-          var mult=calcMinesMult(TOTAL,mc,mState.safeCount);
-          var payout=Math.floor(bet*mult);
-          cell.className='mcell gem';
-          cell.innerHTML='<span class="gem-icon">💎</span><span class="mcell-mult">'+mult.toFixed(2)+'x</span>';
-          st('minemult',mult.toFixed(2)+'x');
-          var pot=$('minepot');if(pot)pot.textContent='Cash out for '+fmt(payout);
-          co.disabled=false;
-          co.textContent='Cash Out  '+mult.toFixed(2)+'x  =  '+fmt(payout);
+  for (var i = 0; i < TOTAL; i++) {
+    (function(idx) {
+      var cell = document.createElement('div');
+      cell.style.cssText = 'background:linear-gradient(145deg,#1e3a6e,#1a3060);border:2px solid #2255b8;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;aspect-ratio:1;transition:all 0.2s;position:relative;overflow:hidden;';
+      cell.innerHTML = '<span style="font-size:20px;color:#4a7ab0;">?</span>';
+
+      // Hover effect
+      cell.addEventListener('mouseenter', function() {
+        if (mState.active && mState.revealed.indexOf(idx) < 0) {
+          cell.style.borderColor = '#7eb3ff';
+          cell.style.background = 'linear-gradient(145deg,#233d7a,#1e3570)';
+          cell.style.transform = 'scale(1.05)';
         }
       });
+      cell.addEventListener('mouseleave', function() {
+        if (mState.active && mState.revealed.indexOf(idx) < 0 && mState.mines.indexOf(idx) < 0) {
+          cell.style.borderColor = '#2255b8';
+          cell.style.background = 'linear-gradient(145deg,#1e3a6e,#1a3060)';
+          cell.style.transform = 'scale(1)';
+        }
+      });
+
+      cell.addEventListener('click', function() {
+        if (!mState.active || mState.revealed.indexOf(idx) >= 0) return;
+        mState.revealed.push(idx);
+        cell.style.cursor = 'default';
+        cell.style.transform = 'scale(1)';
+
+        if (mState.mines.indexOf(idx) >= 0) {
+          // BOMB - red explosion
+          cell.style.background = 'linear-gradient(145deg,#5a0a0a,#3a0505)';
+          cell.style.borderColor = '#e74c3c';
+          cell.style.animation = 'explode 0.4s ease';
+          cell.innerHTML = '<span style="font-size:26px;filter:drop-shadow(0 0 8px #e74c3c);">💣</span>';
+          mState.active = false; co.disabled = true;
+
+          // Reveal all other mines
+          grid.querySelectorAll('[data-midx]').forEach(function(c) {
+            var cidx = parseInt(c.dataset.midx);
+            if (mState.mines.indexOf(cidx) >= 0 && mState.revealed.indexOf(cidx) < 0) {
+              setTimeout(function() {
+                c.style.background = 'linear-gradient(145deg,#3a0a0a,#2a0505)';
+                c.style.borderColor = '#c0392b';
+                c.innerHTML = '<span style="font-size:26px;opacity:0.7;">💣</span>';
+              }, 200 + Math.random() * 400);
+            }
+          });
+
+          fbPush('/playerTxns', {playerKey:CK,uid:CD.uid,game:'Mines',bet:bet,win:false,payout:0,time:new Date().toISOString()});
+          setTimeout(function() {
+            showGRes('gres','grt','grs', false, 'Mine hit! Lost ' + fmt(bet), 'You found ' + mState.safeCount + ' gems before the mine');
+            $('gpbtn').disabled = false; $('gpbtn').textContent = 'Play Again';
+          }, 500);
+
+        } else {
+          // GEM - green sparkle
+          mState.safeCount++;
+          var mult = calcMinesMult(TOTAL, mc, mState.safeCount);
+          var payout = Math.floor(bet * mult);
+
+          cell.style.background = 'linear-gradient(145deg,#0a3a1a,#052510)';
+          cell.style.borderColor = '#27ae60';
+          cell.style.animation = 'popIn 0.3s ease';
+          cell.innerHTML =
+            '<span style="font-size:24px;filter:drop-shadow(0 0 8px #4ade80);animation:float 2s ease infinite;">💎</span>' +
+            '<span style="font-size:10px;font-weight:800;color:#4ade80;margin-top:2px;">' + mult.toFixed(2) + 'x</span>';
+
+          // Update displays
+          var mi = $('minemult');
+          if (mi) { mi.textContent = mult.toFixed(2) + 'x'; mi.style.color = '#4ade80'; }
+          var pot = $('minepot');
+          if (pot) pot.textContent = 'Cash out for ' + fmt(payout);
+
+          co.disabled = false;
+          co.textContent = 'Cash Out   ' + mult.toFixed(2) + 'x   =   ' + fmt(payout);
+          co.style.background = 'rgba(74,222,128,0.15)';
+          co.style.borderColor = 'rgba(74,222,128,0.5)';
+          co.style.color = '#4ade80';
+        }
+      });
+
+      cell.dataset.midx = idx;
       grid.appendChild(cell);
     })(i);
   }
 
-  co.addEventListener('click',function(){
-    if(!mState.active||mState.safeCount===0)return;
-    mState.active=false;co.disabled=true;
-    var mult=calcMinesMult(TOTAL,mc,mState.safeCount);
-    var p=Math.floor(bet*mult);
-    var wb=bal()+p;CD.balance=wb;fbUp('/players/'+CK,{balance:wb});ub();
-    fbPush('/playerTxns',{playerKey:CK,uid:CD.uid,game:'Mines',bet:bet,win:true,payout:p,time:new Date().toISOString()});
-    showGRes('gres','grt','grs',true,'Cashed out at '+mult.toFixed(2)+'x  —  Won '+fmt(p)+'!',mState.safeCount+' gems revealed');
-    $('gpbtn').disabled=false;$('gpbtn').textContent='Play Again';
+  co.addEventListener('click', function() {
+    if (!mState.active || mState.safeCount === 0) return;
+    mState.active = false; co.disabled = true;
+    var mult = calcMinesMult(TOTAL, mc, mState.safeCount);
+    var p = Math.floor(bet * mult);
+    var wb = bal() + p; CD.balance = wb; fbUp('/players/' + CK, {balance: wb}); ub();
+    fbPush('/playerTxns', {playerKey:CK,uid:CD.uid,game:'Mines',bet:bet,win:true,payout:p,time:new Date().toISOString()});
+    showGRes('gres','grt','grs', true, 'Cashed out ' + mult.toFixed(2) + 'x', 'Won ' + fmt(p) + ' from ' + mState.safeCount + ' gems!');
+    $('gpbtn').disabled = false; $('gpbtn').textContent = 'Play Again';
   });
 
-  $('gpbtn').disabled=false;$('gpbtn').textContent='Play Again';
+  $('gpbtn').disabled = false; $('gpbtn').textContent = 'Play Again';
 }
 
 // ── PLINKO ──
@@ -938,63 +996,194 @@ function startPlinko(g,bet){
   st('plinkomult','Dropping...');$('gpbtn').disabled=true;requestAnimationFrame(loop);
 }
 
-// ── TOWER ──
-var tState={};
-function startTower(g,bet){
-  var nb=bal()-bet;CD.balance=nb;fbUp('/players/'+CK,{balance:nb});ub();
-  var FLOORS=6,COLS=g.cols||3;
-  tState={bet:bet,floor:0,mult:1.0,active:true,traps:[]};
-  for(var f=0;f<FLOORS;f++)tState.traps.push(rnd(0,COLS-1));
-  var area=$('gma');area.innerHTML='';
-  var info=document.createElement('div');info.style.cssText='display:flex;justify-content:space-between;font-size:12px;color:var(--txt2);margin-bottom:6px;';
-  info.innerHTML='<span>Pick safe tile each floor</span><span id="towermult">1.00x</span>';area.appendChild(info);
-  var co=document.createElement('button');co.style.cssText='width:100%;padding:8px;background:rgba(39,174,96,0.1);color:#1a7a4a;border:1px solid rgba(39,174,96,0.3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;';
-  co.textContent='Cash Out';co.id='towerco';co.disabled=true;area.appendChild(co);
-  var grid=document.createElement('div');grid.style.cssText='display:flex;flex-direction:column;gap:5px;';area.appendChild(grid);
-  function activateFloor(fl){
-    grid.querySelectorAll('[data-trow]').forEach(function(r){
-      var rf=parseInt(r.dataset.trow);
-      r.querySelectorAll('.tcell').forEach(function(c){
-        c.style.opacity=rf===fl?'1':'0.35';c.style.cursor=rf===fl?'pointer':'default';c.style.pointerEvents=rf===fl?'auto':'none';
-        if(rf===fl)c.style.borderColor='#f6c90e';
-      });
-    });
-  }
-  for(var f2=FLOORS-1;f2>=0;f2--){
-    (function(floor){
-      var row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:repeat('+COLS+',1fr);gap:5px;';row.dataset.trow=floor;
-      for(var c=0;c<COLS;c++){
-        (function(col){
-          var cell=document.createElement('div');cell.className='tcell';cell.textContent='?';cell.style.opacity='0.35';cell.style.pointerEvents='none';
-          cell.addEventListener('click',function(){
-            if(!tState.active||tState.floor!==floor)return;
-            row.querySelectorAll('.tcell').forEach(function(tc){tc.style.pointerEvents='none';tc.style.opacity='0.5';});
-            if(col===tState.traps[floor]){
-              cell.className='tcell trap';cell.innerHTML='<span style="font-size:22px;">💣</span>';cell.style.opacity='1';
-              tState.active=false;co.disabled=true;
-              fbPush('/playerTxns',{playerKey:CK,uid:CD.uid,game:'Tower',bet:tState.bet,win:false,payout:0,time:new Date().toISOString()});
-              showGRes('gres','grt','grs',false,'Trap! Lost '+fmt(tState.bet),'');
-              $('gpbtn').disabled=false;$('gpbtn').textContent='Play Again';
+// ── TOWER ── (Stake/1xbet style with apple safe, bomb trap)
+var tState = {};
+function startTower(g, bet) {
+  var nb = bal() - bet; CD.balance = nb; fbUp('/players/' + CK, {balance: nb}); ub();
+  var FLOORS = 6, COLS = g.cols || 3;
+  tState = { bet: bet, floor: 0, mult: 1.0, active: true, traps: [] };
+  for (var f = 0; f < FLOORS; f++) tState.traps.push(rnd(0, COLS - 1));
+
+  var area = $('gma'); area.innerHTML = '';
+
+  // Header
+  var info = document.createElement('div');
+  info.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:8px 12px;background:var(--bg2);border-radius:10px;border:1px solid var(--border);';
+  info.innerHTML =
+    '<div style="font-size:12px;color:var(--txt2);">Climb the tower!</div>' +
+    '<div style="font-size:16px;font-weight:900;color:var(--accent);" id="towermult">1.00x</div>';
+  area.appendChild(info);
+
+  // Cash out button
+  var co = document.createElement('button');
+  co.style.cssText = 'width:100%;padding:10px;background:rgba(39,174,96,0.12);color:#1a7a4a;border:2px solid rgba(39,174,96,0.3);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;transition:all 0.2s;';
+  co.textContent = 'Cash Out'; co.id = 'towerco'; co.disabled = true;
+  area.appendChild(co);
+
+  // Tower grid - top floor to bottom (bottom = current)
+  var grid = document.createElement('div');
+  grid.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+  area.appendChild(grid);
+
+  // Stake tower multipliers
+  var towerMults = [1, 1.46, 2.12, 3.09, 4.50, 6.56, 9.56];
+
+  // Build floors top to bottom (floor 5 at top, floor 0 at bottom)
+  for (var fi = FLOORS - 1; fi >= 0; fi--) {
+    (function(floor) {
+      var mult = towerMults[Math.min(floor + 1, towerMults.length - 1)];
+      var row = document.createElement('div');
+      row.style.cssText = 'display:grid;grid-template-columns:repeat(' + COLS + ',1fr);gap:6px;';
+      row.dataset.trow = floor;
+
+      // Multiplier label on left
+      var rowWrap = document.createElement('div');
+      rowWrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
+      var multLabel = document.createElement('div');
+      multLabel.style.cssText = 'font-size:10px;font-weight:700;color:var(--txt2);width:34px;text-align:right;flex-shrink:0;';
+      multLabel.textContent = mult.toFixed(2) + 'x';
+      rowWrap.appendChild(multLabel);
+      rowWrap.appendChild(row);
+      grid.appendChild(rowWrap);
+
+      for (var c = 0; c < COLS; c++) {
+        (function(col) {
+          var cell = document.createElement('div');
+          var isActive = floor === 0;
+          cell.style.cssText = 'background:linear-gradient(145deg,' + (isActive ? '#1e3a6e,#1a3060' : '#111a2e,#0d1525') + ');' +
+            'border:2px solid ' + (isActive ? '#2255b8' : '#0d1a3a') + ';' +
+            'border-radius:10px;height:46px;display:flex;align-items:center;justify-content:center;' +
+            'cursor:' + (isActive ? 'pointer' : 'default') + ';font-size:22px;transition:all 0.2s;' +
+            'opacity:' + (isActive ? '1' : '0.45') + ';';
+          cell.textContent = '?';
+          cell.style.color = isActive ? '#4a7ab0' : '#2a4060';
+          cell.dataset.tcol = col;
+          cell.dataset.tfloor = floor;
+
+          if (isActive) {
+            cell.addEventListener('mouseenter', function() {
+              if (tState.active && tState.floor === floor) {
+                cell.style.borderColor = '#7eb3ff';
+                cell.style.background = 'linear-gradient(145deg,#233d7a,#1e3570)';
+                cell.style.transform = 'scale(1.05)';
+              }
+            });
+            cell.addEventListener('mouseleave', function() {
+              if (tState.active && tState.floor === floor && cell.textContent === '?') {
+                cell.style.borderColor = '#2255b8';
+                cell.style.background = 'linear-gradient(145deg,#1e3a6e,#1a3060)';
+                cell.style.transform = 'scale(1)';
+              }
+            });
+          }
+
+          cell.addEventListener('click', function() {
+            if (!tState.active || tState.floor !== floor) return;
+
+            // Disable all cells in this row
+            row.querySelectorAll('[data-tcol]').forEach(function(c) {
+              c.style.cursor = 'default';
+              c.removeEventListener('mouseenter', null);
+            });
+
+            if (col === tState.traps[floor]) {
+              // BOMB - red
+              cell.style.background = 'linear-gradient(145deg,#5a0a0a,#3a0505)';
+              cell.style.borderColor = '#e74c3c';
+              cell.style.animation = 'explode 0.4s ease';
+              cell.style.transform = 'scale(1)';
+              cell.textContent = '💣';
+              tState.active = false; co.disabled = true;
+
+              // Reveal trap on other cells in this row
+              row.querySelectorAll('[data-tcol]').forEach(function(c) {
+                if (parseInt(c.dataset.tcol) !== col) {
+                  setTimeout(function() {
+                    c.style.background = 'linear-gradient(145deg,#1a2a0a,#121f08)';
+                    c.style.borderColor = '#27ae60';
+                    c.textContent = '🍎';
+                  }, 300);
+                }
+              });
+
+              fbPush('/playerTxns', {playerKey:CK,uid:CD.uid,game:'Tower',bet:tState.bet,win:false,payout:0,time:new Date().toISOString()});
+              setTimeout(function() {
+                showGRes('gres','grt','grs', false, 'Bomb! Lost ' + fmt(tState.bet), 'Reached floor ' + floor + ' of ' + FLOORS);
+                $('gpbtn').disabled = false; $('gpbtn').textContent = 'Play Again';
+              }, 600);
+
             } else {
-              cell.className='tcell safe';cell.innerHTML='<span style="font-size:22px;">💎</span>';cell.style.opacity='1';
+              // APPLE - green safe
+              cell.style.background = 'linear-gradient(145deg,#1a2a0a,#0d1f05)';
+              cell.style.borderColor = '#27ae60';
+              cell.style.animation = 'popIn 0.3s ease';
+              cell.style.transform = 'scale(1)';
+              cell.textContent = '🍎';
+
               tState.floor++;
-              // Stake tower multipliers (3 cols): 1.46, 2.12, 3.09, 4.50, 6.56, 9.56
-              var towerMults=[1,1.46,2.12,3.09,4.50,6.56,9.56];
-              tState.mult=towerMults[Math.min(tState.floor,towerMults.length-1)];
-              st('towermult',tState.mult.toFixed(2)+'x');co.disabled=false;
-              co.textContent='Cash Out  '+tState.mult.toFixed(2)+'x  =  '+fmt(Math.floor(tState.bet*tState.mult));
-              if(tState.floor<FLOORS)activateFloor(tState.floor);else towerCashout();
+              var newMult = towerMults[Math.min(tState.floor, towerMults.length - 1)];
+              tState.mult = newMult;
+              var payout = Math.floor(tState.bet * newMult);
+
+              var mi = $('towermult');
+              if (mi) { mi.textContent = newMult.toFixed(2) + 'x'; mi.style.color = '#4ade80'; }
+              co.disabled = false;
+              co.textContent = 'Cash Out   ' + newMult.toFixed(2) + 'x   =   ' + fmt(payout);
+              co.style.background = 'rgba(74,222,128,0.15)';
+              co.style.borderColor = 'rgba(74,222,128,0.5)';
+              co.style.color = '#4ade80';
+
+              if (tState.floor >= FLOORS) {
+                // Top reached!
+                towerCashout();
+              } else {
+                // Activate next floor
+                var nextFloor = tState.floor;
+                var allRows = grid.querySelectorAll('[data-trow="' + nextFloor + '"]');
+                if (allRows.length === 0) {
+                  // Find by dataset
+                  grid.querySelectorAll('[data-tfloor]').forEach(function(c) {
+                    if (parseInt(c.dataset.tfloor) === nextFloor) {
+                      c.style.opacity = '1';
+                      c.style.cursor = 'pointer';
+                      c.style.background = 'linear-gradient(145deg,#1e3a6e,#1a3060)';
+                      c.style.borderColor = '#2255b8';
+                      c.style.color = '#4a7ab0';
+                    }
+                  });
+                }
+                // Activate using rowWrap
+                var allRowWraps = grid.children;
+                var targetIdx = FLOORS - 1 - nextFloor;
+                if (allRowWraps[targetIdx]) {
+                  var targetRow = allRowWraps[targetIdx].querySelector('div[data-trow]') ||
+                                  allRowWraps[targetIdx].children[1];
+                  if (targetRow) {
+                    targetRow.querySelectorAll('[data-tcol]').forEach(function(c) {
+                      c.style.opacity = '1';
+                      c.style.cursor = 'pointer';
+                      c.style.background = 'linear-gradient(145deg,#1e3a6e,#1a3060)';
+                      c.style.borderColor = '#f6c90e';
+                      c.style.color = '#4a7ab0';
+                      c.dataset.tfloor = nextFloor;
+                    });
+                  }
+                }
+              }
             }
-          });row.appendChild(cell);
+          });
+
+          cell.dataset.trow = floor;
+          row.appendChild(cell);
         })(c);
       }
-      grid.appendChild(row);
-    })(f2);
+    })(fi);
   }
-  activateFloor(0);
-  co.addEventListener('click',towerCashout);
-  $('gpbtn').disabled=false;$('gpbtn').textContent='Restart';
+
+  co.addEventListener('click', towerCashout);
+  $('gpbtn').disabled = false; $('gpbtn').textContent = 'Restart';
 }
+
 function towerCashout(){
   if(!tState.active)return;tState.active=false;
   var co=$('towerco');if(co)co.disabled=true;

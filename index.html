@@ -46,16 +46,16 @@
 
   <!-- HOME -->
   <div id="pg-home" class="mcontent page active">
-    <!-- Sport search -->
-    <div class="ssearch">
+    <!-- Sport search - hidden until sports loaded -->
+    <div id="sport-search-wrap" style="display:none;" class="ssearch">
       <input class="ssinp" id="ssinp" placeholder="Search team or league..."/>
       <button class="ssbtn" id="ssbtn">Search</button>
     </div>
-    <!-- Sport betting -->
+    <!-- Sport betting section - hidden until admin adds events -->
     <div class="slabel" id="sport-section-label" style="display:none;">Sports Betting</div>
     <div class="spscroll" id="spscroll" style="display:none;"></div>
     <!-- Hot games -->
-    <div class="slabel">Hot Games</div>
+    <div class="slabel" id="hot-section-label" style="display:none;">Hot Games</div>
     <div class="hotscroll" id="hotscroll"></div>
     <!-- Casino -->
     <div class="slabel">Casino</div>
