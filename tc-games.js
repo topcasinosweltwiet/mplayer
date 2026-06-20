@@ -66,13 +66,12 @@ var WOF_SEGS=[
   {l:'5x',v:5,c:'#e67e22'},{l:'10x',v:10,c:'#f6c90e'},
 ];
 
-// ── WIN RATES — VERY STRICT ──
+// ── WIN RATES — 15% all games ──
 var _streak = 0;
 function wc(crash) {
   if (_streak > 0) { _streak--; return false; }
-  var rate = crash ? 0.04 : 0.07;
-  var won = Math.random() < rate;
-  if (won) _streak = rnd(6,15);
+  var won = Math.random() < 0.15;  // 15% win chance
+  if (won) _streak = rnd(3,6);     // after win, 3-6 forced losses
   return won;
 }
 
@@ -440,50 +439,49 @@ function execGame(g, bet, won, btn) {
     },80);return;
 
   } else if (t === 'wheel') {
-    // Wheel: pick segment by probability, then spin to land exactly on it
+    // Wheel: pick segment, spin pointer to land exactly on it
     var wr2=Math.random();var segIdx;
-    // WOF_SEGS indices: 0=0x,1=1x,2=0x,3=1x,4=0x,5=2x,6=0x,7=1x,8=3x,9=0x,10=5x,11=10x
-    if(wr2<0.50)segIdx=0;        // 50%  -> 0x
-    else if(wr2<0.80)segIdx=2;   // 30%  -> 0x
-    else if(wr2<0.90)segIdx=7;   // 10%  -> 1x (get bet back)
-    else if(wr2<0.96)segIdx=5;   // 6%   -> 2x
-    else if(wr2<0.98)segIdx=8;   // 2%   -> 3x
-    else if(wr2<0.995)segIdx=10; // 1.5% -> 5x
-    else segIdx=11;               // 0.5% -> 10x
+    // 0=0x,1=1x,2=0x,3=1x,4=0x,5=2x,6=0x,7=1x,8=3x,9=0x,10=5x,11=10x
+    if(wr2<0.50)segIdx=0;        // 50%  -> 0x (seg 0)
+    else if(wr2<0.80)segIdx=9;   // 30%  -> 0x (seg 9)
+    else if(wr2<0.90)segIdx=1;   // 10%  -> 1x (seg 1)
+    else if(wr2<0.96)segIdx=5;   // 6%   -> 2x (seg 5)
+    else if(wr2<0.98)segIdx=8;   // 2%   -> 3x (seg 8)
+    else if(wr2<0.995)segIdx=10; // 1.5% -> 5x (seg 10)
+    else segIdx=11;               // 0.5% -> 10x (seg 11)
     var seg=WOF_SEGS[segIdx];
-    var n=WOF_SEGS.length;        // 12 segments
-    var segDeg=360/n;             // 30 degrees per segment
-    // Center of chosen segment in SVG coords (0deg = right, clockwise)
-    var segCenter=(segIdx+0.5)*segDeg;
-    // Pointer is at TOP = 270deg in SVG coords
-    // We need: (segCenter + finalRotation) % 360 == 270
-    // So finalRotation = (270 - segCenter + 360) % 360
-    var targetAngle=(270-segCenter+360)%360;
-    // Add 3-6 full extra spins for visual effect
-    var extraSpins=(3+Math.floor(Math.random()*4))*360;
-    var totalDeg=extraSpins+targetAngle;
+    // Calculate exact rotation so pointer (at 270deg/top) lands on chosen segment center
+    // Segment i center = (i+0.5)*30 degrees (SVG clockwise from right)
+    // We need: segCenter + rotation = 270 => rotation = 270 - segCenter
+    var segCenter=(segIdx+0.5)*(360/WOF_SEGS.length);
+    var baseRotation=(270-segCenter+360)%360;
+    // Add full spins for visual effect (3-6 spins)
+    var fullSpins=(3+Math.floor(Math.random()*4))*360;
+    var totalRot=fullSpins+baseRotation;
+    // Pay out
     var wheelPay=Math.floor(bet*seg.v);
     if(wheelPay>0){var wwb=bal()+wheelPay;CD.balance=wwb;fbUp('/players/'+CK,{balance:wwb});ub();}
     fbPush('/playerTxns',{playerKey:CK,uid:CD.uid,game:'Money Wheel',bet:bet,win:wheelPay>0,payout:wheelPay,time:new Date().toISOString()});
+    // Animate with cubic ease-out so wheel decelerates and stops exactly
     var wg=document.getElementById('wofg');
-    var startTime2=null,duration2=4500;
-    function easeOut2(t){return 1-Math.pow(1-t,3);}
-    function wheelAnim(ts){
-      if(!startTime2)startTime2=ts;
-      var elapsed=ts-startTime2;
-      var progress=Math.min(1,elapsed/duration2);
-      var cur=totalDeg*easeOut2(progress);
+    var t0w=null,dur=4000;
+    function easeW(t){return 1-Math.pow(1-t,4);}
+    function animW(ts){
+      if(!t0w)t0w=ts;
+      var p=Math.min(1,(ts-t0w)/dur);
+      var cur=totalRot*easeW(p);
       if(wg)wg.setAttribute('transform','rotate('+cur+' 100 100)');
-      if(progress<1){requestAnimationFrame(wheelAnim);}
+      if(p<1){requestAnimationFrame(animW);}
       else{
-        if(wg)wg.setAttribute('transform','rotate('+totalDeg+' 100 100)');
+        // Snap to exact final position
+        if(wg)wg.setAttribute('transform','rotate('+totalRot+' 100 100)');
         var wrd=$('wheelres');if(wrd)wrd.textContent='Landed: '+seg.l;
         if(seg.v===0){showGRes('gres','grt','grs',false,'0x — No payout this round','Spin again!');}
-        else{showGRes('gres','grt','grs',true,seg.l+' — You got '+fmt(wheelPay)+'!',(seg.v===1?'Got your bet back!':'Profit: +'+fmt(wheelPay-bet)+'!'));}
+        else{showGRes('gres','grt','grs',true,seg.l+' — You get '+fmt(wheelPay)+'!',(seg.v===1?'Bet returned!':'Profit: +'+fmt(wheelPay-bet)));}
         btn.disabled=false;btn.textContent='Spin Again';
       }
     }
-    requestAnimationFrame(wheelAnim);
+    requestAnimationFrame(animW);
     return;
 
   } else if (t === 'coin') {
