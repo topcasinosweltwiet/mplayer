@@ -16,7 +16,17 @@ function loadContactAgents() {
       var icon = c.type === 'telegram' ? '✈️' : c.type === 'whatsapp' ? '📱' : '🔗';
       var color = c.type === 'telegram' ? '#2aa3ef' : c.type === 'whatsapp' ? '#25d366' : '#1a3a7c';
       var label = c.type === 'telegram' ? 'Telegram' : c.type === 'whatsapp' ? 'WhatsApp' : 'Contact';
-      return '<a href="' + (c.link||'#') + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;text-decoration:none;transition:border-color 0.15s;">' +
+      // Fix link - ensure absolute URL
+      var rawLink = (c.link || '').trim();
+      var fullLink;
+      if (!rawLink) { fullLink = '#'; }
+      else if (rawLink.startsWith('http://') || rawLink.startsWith('https://')) { fullLink = rawLink; }
+      else if (rawLink.startsWith('t.me/')) { fullLink = 'https://' + rawLink; }
+      else if (rawLink.startsWith('@')) { fullLink = 'https://t.me/' + rawLink.slice(1); }
+      else if (c.type === 'telegram') { fullLink = 'https://t.me/' + rawLink.replace(/^\/+/, ''); }
+      else if (c.type === 'whatsapp') { fullLink = 'https://wa.me/' + rawLink.replace(/[^0-9+]/g, ''); }
+      else { fullLink = 'https://' + rawLink; }
+      return '<a href="' + fullLink + '" target="_blank" rel="noopener"' style="display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;text-decoration:none;transition:border-color 0.15s;">' +
         '<div style="width:40px;height:40px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">' + icon + '</div>' +
         '<div style="flex:1;">' +
           '<div style="font-size:14px;font-weight:700;color:var(--txt);">' + (c.name||label) + '</div>' +
