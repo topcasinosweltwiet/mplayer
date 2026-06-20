@@ -26,7 +26,7 @@ function loadContactAgents() {
       else if (c.type === 'telegram') { fullLink = 'https://t.me/' + rawLink.replace(/^\/+/, ''); }
       else if (c.type === 'whatsapp') { fullLink = 'https://wa.me/' + rawLink.replace(/[^0-9+]/g, ''); }
       else { fullLink = 'https://' + rawLink; }
-      return '<a href="' + fullLink + '" target="_blank" rel="noopener"' style="display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;text-decoration:none;transition:border-color 0.15s;">' +
+      return '<a href="' + fullLink + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;text-decoration:none;">' +
         '<div style="width:40px;height:40px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">' + icon + '</div>' +
         '<div style="flex:1;">' +
           '<div style="font-size:14px;font-weight:700;color:var(--txt);">' + (c.name||label) + '</div>' +
