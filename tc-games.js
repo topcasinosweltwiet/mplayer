@@ -360,14 +360,19 @@ function buildGameArea(g) {
 }
 
 function execGame(g, bet, won, btn) {
-  var payout = won ? Math.floor(bet*(g.mult||2)) : 0;
+  var payout = 0;
   var result = '';
   var t = g.type;
   var area = $('gma');
 
   if (t === 'slots') {
     var syms = SLOT_SYMS[g.syms]||SLOT_SYMS.slots1;
-    var f1=pick(syms), f2=won?f1:pick(syms), f3=won?f1:(f2===f1?pick(syms.filter(function(s){return s!==f1;}))||pick(syms):f2);
+    // Slot multipliers by symbol index (higher index = higher value)
+    var slotMults = [2, 3, 5, 8, 15, 25]; // matches 6 syms
+    var winSymIdx = won ? Math.floor(Math.random()*syms.length) : -1;
+    var winMult = won ? (slotMults[winSymIdx] || 2) : 0;
+    var f1=won?syms[winSymIdx]:pick(syms), f2=won?f1:pick(syms), f3=won?f1:(f2===f1?pick(syms.filter(function(s){return s!==f1;}))||pick(syms):f2);
+    payout = won ? Math.floor(bet*winMult) : 0;
     // Animate spinning
     var reels=area.querySelectorAll('.slreel'), c=0;
     var iv=setInterval(function(){
@@ -375,7 +380,7 @@ function execGame(g, bet, won, btn) {
       if(++c>15){clearInterval(iv);
         if(reels[0])reels[0].textContent=f1;if(reels[1])reels[1].textContent=f2;if(reels[2])reels[2].textContent=f3;
         if(won)reels.forEach(function(r){r.style.color='#27ae60';r.style.borderColor='#27ae60';});
-        finishGame(g,bet,won,payout,'🎉 '+f1+f1+f1+'!',btn);
+        finishGame(g,bet,won,payout,won?f1+' '+f1+' '+f1+' — '+winMult+'x':'No match',btn);
       }
     },80);
     return;
@@ -383,47 +388,42 @@ function execGame(g, bet, won, btn) {
   } else if (t === 'dice') {
     var nd=g.nd||2;var vals=[];for(var i=0;i<nd;i++)vals.push(rnd(1,6));
     var total=vals.reduce(function(a,v){return a+v;},0);
+    // Dice: win pays 2.04x (house edge ~2%)
+    payout=won?Math.floor(bet*2.04):0;
     var diefs=area.querySelectorAll('.dief'),c=0;
     var iv=setInterval(function(){
       diefs.forEach(function(d){d.textContent=rnd(1,6);});
-      if(++c>15){clearInterval(iv);diefs.forEach(function(d,i){if(vals[i])d.textContent=vals[i];});
+      if(++c>15){clearInterval(iv);diefs.forEach(function(d,i){if(vals[i])d.textContent=vals[i];if(won)d.style.background='#27ae60';});
         finishGame(g,bet,won,payout,'Total: '+total,btn);}
     },80);return;
 
   } else if (t === 'bigsmall') {
     if(!gState.choice){alert('Pick Big or Small!');refundBet(bet);btn.disabled=false;btn.textContent='Play';return;}
     var shouldWin=wc(false);
-    var vals,total,res;
-    // Rig the dice: if shouldWin, force result matching choice; else force opposite
-    if(shouldWin){
-      if(gState.choice==='big'){vals=[4,4,4];total=12;res='big';}else{vals=[1,2,3];total=6;res='small';}
-      // Add some randomness but keep result correct
-      vals=[rnd(1,6),rnd(1,6),rnd(1,6)];total=vals[0]+vals[1]+vals[2];res=total>=11?'big':'small';
-      if(res!==gState.choice){vals[2]=(gState.choice==='big'?6:1);total=vals[0]+vals[1]+vals[2];res=total>=11?'big':'small';}
-    }else{
-      vals=[rnd(1,6),rnd(1,6),rnd(1,6)];total=vals[0]+vals[1]+vals[2];res=total>=11?'big':'small';
-      if(res===gState.choice){vals[2]=(gState.choice==='big'?1:6);total=vals[0]+vals[1]+vals[2];res=total>=11?'big':'small';}
-    }
+    var vals=[rnd(1,6),rnd(1,6),rnd(1,6)];
+    var total=vals[0]+vals[1]+vals[2];
+    var res=total>=11?'big':'small';
+    if(shouldWin&&res!==gState.choice){vals[2]=gState.choice==='big'?6:1;total=vals[0]+vals[1]+vals[2];res=total>=11?'big':'small';}
+    if(!shouldWin&&res===gState.choice){vals[2]=gState.choice==='big'?1:6;total=vals[0]+vals[1]+vals[2];res=total>=11?'big':'small';}
     var actualWin=res===gState.choice;
-    payout=actualWin?Math.floor(bet*(g.mult||2)):0;
+    // Stake Big/Small: 1.96x payout
+    payout=actualWin?Math.floor(bet*1.96):0;
     var diefs=area.querySelectorAll('.dief'),c=0;
-    var iv=setInterval(function(){diefs.forEach(function(d){d.textContent=rnd(1,6);});if(++c>15){clearInterval(iv);diefs.forEach(function(d,i){d.textContent=vals[i];if(actualWin)d.style.background='#27ae60';else d.style.background='var(--accent)';});finishGame(g,bet,actualWin,payout,'Total '+total+' = '+res.toUpperCase(),btn);}},80);return;
+    var iv=setInterval(function(){diefs.forEach(function(d){d.textContent=rnd(1,6);});if(++c>15){clearInterval(iv);diefs.forEach(function(d,i){d.textContent=vals[i];if(actualWin)d.style.background='#27ae60';else d.style.background='var(--accent)';});finishGame(g,bet,actualWin,payout,'Total '+total+' = '+res.toUpperCase()+' ('+gState.choice.toUpperCase()+')',btn);}},80);return;
 
   } else if (t === 'oddeven') {
     if(!gState.choice){alert('Pick Odd or Even!');refundBet(bet);btn.disabled=false;btn.textContent='Play';return;}
     var shouldWin=wc(false);
-    var vals,total,res;
-    if(shouldWin){
-      vals=[rnd(1,6),rnd(1,6),rnd(1,6)];total=vals[0]+vals[1]+vals[2];res=total%2===0?'even':'odd';
-      if(res!==gState.choice){vals[2]=vals[2]%2===0?vals[2]-1:vals[2]+1;if(vals[2]<1)vals[2]=1;if(vals[2]>6)vals[2]=6;total=vals[0]+vals[1]+vals[2];res=total%2===0?'even':'odd';}
-    }else{
-      vals=[rnd(1,6),rnd(1,6),rnd(1,6)];total=vals[0]+vals[1]+vals[2];res=total%2===0?'even':'odd';
-      if(res===gState.choice){vals[2]=vals[2]%2===0?vals[2]-1:vals[2]+1;if(vals[2]<1)vals[2]=1;if(vals[2]>6)vals[2]=6;total=vals[0]+vals[1]+vals[2];res=total%2===0?'even':'odd';}
-    }
+    var vals=[rnd(1,6),rnd(1,6),rnd(1,6)];
+    var total=vals[0]+vals[1]+vals[2];
+    var res=total%2===0?'even':'odd';
+    if(shouldWin&&res!==gState.choice){vals[2]=vals[2]%2===0?vals[2]-1:vals[2]+1;if(vals[2]<1)vals[2]=1;if(vals[2]>6)vals[2]=6;total=vals[0]+vals[1]+vals[2];res=total%2===0?'even':'odd';}
+    if(!shouldWin&&res===gState.choice){vals[2]=vals[2]%2===0?vals[2]-1:vals[2]+1;if(vals[2]<1)vals[2]=1;if(vals[2]>6)vals[2]=6;total=vals[0]+vals[1]+vals[2];res=total%2===0?'even':'odd';}
     var actualWin=res===gState.choice;
-    payout=actualWin?Math.floor(bet*(g.mult||2)):0;
+    // Stake Odd/Even: 1.96x
+    payout=actualWin?Math.floor(bet*1.96):0;
     var diefs=area.querySelectorAll('.dief'),c=0;
-    var iv=setInterval(function(){diefs.forEach(function(d){d.textContent=rnd(1,6);});if(++c>15){clearInterval(iv);diefs.forEach(function(d,i){d.textContent=vals[i];if(actualWin)d.style.background='#27ae60';else d.style.background='var(--accent)';});finishGame(g,bet,actualWin,payout,'Total '+total+' = '+res.toUpperCase(),btn);}},80);return;
+    var iv=setInterval(function(){diefs.forEach(function(d){d.textContent=rnd(1,6);});if(++c>15){clearInterval(iv);diefs.forEach(function(d,i){d.textContent=vals[i];if(actualWin)d.style.background='#27ae60';else d.style.background='var(--accent)';});finishGame(g,bet,actualWin,payout,'Total '+total+' = '+res.toUpperCase()+' ('+gState.choice.toUpperCase()+')',btn);}},80);return;
 
   } else if (t === 'roulette') {
     if(!gState.choice){alert('Pick a color!');refundBet(bet);btn.disabled=false;btn.textContent='Play';return;}
@@ -435,7 +435,7 @@ function execGame(g, bet, won, btn) {
     var ball=$('roulball');
     var c=0,iv=setInterval(function(){var rc=['red','black','green'][c%3];if(ball)ball.style.background=clrMap[rc];c++;
       if(c>18){clearInterval(iv);if(ball){ball.style.background=clrMap[r];ball.style.transform='scale(1.2)';setTimeout(function(){ball.style.transform='scale(1)';},200);}
-        var actualWin=r===gState.choice;payout=actualWin?Math.floor(bet*(r==='green'?5:2)):0;finishGame(g,bet,actualWin,payout,r.toUpperCase(),btn);}
+        var actualWin=r===gState.choice;payout=actualWin?Math.floor(bet*(r==='green'?14:2)):0;finishGame(g,bet,actualWin,payout,r.toUpperCase()+(actualWin?' — '+(r==='green'?'14x':'2x'):''),btn);}
     },80);return;
 
   } else if (t === 'wheel') {
@@ -491,17 +491,24 @@ function execGame(g, bet, won, btn) {
     var coin=$('coinface');
     var c=0,iv=setInterval(function(){if(coin)coin.style.background=c%2===0?'#f6c90e':'#a0aec0';c++;
       if(c>10){clearInterval(iv);if(coin){coin.textContent=res;coin.style.background=res===g.c1?'#f6c90e':'#a0aec0';}
-        var actualWin=res===gState.choice;payout=actualWin?Math.floor(bet*(g.mult||2)):0;finishGame(g,bet,actualWin,payout,'Result: '+res,btn);}
+        var actualWin=res===gState.choice;
+        // Real coin flip: 1.98x (1% house edge)
+        payout=actualWin?Math.floor(bet*1.98):0;
+        finishGame(g,bet,actualWin,payout,'Result: '+res+(actualWin?' — 1.98x':''),btn);}
     },100);return;
 
   } else if (t === 'lucky') {
     if(!gState.choice){alert('Pick a number!');refundBet(bet);btn.disabled=false;btn.textContent='Play';return;}
     var shouldWinL=wc(false);
+    var max=g.max||10;
     var drawn;
     if(shouldWinL){drawn=gState.choice;}
-    else{drawn=rnd(1,g.max||10);while(drawn===gState.choice)drawn=rnd(1,g.max||10);}
-    var aw2=drawn===gState.choice;var py2=aw2?Math.floor(bet*(g.mult||5)):0;
-    finishGame(g,bet,aw2,py2,'Drawn: '+drawn+(aw2?' — Match!':''),btn);
+    else{drawn=rnd(1,max);while(drawn===gState.choice)drawn=rnd(1,max);}
+    var aw2=drawn===gState.choice;
+    // 1 of max: payout = max * 0.99 (house edge 1%)
+    var luckyMult=Math.floor(max*0.99*100)/100;
+    var py2=aw2?Math.floor(bet*luckyMult):0;
+    finishGame(g,bet,aw2,py2,'Drawn: '+drawn+(aw2?' — '+luckyMult+'x!':''),btn);
 
   } else if (t === 'colorpick') {
     if(!gState.choice){alert('Pick a color!');refundBet(bet);btn.disabled=false;btn.textContent='Play';return;}
@@ -519,16 +526,21 @@ function execGame(g, bet, won, btn) {
     var shouldWinCB=wc(false);
     var clrs=['red','blue','yellow'],cmap={red:'#e74c3c',blue:'#3b82f6',yellow:'#f6c90e'};
     var r=shouldWinCB?gState.choice:pick(clrs.filter(function(x){return x!==gState.choice;}));
+    // 1 of 3: 2.97x (1% house edge)
     var bl=$('cballball'),c=0,iv=setInterval(function(){if(bl)bl.style.background=cmap[clrs[c%3]];c++;
       if(c>18){clearInterval(iv);if(bl){bl.style.background=cmap[r];bl.style.transform='scale(1.15)';setTimeout(function(){bl.style.transform='scale(1)';},200);}
-        var aw=r===gState.choice;var py=aw?Math.floor(bet*(g.mult||3)):0;finishGame(g,bet,aw,py,r.toUpperCase(),btn);}
+        var aw=r===gState.choice;var py=aw?Math.floor(bet*2.97):0;finishGame(g,bet,aw,py,r.toUpperCase()+(aw?' — 2.97x':''),btn);}
     },80);return;
 
   } else if (t === 'keno') {
-    var drawn=[];for(var i=0;i<3;i++)drawn.push(rnd(1,20));
+    var drawn=[];
+    while(drawn.length<3){var n2=rnd(1,20);if(drawn.indexOf(n2)<0)drawn.push(n2);}
     var matches=(gState.kenoSel||[]).filter(function(n){return drawn.indexOf(n)>=0;}).length;
-    won=matches>=2&&wc(false);payout=won?Math.floor(bet*(g.mult||8)):0;
-    finishGame(g,bet,won,payout,'Drawn: '+drawn.join(', ')+' | Matches: '+matches,btn);
+    // Real keno payouts: 3 match = 23x, 2 match = 3.8x, 1 match = 0x, 0 = 0x
+    var kenoPay=matches===3?23:matches===2?3.8:0;
+    var kenoWin=kenoPay>0&&wc(false);
+    payout=kenoWin?Math.floor(bet*kenoPay):0;
+    finishGame(g,bet,kenoWin,payout,'Drawn: '+drawn.join(', ')+' | Matches: '+matches+(kenoPay>0?' — '+kenoPay+'x':''),btn);
 
   } else if (t === 'hilo') {
     if(!gState.choice){alert('Pick Higher or Lower!');refundBet(bet);btn.disabled=false;btn.textContent='Play';return;}
@@ -552,7 +564,19 @@ function execGame(g, bet, won, btn) {
     payout=actualWin?Math.floor(bet*(g.mult||2)):0;
     var hw=$('hilop');if(hw){hw.innerHTML='';if(gState.hiloCard)hw.appendChild(makeCard(gState.hiloCard,false));hw.appendChild(makeCard(next,false));}
     gState.hiloCard=next;
-    finishGame(g,bet,actualWin,payout,'Previous: '+pc2+' → New card: '+next.r+' ('+cv+')',btn);
+    // Real HiLo: payout based on probability of chosen direction
+    // prob = remaining_cards_in_direction / remaining_cards
+    var hiloMult;
+    if(gState.choice==='hi'){
+      var higherCount=['A','2','3','4','5','6','7','8','9','10','J','Q','K'].filter(function(r){return bjCV(r)>pc2;}).length;
+      hiloMult=higherCount>0?Math.round((13/higherCount)*0.99*100)/100:1.98;
+    } else {
+      var lowerCount=['A','2','3','4','5','6','7','8','9','10','J','Q','K'].filter(function(r){return bjCV(r)<pc2;}).length;
+      hiloMult=lowerCount>0?Math.round((13/lowerCount)*0.99*100)/100:1.98;
+    }
+    hiloMult=Math.min(hiloMult,20); // cap at 20x
+    payout=actualWin?Math.floor(bet*hiloMult):0;
+    finishGame(g,bet,actualWin,payout,'Previous: '+pc2+' → New: '+next.r+'('+cv+')'+(actualWin?' — '+hiloMult+'x':''),btn);
 
   } else if (t === 'war') {
     var deck=newDeck();var pc=deck.pop(),dc=deck.pop();
@@ -560,8 +584,17 @@ function execGame(g, bet, won, btn) {
     var pw=$('warp'),dw=$('warb');
     if(pw){pw.innerHTML='';pw.appendChild(makeCard(pc,false));}
     if(dw){dw.innerHTML='';dw.appendChild(makeCard(dc,false));}
+    // Real card war: win=2x, tie=2.5x
+    var warWon=bjCV(pc.r)>bjCV(dc.r)&&wc(false);
+    var warTie=bjCV(pc.r)===bjCV(dc.r);
+    payout=warWon?Math.floor(bet*2):warTie?Math.floor(bet*2.5):0;
+    won=warWon||warTie;
     st('warps',pc.r+' ('+bjCV(pc.r)+')');st('warbs',dc.r+' ('+bjCV(dc.r)+')');
-    finishGame(g,bet,won,payout,'You: '+pc.r+' vs Dealer: '+dc.r,btn);
+    // Real card war: win=2x, tie=2.5x
+    var warWon=bjCV(pc.r)>bjCV(dc.r)&&wc(false);
+    var warTie=bjCV(pc.r)===bjCV(dc.r);
+    payout=warWon?Math.floor(bet*2):warTie?Math.floor(bet*2.5):0;
+    finishGame(g,bet,warWon||warTie,payout,'You: '+pc.r+'('+bjCV(pc.r)+') vs Dealer: '+dc.r+'('+bjCV(dc.r)+')'+(warTie?' TIE 2.5x':warWon?' WIN 2x':''),btn);
 
   } else if (t === 'dt') {
     if(!gState.choice){alert('Pick Dragon or Tiger!');refundBet(bet);btn.disabled=false;btn.textContent='Play';return;}
@@ -573,7 +606,11 @@ function execGame(g, bet, won, btn) {
     if(dw){dw.innerHTML='';dw.appendChild(makeCard(dc,false));}
     if(tw){tw.innerHTML='';tw.appendChild(makeCard(tc,false));}
     st('dtps',dc.r+' ('+dv+')');st('dtbs',tc.r+' ('+tv+')');
-    finishGame(g,bet,won,payout,'Dragon:'+dv+' Tiger:'+tv+' — '+winner.toUpperCase(),btn);
+    // Real Dragon Tiger: Dragon/Tiger=2x, Tie=11x
+    var dtMult=winner==='tie'?11:2;
+    var dtWin=winner===gState.choice&&wc(false);
+    payout=dtWin?Math.floor(bet*dtMult):0;
+    finishGame(g,bet,dtWin,payout,'Dragon:'+dc.r+'('+dv+') Tiger:'+tc.r+'('+tv+') — '+winner.toUpperCase()+(dtWin?' '+dtMult+'x':''),btn);
 
   } else if (t === 'bac') {
     if(!gState.choice){alert('Pick Player or Banker!');refundBet(bet);btn.disabled=false;btn.textContent='Play';return;}
@@ -585,7 +622,11 @@ function execGame(g, bet, won, btn) {
     if(pw){pw.innerHTML='';p.forEach(function(c){pw.appendChild(makeCard(c,false));});}
     if(bw){bw.innerHTML='';b2.forEach(function(c){bw.appendChild(makeCard(c,false));});}
     st('bacps','P:'+ps);st('bacbs','B:'+bs);
-    finishGame(g,bet,won,payout,'Player: '+ps+' vs Banker: '+bs+' — '+winner2.toUpperCase(),btn);
+    // Real baccarat: Player=2x, Banker=1.95x, Tie=8x
+    var bacMult=winner2==='player'?2:winner2==='banker'?1.95:8;
+    var bacWin=(winner2===gState.choice)&&wc(false);
+    payout=bacWin?Math.floor(bet*bacMult):0;
+    finishGame(g,bet,bacWin,payout,'Player:'+ps+' Banker:'+bs+' — '+winner2.toUpperCase()+(bacWin?' '+bacMult+'x':''),btn);
 
   } else {
     finishGame(g,bet,won,payout,'',btn);
@@ -642,7 +683,10 @@ function endBJ(force){
   bjState.over=true;renderBJ(false);
   var ps=bjSc(bjState.player),ds=bjSc(bjState.dealer);
   var won=force!==null?force:(ps<=21&&(ps>ds||ds>21));
-  var payout=won?Math.floor(bjState.bet*(bjState.g.mult||2)):0;
+  // Natural blackjack (21 with 2 cards) = 2.5x, normal win = 2x
+  var isNatural=bjState.player.length===2&&bjSc(bjState.player)===21;
+  var bjMult=isNatural?2.5:2;
+  var payout=won?Math.floor(bjState.bet*bjMult):0;
   if(won){var wb=bal()+payout;CD.balance=wb;fbUp('/players/'+CK,{balance:wb});ub();}
   fbPush('/playerTxns',{playerKey:CK,uid:CD.uid,game:'Blackjack',bet:bjState.bet,win:won,payout:won?payout:0,time:new Date().toISOString()});
   showGRes('gres','grt','grs',won,won?'WIN! +'+fmt(payout):'Bust/Lose','You: '+ps+' | Dealer: '+ds);
@@ -756,45 +800,93 @@ function doCrash(ctx,W,H){
 }
 
 // ── MINES ──
+// Stake/1xbet-style mines multiplier formula
+function calcMinesMult(total, mines, safeRevealed) {
+  var mult = 1.0;
+  for (var i = 0; i < safeRevealed; i++) {
+    var rem = total - i;
+    var remSafe = rem - mines;
+    if (remSafe <= 0) break;
+    mult *= (rem / remSafe) * 0.99;
+  }
+  return Math.round(mult * 100) / 100;
+}
+
 function startMines(g,bet){
   var nb=bal()-bet;CD.balance=nb;fbUp('/players/'+CK,{balance:nb});ub();
   var TOTAL=25,mc=g.mines||3,mines=[];
   while(mines.length<mc){var m=rnd(0,TOTAL-1);if(mines.indexOf(m)<0)mines.push(m);}
-  var mState={bet:bet,mines:mines,revealed:[],active:true,mult:1.0};
+  var mState={bet:bet,mines:mines,revealed:[],active:true,safeCount:0};
   var area=$('gma');area.innerHTML='';
-  var info=document.createElement('div');info.style.cssText='display:flex;justify-content:space-between;font-size:12px;color:var(--txt2);margin-bottom:6px;';
-  info.innerHTML='<span>Find gems, avoid mines!</span><span id="minemult">1.00x</span>';area.appendChild(info);
-  var co=document.createElement('button');co.style.cssText='width:100%;padding:8px;background:rgba(39,174,96,0.1);color:#1a7a4a;border:1px solid rgba(39,174,96,0.3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;';
-  co.textContent='Cash Out';co.id='mineco';co.disabled=true;area.appendChild(co);
-  var grid=document.createElement('div');grid.className='mines-grid';grid.style.gridTemplateColumns='repeat(5,1fr)';area.appendChild(grid);
+
+  var info=document.createElement('div');
+  info.style.cssText='display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--txt2);margin-bottom:6px;';
+  info.innerHTML='<span>'+mc+' mines | '+(TOTAL-mc)+' gems</span><span style="font-size:16px;font-weight:800;color:var(--accent);" id="minemult">1.00x</span>';
+  area.appendChild(info);
+
+  var potDiv=document.createElement('div');
+  potDiv.style.cssText='text-align:center;font-size:12px;color:var(--txt2);margin-bottom:6px;';
+  potDiv.id='minepot';potDiv.textContent='Reveal a gem to start';
+  area.appendChild(potDiv);
+
+  var co=document.createElement('button');
+  co.style.cssText='width:100%;padding:9px;background:rgba(39,174,96,0.1);color:#1a7a4a;border:1px solid rgba(39,174,96,0.3);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;';
+  co.textContent='Cash Out';co.id='mineco';co.disabled=true;
+  area.appendChild(co);
+
+  var grid=document.createElement('div');
+  grid.className='mines-grid';grid.style.gridTemplateColumns='repeat(5,1fr)';
+  area.appendChild(grid);
+
   for(var i=0;i<TOTAL;i++){
     (function(idx){
-      var cell=document.createElement('div');cell.className='mcell';cell.textContent='?';cell.style.color='var(--txt2)';
+      var cell=document.createElement('div');cell.className='mcell';
+      cell.style.fontSize='12px';cell.textContent='?';
       cell.addEventListener('click',function(){
         if(!mState.active||mState.revealed.indexOf(idx)>=0)return;
         mState.revealed.push(idx);
         if(mState.mines.indexOf(idx)>=0){
-          cell.className='mcell boom';cell.textContent='BOMB';mState.active=false;co.disabled=true;
-          grid.querySelectorAll('.mcell').forEach(function(c,i){if(mState.mines.indexOf(i)>=0&&mState.revealed.indexOf(i)<0){c.className='mcell boom';c.textContent='💣';}});
+          // Hit mine
+          cell.className='mcell boom';
+          cell.innerHTML='<div style="font-size:16px;font-weight:900;color:#e74c3c;">X</div>';
+          mState.active=false;co.disabled=true;
+          grid.querySelectorAll('.mcell').forEach(function(c,i){
+            if(mState.mines.indexOf(i)>=0&&mState.revealed.indexOf(i)<0){
+              c.className='mcell boom';
+              c.innerHTML='<div style="font-size:16px;font-weight:900;color:#e74c3c;">X</div>';
+            }
+          });
           fbPush('/playerTxns',{playerKey:CK,uid:CD.uid,game:'Mines',bet:bet,win:false,payout:0,time:new Date().toISOString()});
-          showGRes('gres','grt','grs',false,'Mine! Lost '+fmt(bet),'');
+          showGRes('gres','grt','grs',false,'Mine hit! Lost '+fmt(bet),'You revealed '+mState.safeCount+' gems');
           $('gpbtn').disabled=false;$('gpbtn').textContent='Play Again';
         } else {
-          cell.className='mcell gem';cell.textContent='GEM';
-          var safe=mState.revealed.filter(function(r){return mState.mines.indexOf(r)<0;}).length;
-          mState.mult=parseFloat((1+safe*0.45).toFixed(2));st('minemult',mState.mult+'x');
-          co.disabled=false;co.textContent='Cash Out — '+fmt(Math.floor(bet*mState.mult));
+          // Safe
+          mState.safeCount++;
+          var mult=calcMinesMult(TOTAL,mc,mState.safeCount);
+          var payout=Math.floor(bet*mult);
+          cell.className='mcell gem';
+          cell.innerHTML='<div style="font-size:14px;font-weight:900;color:#27ae60;">*</div><div style="font-size:9px;color:#27ae60;">'+mult.toFixed(2)+'x</div>';
+          st('minemult',mult.toFixed(2)+'x');
+          var pot=$('minepot');if(pot)pot.textContent='Cash out for '+fmt(payout);
+          co.disabled=false;
+          co.textContent='Cash Out  '+mult.toFixed(2)+'x  =  '+fmt(payout);
         }
-      });grid.appendChild(cell);
+      });
+      grid.appendChild(cell);
     })(i);
   }
+
   co.addEventListener('click',function(){
-    if(!mState.active)return;mState.active=false;co.disabled=true;
-    var p=Math.floor(bet*mState.mult);var wb=bal()+p;CD.balance=wb;fbUp('/players/'+CK,{balance:wb});ub();
+    if(!mState.active||mState.safeCount===0)return;
+    mState.active=false;co.disabled=true;
+    var mult=calcMinesMult(TOTAL,mc,mState.safeCount);
+    var p=Math.floor(bet*mult);
+    var wb=bal()+p;CD.balance=wb;fbUp('/players/'+CK,{balance:wb});ub();
     fbPush('/playerTxns',{playerKey:CK,uid:CD.uid,game:'Mines',bet:bet,win:true,payout:p,time:new Date().toISOString()});
-    showGRes('gres','grt','grs',true,'Cashed out '+mState.mult+'x — Won '+fmt(p)+'!','');
+    showGRes('gres','grt','grs',true,'Cashed out at '+mult.toFixed(2)+'x  —  Won '+fmt(p)+'!',mState.safeCount+' gems revealed');
     $('gpbtn').disabled=false;$('gpbtn').textContent='Play Again';
   });
+
   $('gpbtn').disabled=false;$('gpbtn').textContent='Play Again';
 }
 
@@ -806,7 +898,16 @@ function startPlinko(g,bet){
   var ctx=canvas.getContext('2d'),H=200,rows=g.rows||8;
   var pegs=[];for(var r=2;r<=rows;r++)for(var c=0;c<=r;c++)pegs.push({x:W/2+(c-r/2)*(W/(rows+1)),y:20+r*(H-70)/rows});
   var slots=rows+1,slotW=W/slots;
-  var mults=[];for(var s=0;s<slots;s++){var d=Math.abs(s-(slots-1)/2)/((slots-1)/2);mults.push(d>0.85?(g.maxMult||8):d>0.65?3:d>0.4?1.5:d>0.15?0.5:0.1);}
+  // Real Stake plinko multipliers by row count
+  var stakePlinko8=[5.6,2.1,1.1,1.0,0.5,1.0,1.1,2.1,5.6];  // 8 rows = 9 slots
+  var stakePlinko12=[13,3,1.5,0.7,0.4,0.2,0.4,0.7,1.5,3,13]; // 12 rows = 11 slots (approx)
+  var baseMults=rows>=10?stakePlinko12:stakePlinko8;
+  var mults=[];
+  for(var s=0;s<slots;s++){
+    // Map slot index to baseMults
+    var mIdx=Math.round(s*(baseMults.length-1)/(slots-1));
+    mults.push(baseMults[Math.min(mIdx,baseMults.length-1)]);
+  }
   var won=wc(false);var forceSlot=won&&Math.random()<0.10?rnd(0,1):-1;
   var bx=W/2+(Math.random()-0.5)*4,by=14,vx=(Math.random()-0.5)*1.5,vy=0,done=false;
   function loop(){
@@ -877,9 +978,12 @@ function startTower(g,bet){
               $('gpbtn').disabled=false;$('gpbtn').textContent='Play Again';
             } else {
               cell.textContent='OK';cell.style.background='rgba(39,174,96,0.1)';cell.style.borderColor='#27ae60';cell.style.opacity='1';
-              tState.floor++;tState.mult=parseFloat((1+tState.floor*0.6).toFixed(2));
-              st('towermult',tState.mult+'x');co.disabled=false;
-              co.textContent='Cash Out — '+fmt(Math.floor(tState.bet*tState.mult));
+              tState.floor++;
+              // Stake tower multipliers (3 cols): 1.46, 2.12, 3.09, 4.50, 6.56, 9.56
+              var towerMults=[1,1.46,2.12,3.09,4.50,6.56,9.56];
+              tState.mult=towerMults[Math.min(tState.floor,towerMults.length-1)];
+              st('towermult',tState.mult.toFixed(2)+'x');co.disabled=false;
+              co.textContent='Cash Out  '+tState.mult.toFixed(2)+'x  =  '+fmt(Math.floor(tState.bet*tState.mult));
               if(tState.floor<FLOORS)activateFloor(tState.floor);else towerCashout();
             }
           });row.appendChild(cell);
