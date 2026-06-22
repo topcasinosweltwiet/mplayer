@@ -65,12 +65,14 @@ document.addEventListener('DOMContentLoaded', function() {
   $('tr').onclick = function() {
     $('tr').classList.add('active'); $('tl').classList.remove('active');
     $('fr').style.display = ''; $('fl').style.display = 'none'; hd('aerr');
+    refreshCaptcha();
   };
   $('lbtn').onclick = doLogin;
   $('rbtn').onclick = doReg;
   [$('lu'), $('lp')].forEach(function(e) { if (e) e.onkeydown = function(ev) { if (ev.key === 'Enter') doLogin(); }; });
   [$('ru'), $('rp'), $('rp2')].forEach(function(e) { if (e) e.onkeydown = function(ev) { if (ev.key === 'Enter') doReg(); }; });
   applyTheme(localStorage.getItem('tc_theme') || 'light');
+  refreshCaptcha();
 });
 
 function aerr(m) { sh('aerr', m); }
@@ -90,11 +92,40 @@ function doLogin() {
   }).catch(function(e) { $('lbtn').textContent = 'Login'; $('lbtn').disabled = false; aerr('Error: ' + e.message); });
 }
 
+// ── CAPTCHA ──
+var _captchaAnswer = 0;
+function refreshCaptcha() {
+  var a = Math.floor(Math.random() * 20) + 1;
+  var b = Math.floor(Math.random() * 20) + 1;
+  var ops = [
+    { q: a + ' + ' + b, ans: a + b },
+    { q: a + ' x ' + b, ans: a * b },
+    { q: (a + b) + ' - ' + a, ans: b },
+  ];
+  var op = ops[Math.floor(Math.random() * ops.length)];
+  _captchaAnswer = op.ans;
+  var qEl = $('captcha-q'); if (qEl) qEl.textContent = 'What is ' + op.q + '?';
+  var aEl = $('captcha-a'); if (aEl) aEl.value = '';
+  var eEl = $('captcha-err'); if (eEl) eEl.style.display = 'none';
+}
+
 function doReg() {
   var u = ($('ru').value || '').trim(), p = $('rp').value || '', p2 = $('rp2').value || '';
   if (!u || !p || !p2) { aerr('Fill all fields.'); return; }
   if (p.length < 4) { aerr('Password min 4 characters.'); return; }
   if (p !== p2) { aerr('Passwords do not match.'); return; }
+
+  // ── CAPTCHA CHECK ──
+  var captchaInput = parseInt(($('captcha-a') ? $('captcha-a').value : '')) || null;
+  var captchaErr = $('captcha-err');
+  if (captchaInput === null || captchaInput !== _captchaAnswer) {
+    if (captchaErr) captchaErr.style.display = 'block';
+    if ($('captcha-a')) $('captcha-a').value = '';
+    refreshCaptcha();
+    return;
+  }
+  if (captchaErr) captchaErr.style.display = 'none';
+
   $('rbtn').textContent = 'Creating...'; $('rbtn').disabled = true;
   fbGet('/players').then(function(pl) {
     if (pl && Object.values(pl).some(function(x) { return (x.username || '').toLowerCase() === u.toLowerCase(); })) {

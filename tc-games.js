@@ -744,7 +744,7 @@ function drawIdle() {
   // Stars
   drawStars(ctx,W,H,40);
   // Rocket sitting at bottom-left
-  drawRocket(ctx, W*0.08, H*0.82, 0);
+  drawRocket(ctx, W*0.08, H*0.82, -Math.PI/4); // point up-right when idle
   // "Place bet to start" text
   ctx.fillStyle='rgba(74,222,128,0.7)'; ctx.font='bold 14px sans-serif';
   ctx.textAlign='center'; ctx.fillText('Place your bet and press Play',W/2,H/2-10);
@@ -768,7 +768,7 @@ function drawStars(ctx,W,H,count) {
 function drawRocket(ctx, x, y, angle) {
   ctx.save();
   ctx.translate(x, y);
-  ctx.rotate(angle - Math.PI/2); // point up by default
+  ctx.rotate(angle); // angle already corrected before call
   // Body
   ctx.fillStyle='#e0e8ff';
   ctx.beginPath(); ctx.ellipse(0,0,8,16,0,0,Math.PI*2); ctx.fill();
@@ -905,8 +905,10 @@ function startCrash() {
     if(pts.length>1){
       var lp=pts[pts.length-1];
       var pp=pts[pts.length-2];
-      var angle=Math.atan2(pp.y-lp.y,lp.x-pp.x);
-      drawRocket(ctx,lp.x,lp.y,angle);
+      // angle of travel direction (canvas: y increases downward)
+      var angle=Math.atan2(lp.y-pp.y, lp.x-pp.x);
+      // rocket nose points up in local space (-PI/2), so add PI/2 to align with travel
+      drawRocket(ctx,lp.x,lp.y,angle+Math.PI/2);
     }
 
     // Update multiplier display

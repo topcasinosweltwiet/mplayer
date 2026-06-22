@@ -27,6 +27,19 @@
         <div class="af"><label>Username</label><input type="text" id="ru" placeholder="Choose username"/></div>
         <div class="af"><label>Password</label><input type="password" id="rp" placeholder="Min 4 characters"/></div>
         <div class="af"><label>Confirm Password</label><input type="password" id="rp2" placeholder="Confirm password"/></div>
+        <!-- Anti-bot math captcha -->
+        <div class="af" id="captcha-wrap" style="background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <label style="font-size:12px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;">Verify you are human</label>
+            <button type="button" onclick="refreshCaptcha()" style="background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;font-weight:600;">Refresh</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div id="captcha-q" style="font-size:18px;font-weight:900;color:var(--txt);background:var(--card);padding:8px 16px;border-radius:8px;border:1px solid var(--border);letter-spacing:2px;min-width:80px;text-align:center;"></div>
+            <span style="font-size:18px;color:var(--txt2);">=</span>
+            <input type="number" id="captcha-a" placeholder="?" style="width:70px;padding:8px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:16px;font-weight:700;text-align:center;outline:none;"/>
+          </div>
+          <div id="captcha-err" style="color:#e74c3c;font-size:11px;margin-top:6px;display:none;">Wrong answer. Please try again.</div>
+        </div>
         <button class="auth-btn" id="rbtn">Create Account</button>
       </div>
       <div class="aerr" id="aerr"></div>
@@ -48,12 +61,16 @@
   <div id="pg-home" class="mcontent page active">
     <!-- Sport search - hidden until sports loaded -->
     <div id="sport-search-wrap" style="display:none;" class="ssearch">
-      <input class="ssinp" id="ssinp" placeholder="Search team or league..."/>
+      <input class="ssinp" id="ssinp" placeholder="Search team, league or sport..."/>
       <button class="ssbtn" id="ssbtn">Search</button>
     </div>
-    <!-- Sport betting section - hidden until admin adds events -->
+    <!-- Sport category tabs -->
+    <div id="sport-cats-wrap" style="display:none;">
+      <div class="spcats" id="sport-cats"></div>
+    </div>
+    <!-- Sport betting section -->
     <div class="slabel" id="sport-section-label" style="display:none;">Sports Betting</div>
-    <div class="spscroll" id="spscroll" style="display:none;"></div>
+    <div id="spscroll" style="display:none;"></div>
     <!-- Hot games -->
     <div class="slabel" id="hot-section-label" style="display:none;">Hot Games</div>
     <div class="hotscroll" id="hotscroll"></div>

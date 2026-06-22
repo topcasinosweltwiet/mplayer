@@ -46,32 +46,64 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--tx
 .slabel::after{content:'';flex:1;height:1px;background:var(--border);}
 
 /* ── SPORT SEARCH ── */
-.ssearch{padding:0.75rem 1rem 0;display:flex;gap:8px;}
-.ssinp{flex:1;padding:10px 16px;border-radius:24px;border:2px solid var(--border);background:var(--card);font-size:13px;color:var(--txt);outline:none;}
-.ssinp:focus{border-color:var(--accent);}
-.ssbtn{padding:10px 18px;background:var(--accent);color:#fff;border:none;border-radius:24px;font-size:13px;font-weight:700;cursor:pointer;}
+/* ── SPORT SEARCH ── */
+.ssearch{padding:0.75rem 1rem 0.25rem;display:flex;gap:8px;}
+.ssinp{flex:1;padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:13px;outline:none;}
+.ssbtn{padding:10px 16px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;}
 
-/* ── SPORT CARDS ── */
-.spscroll{overflow-x:auto;padding:0.5rem 1rem;display:flex;gap:12px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
-.spscroll::-webkit-scrollbar{display:none;}
-.spcard{flex-shrink:0;width:290px;background:var(--card);border-radius:14px;border:1px solid var(--border);overflow:hidden;box-shadow:0 2px 10px var(--sh);cursor:pointer;transition:transform 0.15s;}
-.spcard:active{transform:scale(0.98);}
-.spbanner{height:80px;display:flex;align-items:center;justify-content:space-around;padding:0 1rem;}
-.spbanner-team{text-align:center;color:#fff;}
-.spbanner-team-name{font-size:13px;font-weight:800;}
-.spbanner-team-ico{font-size:24px;margin-bottom:2px;}
-.spbanner-vs{font-size:16px;font-weight:900;color:rgba(255,255,255,0.7);}
-.spbody{padding:10px 12px;}
-.splea{font-size:10px;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
-.spmatch{font-size:12px;font-weight:700;color:var(--txt);margin-bottom:8px;}
-.spodds{display:flex;gap:6px;}
-.spod{flex:1;padding:8px 4px;background:var(--bg2);border:2px solid var(--border);border-radius:8px;text-align:center;cursor:pointer;transition:all 0.15s;}
-.spod:active,.spod.sel{background:var(--accent);border-color:var(--accent);}
-.spod-n{font-size:10px;color:var(--txt2);font-weight:600;}
-.spod:active .spod-n,.spod.sel .spod-n{color:rgba(255,255,255,0.8);}
-.spod-v{font-size:15px;font-weight:900;color:var(--accent);}
-.spod:active .spod-v,.spod.sel .spod-v{color:#fff;}
-.splive{background:#e74c3c;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;display:inline-block;margin-bottom:4px;}
+/* ── SPORT CATEGORY TABS ── */
+.spcats{display:flex;gap:6px;padding:8px 1rem 0;overflow-x:auto;scrollbar-width:none;}
+.spcats::-webkit-scrollbar{display:none;}
+.spcat{flex-shrink:0;padding:6px 14px;background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;font-size:11px;font-weight:700;color:var(--txt2);cursor:pointer;transition:all 0.15s;}
+.spcat.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* ── SPORT SCROLL ── */
+.spscroll{display:flex;flex-direction:column;gap:8px;padding:8px 1rem;}
+
+/* ── SPORT CARD - 1xbet style ── */
+.spcard{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:0 2px 8px var(--sh);transition:transform 0.15s;}
+.spcard:active{transform:scale(0.99);}
+
+/* Card top - league + live */
+.sptop{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border);}
+.sptop-left{display:flex;align-items:center;gap:6px;}
+.spico{font-size:14px;}
+.splea{font-size:10px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:0.3px;}
+.sptop-right{display:flex;align-items:center;gap:6px;}
+.splive{background:#e74c3c;color:#fff;font-size:9px;font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:0.5px;animation:pulse 1.5s ease infinite;}
+.sptime{font-size:10px;color:var(--txt2);}
+
+/* Teams row */
+.spteams{padding:10px 12px 6px;}
+.spteam-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.spteam-name{font-size:13px;font-weight:700;color:var(--txt);}
+.spteam-score{font-size:14px;font-weight:900;color:var(--accent);}
+
+/* Market tabs */
+.spmkts{display:flex;gap:4px;padding:0 12px 8px;overflow-x:auto;scrollbar-width:none;}
+.spmkts::-webkit-scrollbar{display:none;}
+.spmkt-tab{flex-shrink:0;padding:3px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;font-size:10px;font-weight:600;color:var(--txt2);cursor:pointer;transition:all 0.15s;}
+.spmkt-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* Odds buttons - 1xbet style */
+.spodds{display:flex;gap:6px;padding:0 12px 12px;}
+.spod{flex:1;padding:8px 6px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;text-align:center;cursor:pointer;transition:all 0.15s;position:relative;overflow:hidden;}
+.spod:hover{border-color:var(--accent);background:rgba(74,222,128,0.05);}
+.spod.sel{background:rgba(74,222,128,0.15);border-color:#4ade80;}
+.spod-n{font-size:9px;color:var(--txt2);font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.spod-v{font-size:15px;font-weight:900;color:#4ade80;}
+.spod.sel .spod-v{color:#fff;}
+/* Odds flash green when up, red when down — stays for 5 seconds */
+.spod.odds-up{background:rgba(39,174,96,0.12);border-color:rgba(39,174,96,0.5);transition:all 0.3s;}
+.spod.odds-up .spod-v{color:#27ae60;animation:oddsUp 0.4s ease;}
+.spod.odds-down{background:rgba(231,76,60,0.12);border-color:rgba(231,76,60,0.5);transition:all 0.3s;}
+.spod.odds-down .spod-v{color:#e74c3c;animation:oddsDown 0.4s ease;}
+@keyframes oddsUp{0%{transform:translateY(6px);opacity:0.5;}100%{transform:translateY(0);opacity:1;}}
+@keyframes oddsDown{0%{transform:translateY(-6px);opacity:0.5;}100%{transform:translateY(0);opacity:1;}}
+
+/* More markets button */
+.spmore{display:flex;align-items:center;justify-content:center;padding:6px;border-top:1px solid var(--border);font-size:11px;color:var(--txt2);cursor:pointer;gap:4px;}
+.spmore:hover{background:var(--bg2);}
 
 /* ── HOT GAMES ── */
 .hotscroll{overflow-x:auto;padding:0.5rem 1rem;display:flex;gap:10px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
