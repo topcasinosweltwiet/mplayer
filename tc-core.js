@@ -360,7 +360,16 @@ function checkNotifCount() {
     if (!data) return;
     var unread = Object.values(data).filter(function(n) { return !n.read; }).length;
     var badge = $('nbadge');
-    if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'flex' : 'none'; }
+    if (badge) {
+      badge.textContent = unread;
+      if(unread > 0) {
+        badge.style.display = 'flex';
+        badge.classList.add('pulse');
+      } else {
+        badge.style.display = 'none';
+        badge.classList.remove('pulse');
+      }
+    }
   }).catch(function() {});
 }
 function openNotif() {

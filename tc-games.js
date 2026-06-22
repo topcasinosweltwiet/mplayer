@@ -7,7 +7,7 @@ var HOT_GAMES = [
   {id:'crash1',name:'Rocket Crash',icon:'🚀',badge:'hbl',type:'crash',vehicle:'rocket',theme:{name:'Rocket Crash',color:'#4ade80',lc:'#4ade80'}},
   {id:'slots1',name:'Fruit Slots',icon:'🍒',badge:'hbl',type:'slots',syms:'slots1',mult:2},
   {id:'bj1',name:'Blackjack',icon:'🃏',badge:'hbh',type:'bj',mult:2},
-  {id:'mines1',name:'Mines',icon:'💣',badge:'hbh',type:'mines',mines:3},
+  {id:'mines1',name:'Mines',icon:'💣',badge:'hbh',type:'mines',mines:5},
   {id:'plinko1',name:'Plinko',icon:'⚪',badge:'hbl',type:'plinko',rows:8,maxMult:8},
   {id:'tower1',name:'Tower',icon:'🏗️',badge:'hbh',type:'tower',cols:3},
   {id:'coin1',name:'Coin Flip',icon:'🪙',badge:'hbn',type:'coin',mult:2,c1:'HEADS',c2:'TAILS'},
@@ -39,8 +39,8 @@ var ALL_CASINO = [
   {id:'coin2',name:'Gold Coin',icon:'💰',type:'coin',mult:3,c1:'GOLD',c2:'SILVER'},
   {id:'lucky1',name:'Lucky Number',icon:'🔮',type:'lucky',max:20,mult:5},
   {id:'keno1',name:'Keno',icon:'📊',type:'keno',mult:8},
-  {id:'mines1',name:'Mines',icon:'💣',type:'mines',mines:3},
-  {id:'mines2',name:'Hard Mines',icon:'BOMB',type:'mines',mines:8},
+  {id:'mines1',name:'Mines',icon:'💣',badge:'hbh',type:'mines',mines:5},
+  {id:'mines2',name:'Hard Mines',icon:'💥',type:'mines',mines:10},
   {id:'plinko1',name:'Plinko',icon:'⚪',type:'plinko',rows:8,maxMult:8},
   {id:'plinko2',name:'Mega Plinko',icon:'🔵',type:'plinko',rows:12,maxMult:15},
   {id:'tower1',name:'Tower',icon:'🏗️',type:'tower',cols:3},
@@ -72,8 +72,8 @@ var WOF_SEGS=[
 var _streak = 0;
 function wc(crash) {
   if (_streak > 0) { _streak--; return false; }
-  var won = Math.random() < 0.30;  // 30% win chance
-  if (won) _streak = rnd(1,3);     // after win, 1-3 forced losses
+  var won = Math.random() < 0.25;  // 25% win chance
+  if (won) _streak = rnd(2,5);     // after win, 2-5 forced losses
   return won;
 }
 
@@ -832,10 +832,12 @@ function startCrashLoop() {
 
   // Set crash point for this round
   var won = wc(true);
-  if(won){ CS.crashAt = parseFloat((1.50+Math.random()*3.0).toFixed(2)); }
+  if(won){ CS.crashAt = parseFloat((1.40+Math.random()*2.5).toFixed(2)); }
   else {
-    if(Math.random()<0.6) CS.crashAt = parseFloat((1.01+Math.random()*0.12).toFixed(2));
-    else CS.crashAt = parseFloat((1.13+Math.random()*0.40).toFixed(2));
+    var r = Math.random();
+    if(r < 0.45) CS.crashAt = parseFloat((1.01+Math.random()*0.08).toFixed(2)); // crash very early
+    else if(r < 0.80) CS.crashAt = parseFloat((1.09+Math.random()*0.20).toFixed(2)); // crash early
+    else CS.crashAt = parseFloat((1.29+Math.random()*0.30).toFixed(2)); // crash medium
   }
 
   $('cplay').disabled=false; $('cplay').textContent='Place Bet';
@@ -925,7 +927,7 @@ function beginFlight() {
   function frame(ts){
     if(!CS.running)return;
     var el=(ts-t0)/1000;
-    CS.mult=parseFloat(Math.max(1.00,Math.pow(1.06,el*6)).toFixed(2));
+    CS.mult=parseFloat(Math.max(1.00,Math.pow(1.04,el*5)).toFixed(2));
     // Auto cashout
     if(auto>1&&CS.mult>=auto&&!CS.cashedOut&&CS.betPlaced) { doCashout(); return; }
     if(CS.mult>=CS.crashAt){ doCrashAnim(ctx,W,H,pts,startY); return; }
@@ -936,8 +938,8 @@ function beginFlight() {
 
     // Curve path
     var progress=Math.min(0.92,(CS.mult-1)/(Math.max(1.5,CS.crashAt)-1));
-    var rx=startX+progress*W*0.88;
-    var ry=startY-Math.pow(progress,0.65)*H*0.75;
+    var rx=startX+Math.pow(progress,1.3)*W*0.82;
+    var ry=startY-Math.pow(progress,0.55)*H*0.78;
     pts.push({x:rx,y:ry});
 
     if(pts.length>1){
@@ -984,8 +986,19 @@ function beginFlight() {
       // Rotate so local UP aligns with travel direction:
       // travel angle = atan2(dy,dx), rocket up = atan2(-1,0) = -PI/2
       // rotation needed = travel_angle - (-PI/2) = travel_angle + PI/2
-      var travelAngle=Math.atan2(dy,dx);
-      drawCrashRocket(ctx,lp.x,lp.y,travelAngle,true);
+      var travelAngle=Math.atan2(-dy,dx);
+      // Trail glow
+    ctx.save();
+    ctx.globalAlpha=0.15;
+    for(var ti=1;ti<=3;ti++){
+      var ti2=Math.max(0,pts.length-ti*3);
+      if(pts[ti2]){
+        drawCrashRocket(ctx,pts[ti2].x,pts[ti2].y,travelAngle,false);
+      }
+    }
+    ctx.globalAlpha=1;
+    ctx.restore();
+    drawCrashRocket(ctx,lp.x,lp.y,travelAngle,true);
     }
 
     // Multiplier display
@@ -1377,12 +1390,18 @@ function startPlinko(g,bet){
 var tState = {};
 function startTower(g, bet) {
   var nb = bal() - bet; CD.balance = nb; fbUp('/players/' + CK, {balance: nb}); ub();
-  var FLOORS = 6, COLS = g.cols || 3;
-  tState = { bet: bet, floor: 0, mult: 1.0, active: true, traps: [] };
-  for (var f = 0; f < FLOORS; f++) tState.traps.push(rnd(0, COLS - 1));
+  var FLOORS = 6, COLS = 3; // Always 3 cols: 2 bombs, 1 gem
+  tState = { bet: bet, floor: 0, mult: 1.0, active: true, traps: [], safeCol: [] };
+  for (var f = 0; f < FLOORS; f++) {
+    var safe = rnd(0, COLS-1); // only 1 safe column
+    tState.safeCol.push(safe);
+    var bombs = [];
+    for(var c=0;c<COLS;c++){if(c!==safe)bombs.push(c);}
+    tState.traps.push(bombs); // 2 bombs per row
+  }
 
   var area = $('gma'); area.innerHTML = '';
-  var towerMults = [1, 1.46, 2.12, 3.09, 4.50, 6.56, 9.56];
+  var towerMults = [1, 1.90, 3.60, 6.80, 12.90, 24.50, 46.50];
 
   // Header
   var info = document.createElement('div');
@@ -1447,7 +1466,7 @@ function startTower(g, bet) {
               c2.style.pointerEvents = 'none';
             });
 
-            if (col === tState.traps[floor]) {
+            if (tState.traps[floor].indexOf(col) >= 0) {
               // BOMB
               cell.style.background = 'linear-gradient(145deg,#4a0505,#2a0202)';
               cell.style.borderColor = '#e74c3c';
@@ -1455,13 +1474,20 @@ function startTower(g, bet) {
               cell.textContent = '💣';
               setTimeout(function() { cell.style.transform = 'scale(1)'; }, 200);
 
-              // Show apples on safe cells in this row
+              // Reveal remaining cells: apple for safe, bomb for traps
               cells.forEach(function(c2) {
-                if (parseInt(c2.dataset.col) !== col) {
+                var c2col = parseInt(c2.dataset.col);
+                if (c2col !== col) {
                   setTimeout(function() {
-                    c2.style.background = 'linear-gradient(145deg,#0a2a05,#051502)';
-                    c2.style.borderColor = '#27ae60';
-                    c2.textContent = '🍎';
+                    if(tState.safeCol[floor] === c2col) {
+                      c2.style.background = 'linear-gradient(145deg,#0a2a05,#051502)';
+                      c2.style.borderColor = '#27ae60';
+                      c2.textContent = '🍎';
+                    } else {
+                      c2.style.background = 'linear-gradient(145deg,#4a0505,#2a0202)';
+                      c2.style.borderColor = '#e74c3c';
+                      c2.textContent = '💣';
+                    }
                   }, 300);
                 }
               });
