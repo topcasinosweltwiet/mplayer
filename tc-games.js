@@ -977,7 +977,7 @@ function beginFlight() {
       // Rotate so local UP aligns with travel direction:
       // travel angle = atan2(dy,dx), rocket up = atan2(-1,0) = -PI/2
       // rotation needed = travel_angle - (-PI/2) = travel_angle + PI/2
-      var travelAngle=Math.atan2(-dy,dx);
+      var travelAngle=Math.atan2(dy,dx); // horizontal vehicle: atan2(dy,dx) gives correct rotation
       // Trail glow
     ctx.save();
     ctx.globalAlpha=0.15;
@@ -1026,62 +1026,90 @@ function drawCrashRocket(ctx, x, y, rotation, withFlame){
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(rotation);
+  // All vehicles drawn HORIZONTALLY: nose points RIGHT (+x direction)
+  // rotation=0 → nose points RIGHT
+  // rotation=-PI/4 → nose points upper-right (tilted up)
+  // travelAngle = atan2(-dy,dx) for upper-right = +PI/4... wait
+  // Actually for horizontal drawing:
+  // nose at (+size, 0) in local space
+  // After rotate(r): screen pos = (size*cos(r), size*sin(r))
+  // For upper-right: sin(r)<0, cos(r)>0 → r<0 → rotation=-PI/4 ✓
+  
   if(vehicle === 'plane') {
-    // Plane body
-    ctx.fillStyle='#c8d8ff'; ctx.beginPath(); ctx.ellipse(0,0,5,18,0,0,Math.PI*2); ctx.fill();
-    // Nose
-    ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.moveTo(0,-20); ctx.lineTo(-5,-8); ctx.lineTo(5,-8); ctx.closePath(); ctx.fill();
-    // Wings
+    // Plane body (horizontal, nose RIGHT)
+    ctx.fillStyle='#c8d8ff';
+    ctx.beginPath(); ctx.ellipse(0,0,18,5,0,0,Math.PI*2); ctx.fill();
+    // Nose cone (pointing RIGHT)
+    ctx.fillStyle='#ffffff';
+    ctx.beginPath(); ctx.moveTo(22,0); ctx.lineTo(10,-4); ctx.lineTo(10,4); ctx.closePath(); ctx.fill();
+    // Main wings (vertical, centered on body)
     ctx.fillStyle='#3b82f6';
-    ctx.beginPath(); ctx.moveTo(-3,2); ctx.lineTo(-22,8); ctx.lineTo(-22,12); ctx.lineTo(-3,10); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(3,2); ctx.lineTo(22,8); ctx.lineTo(22,12); ctx.lineTo(3,10); ctx.closePath(); ctx.fill();
-    // Tail
-    ctx.beginPath(); ctx.moveTo(-3,14); ctx.lineTo(-10,20); ctx.lineTo(-3,18); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(3,14); ctx.lineTo(10,20); ctx.lineTo(3,18); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(2,-5); ctx.lineTo(6,-22); ctx.lineTo(10,-22); ctx.lineTo(8,-5); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(2,5); ctx.lineTo(6,22); ctx.lineTo(10,22); ctx.lineTo(8,5); ctx.closePath(); ctx.fill();
+    // Tail fins
+    ctx.fillStyle='#1e3a8a';
+    ctx.beginPath(); ctx.moveTo(-14,-5); ctx.lineTo(-20,-14); ctx.lineTo(-16,-5); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-14,5); ctx.lineTo(-20,14); ctx.lineTo(-16,5); ctx.closePath(); ctx.fill();
     // Windows
-    ctx.fillStyle='rgba(147,197,253,0.8)';
-    for(var wi=-4;wi<=4;wi+=4){ctx.beginPath();ctx.ellipse(0,wi,2,1.5,0,0,Math.PI*2);ctx.fill();}
-    // Engine glow
+    ctx.fillStyle='rgba(147,197,253,0.9)';
+    ctx.beginPath(); ctx.ellipse(4,0,3,2.5,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-2,0,2.5,2,0,0,Math.PI*2); ctx.fill();
+    // Engine trail
     if(withFlame){
-      ctx.fillStyle='rgba(150,200,255,0.5)';
-      ctx.beginPath(); ctx.ellipse(-20,10,3,5,0.3,0,Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(20,10,3,5,-0.3,0,Math.PI*2); ctx.fill();
+      var t=Date.now()*0.012;
+      var tl=16+Math.sin(t)*4;
+      var grd=ctx.createLinearGradient(-18,0,-18-tl,0);
+      grd.addColorStop(0,'rgba(150,200,255,0.8)');
+      grd.addColorStop(1,'rgba(150,200,255,0)');
+      ctx.fillStyle=grd;
+      ctx.beginPath(); ctx.ellipse(-18-tl/2,0,tl/2,4,0,0,Math.PI*2); ctx.fill();
     }
   } else if(vehicle === 'lightning') {
-    // Lightning bolt
-    ctx.shadowColor='#f6c90e'; ctx.shadowBlur=withFlame?20:10;
+    // Lightning bolt (horizontal)
+    ctx.shadowColor='#f6c90e'; ctx.shadowBlur=withFlame?20:8;
     ctx.fillStyle='#f6c90e';
     ctx.beginPath();
-    ctx.moveTo(4,-20); ctx.lineTo(-3,-2); ctx.lineTo(4,-2);
-    ctx.lineTo(-4,20); ctx.lineTo(3,2); ctx.lineTo(-4,2);
+    ctx.moveTo(20,-4); ctx.lineTo(2,3); ctx.lineTo(8,3);
+    ctx.lineTo(-20,4); ctx.lineTo(-2,-3); ctx.lineTo(-8,-3);
     ctx.closePath(); ctx.fill();
     ctx.fillStyle='rgba(255,255,255,0.8)';
     ctx.beginPath();
-    ctx.moveTo(2,-15); ctx.lineTo(-1,-2); ctx.lineTo(2,-2);
-    ctx.lineTo(-2,15); ctx.lineTo(1,2); ctx.lineTo(-2,2);
+    ctx.moveTo(15,-2); ctx.lineTo(2,1.5); ctx.lineTo(6,1.5);
+    ctx.lineTo(-15,2); ctx.lineTo(-2,-1.5); ctx.lineTo(-6,-1.5);
     ctx.closePath(); ctx.fill();
     ctx.shadowBlur=0;
+    if(withFlame){
+      ctx.shadowColor='#f6c90e'; ctx.shadowBlur=15;
+      ctx.strokeStyle='rgba(246,201,0,0.4)'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(-20,0); ctx.lineTo(-36,0); ctx.stroke();
+      ctx.shadowBlur=0;
+    }
   } else {
-    // Rocket (default)
+    // Rocket (horizontal, nose RIGHT)
     // Body
-    ctx.fillStyle='#dde8ff'; ctx.beginPath(); ctx.ellipse(0,0,7,15,0,0,Math.PI*2); ctx.fill();
-    // Nose cone
-    ctx.fillStyle='#e74c3c'; ctx.beginPath(); ctx.moveTo(0,-20); ctx.lineTo(-7,-5); ctx.lineTo(7,-5); ctx.closePath(); ctx.fill();
-    // Fins
+    ctx.fillStyle='#dde8ff';
+    ctx.beginPath(); ctx.ellipse(0,0,15,7,0,0,Math.PI*2); ctx.fill();
+    // Nose cone (RIGHT)
+    ctx.fillStyle='#e74c3c';
+    ctx.beginPath(); ctx.moveTo(20,0); ctx.lineTo(6,-6); ctx.lineTo(6,6); ctx.closePath(); ctx.fill();
+    // Fins (LEFT side = tail)
     ctx.fillStyle='#2255b8';
-    ctx.beginPath(); ctx.moveTo(-7,8); ctx.lineTo(-14,20); ctx.lineTo(-3,12); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(7,8); ctx.lineTo(14,20); ctx.lineTo(3,12); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-8,-7); ctx.lineTo(-18,-16); ctx.lineTo(-10,-7); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-8,7); ctx.lineTo(-18,16); ctx.lineTo(-10,7); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-10,-4); ctx.lineTo(-18,0); ctx.lineTo(-10,4); ctx.closePath(); ctx.fill();
     // Window
-    ctx.fillStyle='#4ade80'; ctx.beginPath(); ctx.arc(0,-2,4,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='rgba(200,255,200,0.6)'; ctx.beginPath(); ctx.arc(-1,-3,2,0,Math.PI*2); ctx.fill();
-    // Flame
+    ctx.fillStyle='#4ade80';
+    ctx.beginPath(); ctx.arc(4,0,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(200,255,200,0.6)';
+    ctx.beginPath(); ctx.arc(3,-1,2,0,Math.PI*2); ctx.fill();
+    // Flame (LEFT side)
     if(withFlame){
       var t=Date.now()*0.015;
-      var fh=14+Math.sin(t)*5;
-      var g2=ctx.createLinearGradient(0,14,0,14+fh);
-      g2.addColorStop(0,'#f6c90e'); g2.addColorStop(0.5,'#e67e22'); g2.addColorStop(1,'rgba(231,76,60,0)');
+      var fh=18+Math.sin(t)*6;
+      var g2=ctx.createLinearGradient(-14,0,-14-fh,0);
+      g2.addColorStop(0,'#f6c90e'); g2.addColorStop(0.4,'#e67e22'); g2.addColorStop(1,'rgba(231,76,60,0)');
       ctx.fillStyle=g2;
-      ctx.beginPath(); ctx.moveTo(-5,14); ctx.quadraticCurveTo(0,14+fh+5,5,14); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-14,-5); ctx.quadraticCurveTo(-14-fh,-0,-14,5); ctx.closePath(); ctx.fill();
     }
   }
   ctx.restore();
@@ -1190,7 +1218,7 @@ function calcMinesMult(total, mines, safeRevealed) {
     var rem = total - i;
     var remSafe = rem - mines;
     if (remSafe <= 0) break;
-    mult *= (rem / remSafe) * 0.99;
+    mult *= (rem / remSafe) * 0.97; // 3% house edge per gem (like Stake.com)
   }
   return Math.round(mult * 100) / 100;
 }
