@@ -2,7 +2,7 @@
 'use strict';
 
 var HOT_GAMES = [
-  {id:'crash1',name:'Rocket Crash',icon:'🚀',badge:'hbl',type:'crash',theme:{name:'Rocket Crash',color:'#4ade80',lc:'#4ade80'}},
+  {id:'crash1',name:'Rocket Crash',icon:'🚀',badge:'hbl',type:'crash',vehicle:'rocket',theme:{name:'Rocket Crash',color:'#4ade80',lc:'#4ade80'}},
   {id:'slots1',name:'Fruit Slots',icon:'🍒',badge:'hbl',type:'slots',syms:'slots1',mult:2},
   {id:'bj1',name:'Blackjack',icon:'🃏',badge:'hbh',type:'bj',mult:2},
   {id:'mines1',name:'Mines',icon:'💣',badge:'hbh',type:'mines',mines:3},
@@ -15,8 +15,8 @@ var HOT_GAMES = [
 
 var ALL_CASINO = [
   {id:'crash1',name:'Rocket Crash',icon:'🚀',type:'crash',theme:{name:'Rocket Crash',color:'#4ade80',lc:'#4ade80'}},
-  {id:'crash2',name:'Aviator',icon:'✈️',type:'crash',theme:{name:'Aviator',color:'#60a5fa',lc:'#60a5fa'}},
-  {id:'crash3',name:'Dragon Blast',icon:'🐉',type:'crash',theme:{name:'Dragon Blast',color:'#f97316',lc:'#f97316'}},
+  {id:'crash2',name:'Aviator',icon:'✈️',type:'crash',vehicle:'plane',theme:{name:'Aviator',color:'#3b82f6',lc:'#60a5fa'}},
+  {id:'crash3',name:'Dragon Blast',icon:'🐉',type:'crash',vehicle:'lightning',theme:{name:'Dragon Blast',color:'#f97316',lc:'#f97316'}},
   {id:'crash4',name:'Lightning',icon:'⚡',type:'crash',theme:{name:'Lightning',color:'#facc15',lc:'#facc15'}},
   {id:'slots1',name:'Fruit Slots',icon:'🍒',type:'slots',syms:'slots1',mult:2},
   {id:'slots2',name:'Diamond Slots',icon:'GEM',type:'slots',syms:'slots2',mult:3},
@@ -729,7 +729,7 @@ function openCrash(g) {
   if(CS.animId) cancelAnimationFrame(CS.animId);
   if(CS.countdownTimer) clearInterval(CS.countdownTimer);
   CS = {running:false,bet:0,mult:1.00,crashAt:1.5,animId:null,cashedOut:false,betPlaced:false,
-        phase:'waiting',countdown:10,countdownTimer:null,
+        phase:'waiting',countdown:10,countdownTimer:null,vehicle:g.vehicle||'rocket',
         theme:g.theme||{name:g.name||'Rocket Crash',color:'#4ade80',lc:'#4ade80'}};
   st('ctitle', g.name||'Rocket Crash');
   $('cov').classList.add('open');
@@ -789,7 +789,7 @@ function drawWaiting(sec) {
   drawCrashGrid(ctx,W,H);
   drawCrashStars(ctx,W,H);
   // Rocket sitting at launch position
-  drawCrashRocket(ctx, W*0.08, H*0.80, -Math.PI*0.35, false);
+  drawCrashRocket(ctx, W*0.08, H*0.80, Math.PI*0.15, false); // slight tilt up-right
   // Countdown circle
   var cx2=W/2, cy2=H/2-10;
   ctx.beginPath(); ctx.arc(cx2,cy2,40,0,Math.PI*2);
@@ -922,40 +922,106 @@ function drawCrashStars(ctx,W,H){
 }
 
 function drawCrashRocket(ctx, x, y, rotation, withFlame){
+  var vehicle = CS.vehicle || 'rocket';
+  if(vehicle==='plane') { drawPlane(ctx,x,y,rotation,withFlame); return; }
+  if(vehicle==='lightning') { drawLightningBolt(ctx,x,y,rotation,withFlame); return; }
+  // Default: Rocket
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(rotation);
-  // Body - white ellipse
+  // Body
   ctx.fillStyle='#dde8ff';
   ctx.beginPath(); ctx.ellipse(0,0,7,15,0,0,Math.PI*2); ctx.fill();
-  // Nose cone - red pointed tip
+  // Nose cone
   ctx.fillStyle='#e74c3c';
   ctx.beginPath(); ctx.moveTo(0,-15); ctx.lineTo(-7,0); ctx.lineTo(7,0); ctx.closePath(); ctx.fill();
-  // Left wing
+  // Wings
   ctx.fillStyle='#2255b8';
   ctx.beginPath(); ctx.moveTo(-7,4); ctx.lineTo(-14,18); ctx.lineTo(-2,9); ctx.closePath(); ctx.fill();
-  // Right wing
   ctx.beginPath(); ctx.moveTo(7,4); ctx.lineTo(14,18); ctx.lineTo(2,9); ctx.closePath(); ctx.fill();
   // Window
   ctx.fillStyle='#4ade80';
   ctx.beginPath(); ctx.arc(0,-2,4,0,Math.PI*2); ctx.fill();
   ctx.fillStyle='rgba(200,255,200,0.6)';
   ctx.beginPath(); ctx.arc(-1,-3,2,0,Math.PI*2); ctx.fill();
-  // Flame (only when flying)
+  // Flame
   if(withFlame){
-    var t2=Date.now()*0.01;
+    var t2=Date.now()*0.012;
     var fh=12+Math.sin(t2)*4;
     var grad2=ctx.createLinearGradient(0,12,0,12+fh);
     grad2.addColorStop(0,'#f6c90e'); grad2.addColorStop(0.5,'#e67e22'); grad2.addColorStop(1,'rgba(231,76,60,0)');
     ctx.fillStyle=grad2;
     ctx.beginPath(); ctx.moveTo(-5,12); ctx.quadraticCurveTo(0,12+fh+4,5,12); ctx.closePath(); ctx.fill();
-    // Small side flames
-    ctx.fillStyle='rgba(246,201,0,0.4)';
-    ctx.beginPath(); ctx.ellipse(-2,16,2,4,0.3,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(2,16,2,4,-0.3,0,Math.PI*2); ctx.fill();
   }
   ctx.restore();
 }
+
+// ── PLANE (Aviator style) ──
+function drawPlane(ctx, x, y, rotation, withFlame){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  // Fuselage
+  ctx.fillStyle='#c8d8ff';
+  ctx.beginPath(); ctx.ellipse(0,0,5,18,0,0,Math.PI*2); ctx.fill();
+  // Nose
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.moveTo(0,-18); ctx.lineTo(-4,-8); ctx.lineTo(4,-8); ctx.closePath(); ctx.fill();
+  // Main wings (wide)
+  ctx.fillStyle='#3b82f6';
+  ctx.beginPath(); ctx.moveTo(-5,0); ctx.lineTo(-22,6); ctx.lineTo(-22,10); ctx.lineTo(-5,8); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(5,0); ctx.lineTo(22,6); ctx.lineTo(22,10); ctx.lineTo(5,8); ctx.closePath(); ctx.fill();
+  // Tail wings
+  ctx.fillStyle='#2255b8';
+  ctx.beginPath(); ctx.moveTo(-3,12); ctx.lineTo(-10,18); ctx.lineTo(-3,16); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(3,12); ctx.lineTo(10,18); ctx.lineTo(3,16); ctx.closePath(); ctx.fill();
+  // Windows
+  ctx.fillStyle='#93c5fd';
+  [-6,-2,2].forEach(function(wy){
+    ctx.beginPath(); ctx.ellipse(0,wy,2.5,2,0,0,Math.PI*2); ctx.fill();
+  });
+  // Engine exhaust trail
+  if(withFlame){
+    ctx.fillStyle='rgba(150,200,255,0.4)';
+    ctx.beginPath(); ctx.ellipse(-18,8,3,6,0.2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(18,8,3,6,-0.2,0,Math.PI*2); ctx.fill();
+    // Contrail
+    ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=2; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(-22,8); ctx.lineTo(-35,12); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(22,8); ctx.lineTo(35,12); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  ctx.restore();
+}
+
+// ── LIGHTNING BOLT (Lightning crash) ──
+function drawLightningBolt(ctx, x, y, rotation, withFlame){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  // Main bolt shape
+  ctx.fillStyle='#f6c90e';
+  ctx.shadowColor='#f6c90e'; ctx.shadowBlur=15;
+  ctx.beginPath();
+  ctx.moveTo(4,-18); ctx.lineTo(-2,-2); ctx.lineTo(4,-2);
+  ctx.lineTo(-4,18); ctx.lineTo(2,2); ctx.lineTo(-4,2);
+  ctx.closePath(); ctx.fill();
+  // Inner highlight
+  ctx.fillStyle='#fff';
+  ctx.shadowBlur=0;
+  ctx.beginPath();
+  ctx.moveTo(2,-14); ctx.lineTo(-1,-2); ctx.lineTo(2,-2);
+  ctx.lineTo(-2,12); ctx.lineTo(1,2); ctx.lineTo(-2,2);
+  ctx.closePath(); ctx.fill();
+  // Glow effect when flying
+  if(withFlame){
+    ctx.strokeStyle='rgba(246,201,0,0.6)'; ctx.lineWidth=4; ctx.shadowColor='#f6c90e'; ctx.shadowBlur=20;
+    ctx.beginPath(); ctx.moveTo(0,-18); ctx.lineTo(0,18); ctx.stroke();
+    ctx.shadowBlur=0;
+  }
+  ctx.restore();
+}
+
 
 function doCrash(){} // override below
 function doCrashAnim(ctx,W,H,pts,startY){
