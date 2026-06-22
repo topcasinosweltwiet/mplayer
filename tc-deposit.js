@@ -1,5 +1,4 @@
 // tc-deposit.js — Deposit & Withdrawal with dynamic sections
-'use strict';
 
 // ── TAB SWITCHING ──
 var _depLoaded=false, _wdLoaded=false, _curDWTab='dep';
@@ -486,3 +485,8 @@ function submitDeposit(){
     $('dsubmit').textContent='Submit Deposit'; $('dsubmit').disabled=false;
   }).catch(function(e){sh('derr','Error: '+e.message);$('dsubmit').textContent='Submit Deposit';$('dsubmit').disabled=false;});
 }
+
+window.loadContactAgents = loadContactAgents;
+window.loadDepositSections = loadDepositSections;
+window.loadWithdrawSections = loadWithdrawSections;
+window.loadDeposit = function(){ loadContactAgents(); loadDepositSections(); };

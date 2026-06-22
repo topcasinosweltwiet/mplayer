@@ -1,11 +1,15 @@
 // tc-core.js — Core helpers, session, auth, nav, win rates
-'use strict';
 
 // ── HELPERS ──
 function $(i){return document.getElementById(i);}
 function st(i,v){var e=$(i);if(e)e.textContent=v;}
 function sh(i,m){var e=$(i);if(!e)return;if(m!==undefined)e.textContent=m;e.style.display='block';}
 function hd(i){var e=$(i);if(e)e.style.display='none';}
+// Make helpers globally accessible
+window.$ = $;
+window.st = st;
+window.sh = sh;
+window.hd = hd;
 function fmt(n){return 'Rs. '+Number(n||0).toLocaleString('en-NP');}
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function pick(arr){return arr[rnd(0,arr.length-1)];}
@@ -26,12 +30,11 @@ function closeCrashGame(){
 }
 
 // ── WIN RATES — VERY LOW ──
-var _streak = 0;
+_streak = 0; // global
 function wc(crash) {
   if (_streak > 0) { _streak--; return false; }
-  var rate = crash ? 0.04 : 0.07; // 4% crash, 7% other games
-  var won = Math.random() < rate;
-  if (won) _streak = rnd(6, 15); // force 6-15 losses after every win
+  var won = Math.random() < 0.40; // ~25% effective win rate after streaks
+  if (won) _streak = rnd(1, 2);   // 1-2 forced losses after win
   return won;
 }
 
@@ -439,3 +442,33 @@ function sendSupport() {
     loadSupportMsgs(); $('sup-send').disabled = false;
   }).catch(function() { $('sup-send').disabled = false; });
 }
+
+// Expose core functions globally
+window.showPage = showPage;
+window.fmt = fmt;
+window.bal = bal;
+window.ub = ub;
+window.wc = wc;
+window.rnd = rnd;
+window.pick = pick;
+window.pushNotif = pushNotif;
+window.applyTheme = applyTheme;
+window.openKYC = openKYC;
+window.openProfile = openProfile;
+window.openSupport = openSupport;
+window.openNotif = openNotif;
+window.saveKYC = saveKYC;
+window.savePassword = savePassword;
+window.sendSupport = sendSupport;
+window.doLogin = doLogin;
+window.doReg = doReg;
+window.doLogout = doLogout;
+window.startSession = startSession;
+window.closeCrashGame = closeCrashGame;
+window.refreshCaptcha = refreshCaptcha;
+window.aerr = aerr;
+window.sh = sh;
+window.hd = hd;
+window.om = om;
+window.cm = cm;
+window.st = st;

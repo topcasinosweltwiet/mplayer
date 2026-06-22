@@ -1,5 +1,4 @@
 // tc-sport.js — 1xbet style sports UI
-'use strict';
 
 var allSportEvents = [];
 var sbState = { event: null, sel: null, odds: 0 };
@@ -418,3 +417,10 @@ function loadHistory(type) {
     }).catch(function(){wrap.innerHTML='<div style="color:var(--red);padding:1rem;">Error loading.</div>';});
   }
 }
+
+window.loadHome = loadHome;
+window.loadHistory = loadHistory;
+window.openSportBet = openSportBet;
+window.placeSportBet = placeSportBet;
+window.updateBsum = updateBsum;
+window.doSportSearch = doSportSearch;

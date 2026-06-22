@@ -1,7 +1,5 @@
 // tc-games.js — All casino games
-'use strict';
-
-var currentGame = null, gState = {};
+currentGame = null; gState = {}; // global game state
 
 var HOT_GAMES = [
   {id:'crash1',name:'Rocket Crash',icon:'🚀',badge:'hbl',type:'crash',vehicle:'rocket',theme:{name:'Rocket Crash',color:'#4ade80',lc:'#4ade80'}},
@@ -70,13 +68,6 @@ var WOF_SEGS=[
 
 // ── WIN RATES — 30% all games ──
 var _streak = 0;
-function wc(crash) {
-  if (_streak > 0) { _streak--; return false; }
-  var won = Math.random() < 0.25;  // 25% win chance
-  if (won) _streak = rnd(2,5);     // after win, 2-5 forced losses
-  return won;
-}
-
 function loadHotGames() {
   fbGet('/adminSettings/hotGames').then(function(data) {
     var games = data ? HOT_GAMES.filter(function(g){return data[g.id];}) : HOT_GAMES;
@@ -736,7 +727,7 @@ function makeCard(c,hidden){
 }
 
 // ── BLACKJACK ──
-var bjState={};
+bjState={};
 function startBJ(g,bet){
   var nb=bal()-bet;CD.balance=nb;fbUp('/players/'+CK,{balance:nb});ub();
   bjState={deck:newDeck(),player:[],dealer:[],g:g,bet:bet,over:false};
@@ -789,7 +780,7 @@ function buildWheelSVG(){
 }
 
 // ── CRASH ── (Continuous auto-fly loop like real crash games)
-var CS = {
+CS = {
   running:false, bet:0, mult:1.00, crashAt:1.5,
   animId:null, cashedOut:false, betPlaced:false,
   phase:'waiting', // 'waiting' | 'flying' | 'crashed'
@@ -1208,7 +1199,7 @@ function startMines(g, bet) {
   var nb = bal() - bet; CD.balance = nb; fbUp('/players/' + CK, {balance: nb}); ub();
   var TOTAL = 25, mc = g.mines || 3, mines = [];
   while (mines.length < mc) { var m = rnd(0, TOTAL-1); if (mines.indexOf(m) < 0) mines.push(m); }
-  var mState = { bet: bet, mines: mines, revealed: [], active: true, safeCount: 0 };
+  mState = { bet: bet, mines: mines, revealed: [], active: true, safeCount: 0 };
 
   var area = $('gma'); area.innerHTML = '';
 
@@ -1387,7 +1378,7 @@ function startPlinko(g,bet){
 }
 
 // ── TOWER ── (Stake/1xbet style)
-var tState = {};
+tState = {};
 function startTower(g, bet) {
   var nb = bal() - bet; CD.balance = nb; fbUp('/players/' + CK, {balance: nb}); ub();
   var FLOORS = 6, COLS = 3; // Always 3 cols: 2 bombs, 1 gem
@@ -1597,3 +1588,27 @@ function startScratch(g,bet){
   }
   $('gpbtn').disabled=false;$('gpbtn').textContent='New Card';
 }
+
+// Expose all game functions globally
+window.openGame = openGame;
+window.doPlayGame = doPlayGame;
+window.renderCasinoGrid = renderCasinoGrid;
+window.loadHotGames = loadHotGames;
+window.buildChips = buildChips;
+window.getBetVal = getBetVal;
+window.openCrash = openCrash;
+window.startCrash = startCrash;
+window.doCashout = doCashout;
+window.closeCrashGame = closeCrashGame;
+window.towerCashout = towerCashout;
+window.showGRes = showGRes;
+window.finishGame = finishGame;
+window.refundBet = refundBet;
+window.startBJ = startBJ;
+window.startMines = startMines;
+window.startTower = startTower;
+window.startPlinko = startPlinko;
+window.execGame = execGame;
+window.buildGameArea = buildGameArea;
+window.calcMinesMult = calcMinesMult;
+window.minesCashout = typeof minesCashout !== 'undefined' ? minesCashout : function(){};
