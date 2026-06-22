@@ -900,7 +900,7 @@ function beginFlight() {
   CS.phase = 'flying';
   CS.running = true;
   CS.mult = 1.00;
-  // Lock in bet if placed
+
   if(CS.betPlaced && CS.bet>0){
     $('ccashout').disabled=false;
     $('cplay').disabled=true; $('cplay').textContent='Running...';
@@ -908,88 +908,103 @@ function beginFlight() {
     $('cplay').disabled=true; $('cplay').textContent='Next round...';
     $('ccashout').disabled=true;
   }
+
   var md=$('cmult'); if(md){md.textContent='1.00x';md.style.color='#4ade80';md.style.fontSize='42px';}
-  var c=$('ccanvas'); c.width=c.offsetWidth||400; c.height=220;
+  var c=$('ccanvas');
+  c.width=c.offsetWidth||400; c.height=220;
   var ctx=c.getContext('2d'), W=c.width, H=c.height;
   var t0=performance.now(), pts=[];
-  var startX=W*0.08, startY=H*0.80;
+  var startX=W*0.10, startY=H*0.82;
   var auto=parseFloat($('cauto')?$('cauto').value:0)||0;
+
+  // Fixed smooth angle - plane flies at constant upward angle like real Aviator
+  // Going right and slightly up - fixed angle, NO shaking
+  var FIXED_ANGLE = -Math.PI * 0.18; // ~32 degrees upward to the right
 
   function frame(ts){
     if(!CS.running)return;
     var el=(ts-t0)/1000;
     CS.mult=parseFloat(Math.max(1.00,Math.pow(1.04,el*5)).toFixed(2));
-    // Auto cashout
-    if(auto>1&&CS.mult>=auto&&!CS.cashedOut&&CS.betPlaced) { doCashout(); return; }
+
+    if(auto>1&&CS.mult>=auto&&!CS.cashedOut&&CS.betPlaced){ doCashout(); return; }
     if(CS.mult>=CS.crashAt){ doCrashAnim(ctx,W,H,pts,startY); return; }
 
     ctx.fillStyle='#050a18'; ctx.fillRect(0,0,W,H);
     drawCrashGrid(ctx,W,H);
     drawCrashStars(ctx,W,H);
 
-    // Curve path
-    var progress=Math.min(0.92,(CS.mult-1)/(Math.max(1.5,CS.crashAt)-1));
-    var rx=startX+Math.pow(progress,1.3)*W*0.82;
-    var ry=startY-Math.pow(progress,0.55)*H*0.78;
-    pts.push({x:rx,y:ry});
+    // Path: moves RIGHT steadily, rises UP gently - straight smooth line like Aviator
+    var progress=Math.min(0.90,(CS.mult-1)/(Math.max(1.5,CS.crashAt)-1));
+
+    // X: moves right linearly
+    var rx = startX + progress * W * 0.82;
+    // Y: goes up gradually - gentle curve upward
+    var ry = startY - (Math.pow(progress, 0.7) * H * 0.70);
+
+    pts.push({x:rx, y:ry});
 
     if(pts.length>1){
-      // Filled area
-      var grad=ctx.createLinearGradient(0,startY-H*0.6,0,startY);
-      grad.addColorStop(0,CS.theme.lc+'22'); grad.addColorStop(1,'transparent');
+      // Filled area under curve
+      var grad=ctx.createLinearGradient(0,startY-H*0.7,0,startY);
+      grad.addColorStop(0,CS.theme.lc+'18'); grad.addColorStop(1,'transparent');
       ctx.beginPath(); ctx.moveTo(startX,startY);
       pts.forEach(function(p){ctx.lineTo(p.x,p.y);});
       ctx.lineTo(pts[pts.length-1].x,startY); ctx.closePath();
       ctx.fillStyle=grad; ctx.fill();
-      // Line
+
+      // Curve line
       ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
-      pts.forEach(function(p){ctx.lineTo(p.x,p.y);});
-      ctx.strokeStyle=CS.theme.lc; ctx.lineWidth=3;
-      ctx.shadowColor=CS.theme.color; ctx.shadowBlur=10; ctx.stroke(); ctx.shadowBlur=0;
+      for(var pi=1;pi<pts.length;pi++){ctx.lineTo(pts[pi].x,pts[pi].y);}
+      ctx.strokeStyle=CS.theme.lc; ctx.lineWidth=2.5;
+      ctx.shadowColor=CS.theme.color; ctx.shadowBlur=8; ctx.stroke(); ctx.shadowBlur=0;
     }
 
-    // X axis
-    ctx.strokeStyle='rgba(74,222,128,0.15)'; ctx.lineWidth=1;
+    // X axis baseline
+    ctx.strokeStyle='rgba(74,222,128,0.12)'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(startX,startY); ctx.lineTo(W-10,startY); ctx.stroke();
 
-    // Multiplier labels
-    ctx.fillStyle='rgba(74,222,128,0.35)'; ctx.font='10px sans-serif'; ctx.textAlign='left';
+    // Multiplier labels on Y axis
+    ctx.fillStyle='rgba(74,222,128,0.3)'; ctx.font='10px sans-serif'; ctx.textAlign='left';
     [1.5,2,3,5,10].forEach(function(m){
       if(m<CS.mult+0.5){
-        var lp2=startY-Math.pow((m-1)/(Math.max(1.5,CS.crashAt)-1),0.65)*H*0.75;
+        var lp2=startY-Math.pow((m-1)/(Math.max(1.5,CS.crashAt)-1),0.7)*H*0.70;
         if(lp2>15&&lp2<startY-5){
-          ctx.fillText(m+'x',startX+4,lp2-3);
-          ctx.strokeStyle='rgba(74,222,128,0.08)'; ctx.setLineDash([3,3]);
-          ctx.beginPath(); ctx.moveTo(startX+28,lp2); ctx.lineTo(W-10,lp2); ctx.stroke();
+          ctx.fillText(m+'x',2,lp2+4);
+          ctx.strokeStyle='rgba(74,222,128,0.06)'; ctx.setLineDash([3,3]);
+          ctx.beginPath(); ctx.moveTo(startX,lp2); ctx.lineTo(W-10,lp2); ctx.stroke();
           ctx.setLineDash([]);
         }
       }
     });
 
-    // Rocket at tip
-    if(pts.length>2){
-      var lp=pts[pts.length-1], pp=pts[pts.length-3]||pts[pts.length-2];
-      // Angle: rocket should point in direction of travel
-      // travel vector: lp - pp
-      var dx=lp.x-pp.x, dy=lp.y-pp.y;
-      // atan2 gives angle of vector. Rocket points up in local (-PI/2).
-      // We want rocket nose to point toward travel direction.
-      // Rotate so local UP aligns with travel direction:
-      // travel angle = atan2(dy,dx), rocket up = atan2(-1,0) = -PI/2
-      // rotation needed = travel_angle - (-PI/2) = travel_angle + PI/2
-      var travelAngle=Math.atan2(dy,dx); // horizontal vehicle: atan2(dy,dx) gives correct rotation
-      // Trail glow
-    ctx.save();
-    ctx.globalAlpha=0.15;
-    for(var ti=1;ti<=3;ti++){
-      var ti2=Math.max(0,pts.length-ti*3);
-      if(pts[ti2]){
-        drawCrashRocket(ctx,pts[ti2].x,pts[ti2].y,travelAngle,false);
+    // Draw rocket at tip with FIXED smooth angle - no shaking
+    if(pts.length>0){
+      var tip=pts[pts.length-1];
+
+      // Calculate smooth angle from path tangent over larger window (not per-frame)
+      var smoothAngle = FIXED_ANGLE;
+      if(pts.length>8){
+        // Use points far apart for stable angle calculation
+        var p1=pts[Math.max(0,pts.length-12)];
+        var p2=pts[pts.length-1];
+        var dx=p2.x-p1.x, dy=p2.y-p1.y;
+        // Smooth the angle to prevent jitter - blend toward calculated angle slowly
+        var calcAngle = Math.atan2(dy,dx);
+        // Clamp to reasonable range (-60 to 0 degrees)
+        calcAngle = Math.max(-Math.PI*0.33, Math.min(0, calcAngle));
+        smoothAngle = calcAngle;
       }
-    }
-    ctx.globalAlpha=1;
-    ctx.restore();
-    drawCrashRocket(ctx,lp.x,lp.y,travelAngle,true);
+
+      // Ghost trail - 2 faded copies behind (subtle, not shaky)
+      if(pts.length>6){
+        ctx.save(); ctx.globalAlpha=0.12;
+        drawCrashRocket(ctx,pts[pts.length-6].x,pts[pts.length-6].y,smoothAngle,false);
+        ctx.globalAlpha=0.07;
+        drawCrashRocket(ctx,pts[pts.length-10>0?pts.length-10:0].x,pts[pts.length-10>0?pts.length-10:0].y,smoothAngle,false);
+        ctx.restore();
+      }
+
+      drawCrashRocket(ctx,tip.x,tip.y,smoothAngle,true);
     }
 
     // Multiplier display
@@ -1005,6 +1020,7 @@ function beginFlight() {
   }
   CS.animId=requestAnimationFrame(frame);
 }
+
 
 function drawCrashGrid(ctx,W,H){
   ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1;
