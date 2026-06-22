@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof tState !== 'undefined' && tState.active) { tState.active = false; }
     if (typeof mState !== 'undefined' && mState.active) { mState.active = false; }
   };
-  $('gpbtn').onclick = function() { if (currentGame) playGame(currentGame); };
+  $('gpbtn').onclick = function() { if (typeof doPlayGame === 'function' && typeof currentGame !== 'undefined' && currentGame) doPlayGame(currentGame); };
 
   // Crash
   $('cclose').onclick = closeCrashGame;

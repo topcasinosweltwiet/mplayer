@@ -1,6 +1,8 @@
 // tc-games.js — All casino games
 'use strict';
 
+var currentGame = null, gState = {};
+
 var HOT_GAMES = [
   {id:'crash1',name:'Rocket Crash',icon:'🚀',badge:'hbl',type:'crash',vehicle:'rocket',theme:{name:'Rocket Crash',color:'#4ade80',lc:'#4ade80'}},
   {id:'slots1',name:'Fruit Slots',icon:'🍒',badge:'hbl',type:'slots',syms:'slots1',mult:2},
@@ -864,7 +866,7 @@ function drawWaiting(sec) {
   drawCrashStars(ctx,W,H);
 
   // Draw rocket/plane pointing up-right (idle)
-  drawCrashRocket(ctx, W*0.1, H*0.78, -Math.PI*0.35, false);
+  drawCrashRocket(ctx, W*0.1, H*0.78, -Math.PI*0.25, false);
 
   // Countdown circle
   var cx=W/2, cy=H*0.42;
@@ -974,7 +976,7 @@ function beginFlight() {
       // travel angle = atan2(dy,dx), rocket up = atan2(-1,0) = -PI/2
       // rotation needed = travel_angle - (-PI/2) = travel_angle + PI/2
       var travelAngle=Math.atan2(dy,dx);
-      drawCrashRocket(ctx,lp.x,lp.y,travelAngle+Math.PI/2,true);
+      drawCrashRocket(ctx,lp.x,lp.y,travelAngle-Math.PI/2,true);
     }
 
     // Multiplier display
