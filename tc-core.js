@@ -188,8 +188,8 @@ function showPage(id) {
 document.addEventListener('DOMContentLoaded', function() {
   $('bn-h').onclick = function() { showPage('pg-home'); loadHome(); };
   $('bn-hi').onclick = function() { showPage('pg-hist'); loadHistory('sport'); };
-  $('bn-dw').onclick = function() { showPage('pg-dw'); loadDeposit(); loadContactAgents(); };
-  $('bn-s').onclick = function() { showPage('pg-set'); };
+  $('bn-dw').onclick = function() { showPage('pg-dw'); if(window.resetDWTabs)resetDWTabs(); switchDWTab('dep'); };
+  $('bn-s').onclick = function() { showPage('pg-set'); var sb=$('set-bal');if(sb)sb.textContent=fmt(bal()); };
 
   // Settings items
   $('si-pr').onclick = openProfile;

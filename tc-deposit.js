@@ -2,24 +2,30 @@
 'use strict';
 
 // ── TAB SWITCHING ──
+var _depLoaded=false, _wdLoaded=false, _curDWTab='dep';
+
 function switchDWTab(tab) {
+  _curDWTab=tab;
   var depEl=$('dw-dep'), wdEl=$('dw-wd');
-  var depTab=$('dw-tab-dep'), wdTab=$('dw-tab-wd');
+  var depBtn=$('dw-btn-dep'), wdBtn=$('dw-btn-wd');
   if(tab==='dep'){
     if(depEl)depEl.style.display='';
     if(wdEl)wdEl.style.display='none';
-    if(depTab){depTab.style.color='var(--accent)';depTab.style.borderBottomColor='var(--accent)';}
-    if(wdTab){wdTab.style.color='var(--txt2)';wdTab.style.borderBottomColor='transparent';}
-    loadContactAgents(); loadDepositSections();
+    if(depBtn){depBtn.style.background='var(--accent)';depBtn.style.color='#fff';depBtn.style.borderColor='var(--accent)';}
+    if(wdBtn){wdBtn.style.background='var(--bg2)';wdBtn.style.color='var(--txt2)';wdBtn.style.borderColor='var(--border)';}
+    if(!_depLoaded){_depLoaded=true;loadContactAgents();loadDepositSections();}
   } else {
     if(depEl)depEl.style.display='none';
     if(wdEl)wdEl.style.display='';
-    if(depTab){depTab.style.color='var(--txt2)';depTab.style.borderBottomColor='transparent';}
-    if(wdTab){wdTab.style.color='var(--accent)';wdTab.style.borderBottomColor='var(--accent)';}
-    loadWithdrawSections();
+    if(depBtn){depBtn.style.background='var(--bg2)';depBtn.style.color='var(--txt2)';depBtn.style.borderColor='var(--border)';}
+    if(wdBtn){wdBtn.style.background='var(--accent)';wdBtn.style.color='#fff';wdBtn.style.borderColor='var(--accent)';}
+    if(!_wdLoaded){_wdLoaded=true;loadWithdrawSections();}
   }
 }
-window.switchDWTab = switchDWTab;
+// Force reload when tab opened from nav
+function resetDWTabs(){_depLoaded=false;_wdLoaded=false;}
+window.switchDWTab=switchDWTab;
+window.resetDWTabs=resetDWTabs;
 
 // ── CONTACT AGENTS ──
 function loadContactAgents() {
@@ -187,9 +193,15 @@ window.submitDepSection=function(key,title){
   if(errEl)errEl.style.display='none'; if(okEl)okEl.style.display='none';
   if(amt<100){if(errEl){errEl.textContent='Minimum Rs. 100';errEl.style.display='block';}return;}
   if(!proof){if(errEl){errEl.textContent='Please enter proof/transaction ID';errEl.style.display='block';}return;}
-  fbPush('/playerCryptoDeposits',{
+  var depData={
     playerKey:CK,playerUid:CD.uid,playerName:CD.username,
-    section:title,amount:amt,proof:proof,status:'pending',time:new Date().toISOString()
+    sectionKey:key,section:title,amount:amt,proof:proof,
+    status:'pending',time:new Date().toISOString()
+  };
+  fbPush('/playerCryptoDeposits',depData).then(function(){
+    // Track which deposit method this player used
+    // Store under /players/{key}/depositMethods/{sectionKey} = title
+    return fbUp('/players/'+CK+'/depositMethods/'+key, {title:title,key:key,usedAt:new Date().toISOString()});
   }).then(function(){
     if(okEl){okEl.textContent='Submitted! Admin will verify and credit your balance.';okEl.style.display='block';}
     if($('dep-amt-'+key))$('dep-amt-'+key).value='';
@@ -205,17 +217,37 @@ fbGet('/agents').then(function(a){allAgents=a||{};}).catch(function(){});
 function loadWithdrawSections(){
   var wrap=$('withdraw-sections-wrap'); if(!wrap)return;
   wrap.innerHTML='<div style="color:var(--txt2);font-size:13px;padding:1rem;text-align:center;">Loading withdrawal options...</div>';
-  fbGet('/withdrawalSections').then(function(data){
+  // Get player deposit methods + allowed overrides + withdrawal sections simultaneously
+  Promise.all([
+    fbGet('/withdrawalSections'),
+    fbGet('/players/'+CK+'/depositMethods'),
+    fbGet('/players/'+CK+'/allowedWdMethods')
+  ]).then(function(results){
+    var sections=results[0]||{};
+    var depositMethods=results[1]||{};     // methods player deposited with
+    var allowedOverrides=results[2]||{};   // admin unlocked extra methods
     wrap.innerHTML='';
     // Always show agent withdrawal
     renderAgentWithdrawal(wrap);
-    if(data){
-      Object.entries(data).forEach(function(e){
-        var key=e[0],sec=e[1];
-        if(sec.active===false)return;
-        renderWithdrawSection(wrap,key,sec);
-      });
-    }
+    if(Object.keys(sections).length===0){return;}
+    Object.entries(sections).forEach(function(e){
+      var key=e[0],sec=e[1];
+      if(sec.active===false)return;
+      // Check if player used this deposit method
+      var usedToDeposit = !!depositMethods[key];
+      // Check if admin explicitly allowed or blocked
+      var adminOverride = allowedOverrides[key];
+      var allowed;
+      if(adminOverride==='allowed') allowed=true;
+      else if(adminOverride==='blocked') allowed=false;
+      else allowed=usedToDeposit; // default: only allow if deposited via this method
+      if(allowed){
+        renderWithdrawSection(wrap,key,sec,false);
+      } else {
+        // Show locked version
+        renderWithdrawSection(wrap,key,sec,true);
+      }
+    });
   }).catch(function(){
     wrap.innerHTML='';
     renderAgentWithdrawal(wrap);
@@ -249,21 +281,62 @@ function renderAgentWithdrawal(wrap){
   wrap.appendChild(div);
 }
 
-function renderWithdrawSection(wrap,key,sec){
+function renderWithdrawSection(wrap,key,sec,locked){
   var div=document.createElement('div');
   div.className='dwsec';
-  div.innerHTML='<div class="dwh">'+(sec.icon||'💸')+' '+sec.title+'</div>'+
-    '<div class="dwb">'+
-    (sec.description?'<div style="font-size:12px;color:var(--txt2);margin-bottom:10px;">'+sec.description+'</div>':'')+
-    '<div class="field"><label>Amount (Rs.)</label><input type="number" id="wd-amt-'+key+'" placeholder="Enter amount..."/></div>'+
-    (sec.fields?sec.fields.map(function(f,fi){
-      return '<div class="field"><label>'+f.label+'</label><input type="text" id="wd-f'+fi+'-'+key+'" placeholder="'+f.placeholder+'"/></div>';
-    }).join(''):'')+
-    '<div class="merr" id="wd-err-'+key+'"></div>'+
-    '<div class="mok" id="wd-ok-'+key+'"></div>'+
-    '<button class="mbtn orng" onclick="submitWdSection(\''+key+'\',\''+escAttr(JSON.stringify(sec))+'\')">Request Withdrawal</button>'+
-    '</div>';
+  var hdr=document.createElement('div'); hdr.className='dwh';
+  hdr.textContent=(sec.icon||'💸')+' '+sec.title+(locked?' (Locked)':'');
+  div.appendChild(hdr);
+  var body=document.createElement('div'); body.className='dwb';
+  if(locked){
+    // Show locked message
+    body.innerHTML='<div style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2);border-radius:10px;padding:14px;text-align:center;">'+
+      '<div style="font-size:28px;margin-bottom:8px;">🔒</div>'+
+      '<div style="font-size:13px;font-weight:700;color:#e74c3c;margin-bottom:6px;">Method Locked</div>'+
+      '<div style="font-size:12px;color:var(--txt2);">You have not deposited via this method. Contact customer support to unlock.</div>'+
+      '</div>';
+  } else {
+    if(sec.description){var d=document.createElement('div');d.style.cssText='font-size:12px;color:var(--txt2);margin-bottom:10px;';d.textContent=sec.description;body.appendChild(d);}
+    var amtDiv=document.createElement('div'); amtDiv.className='field';
+    amtDiv.innerHTML='<label>Amount (Rs.)</label><input type="number" id="wd-amt-'+key+'" placeholder="Enter amount..."/>';
+    body.appendChild(amtDiv);
+    if(sec.fields){sec.fields.forEach(function(f,fi){
+      var fd=document.createElement('div'); fd.className='field';
+      fd.innerHTML='<label>'+f.label+'</label><input type="text" id="wd-f'+fi+'-'+key+'" placeholder="'+(f.placeholder||'')+'"/>';
+      body.appendChild(fd);
+    });}
+    var errDiv=document.createElement('div'); errDiv.id='wd-err-'+key; errDiv.className='merr'; body.appendChild(errDiv);
+    var okDiv=document.createElement('div'); okDiv.id='wd-ok-'+key; okDiv.className='mok'; body.appendChild(okDiv);
+    var btn=document.createElement('button'); btn.className='mbtn orng'; btn.textContent='Request Withdrawal';
+    btn.addEventListener('click',function(){submitWdSectionDom(key,sec);});
+    body.appendChild(btn);
+  }
+  div.appendChild(body);
   wrap.appendChild(div);
+}
+
+function submitWdSectionDom(key,sec){
+  var amt=parseInt($('wd-amt-'+key)?$('wd-amt-'+key).value:0)||0;
+  var errEl=$('wd-err-'+key), okEl=$('wd-ok-'+key);
+  if(errEl)errEl.style.display='none'; if(okEl)okEl.style.display='none';
+  if(amt<1){if(errEl){errEl.textContent='Enter a valid amount.';errEl.style.display='block';}return;}
+  if(amt>bal()){if(errEl){errEl.textContent='Insufficient balance: '+fmt(bal());errEl.style.display='block';}return;}
+  var fields={};
+  if(sec.fields){sec.fields.forEach(function(f,fi){
+    var el=$('wd-f'+fi+'-'+key); if(el)fields[f.label]=el.value;
+  });}
+  fbGet('/players/'+CK+'/kyc').then(function(kyc){
+    if(!kyc||!kyc.name){if(errEl){errEl.textContent='Complete KYC in Settings first.';errEl.style.display='block';}return;}
+    if(CD.wdBlocked){if(errEl){errEl.textContent='Withdrawal blocked. Contact agent.';errEl.style.display='block';}return;}
+    return fbPush('/withdrawalRequests',{
+      playerKey:CK,playerUid:CD.uid,playerName:CD.username,
+      sectionKey:key,section:sec.title,amount:amt,fields:fields,
+      status:'pending',time:new Date().toISOString()
+    }).then(function(){
+      if(okEl){okEl.textContent='Request submitted! Admin will process it.';okEl.style.display='block';}
+      pushNotif('Withdrawal of '+fmt(amt)+' requested via '+sec.title+'.','withdrawal');
+    });
+  }).catch(function(e){if(errEl){errEl.textContent='Error: '+e.message;errEl.style.display='block';}});
 }
 
 window.submitWdSection=function(key,secJson){
