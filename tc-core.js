@@ -229,11 +229,28 @@ document.addEventListener('DOMContentLoaded', function() {
   $('sbamt').oninput = updateBsum;
 
   // Game overlay
-  $('gclose').onclick = function() { $('gov').classList.remove('open'); };
+  $('gclose').onclick = function() {
+    $('gov').classList.remove('open');
+    // Reset game state
+    if (typeof gState !== 'undefined') gState = {};
+    if (typeof tState !== 'undefined' && tState.active) { tState.active = false; }
+    if (typeof mState !== 'undefined' && mState.active) { mState.active = false; }
+  };
   $('gpbtn').onclick = function() { if (currentGame) playGame(currentGame); };
 
   // Crash
-  $('ccl').onclick = function() { if (CS.animId) cancelAnimationFrame(CS.animId); CS.running = false; $('cov').classList.remove('open'); };
+  $('cclose').onclick = function() {
+    // Stop all crash timers and animations
+    if (CS.animId) { cancelAnimationFrame(CS.animId); CS.animId = null; }
+    if (CS.countdownTimer) { clearInterval(CS.countdownTimer); CS.countdownTimer = null; }
+    CS.running = false; CS.phase = 'waiting';
+    // Refund bet if active
+    if (CS.betPlaced && CS.bet > 0 && !CS.cashedOut) {
+      var wb = bal() + CS.bet; CD.balance = wb; fbUp('/players/' + CK, {balance: wb}); ub();
+    }
+    CS.betPlaced = false; CS.bet = 0;
+    $('cov').classList.remove('open');
+  };
   $('cplay').onclick = startCrash;
   $('ccashout').onclick = doCashout;
 
@@ -264,7 +281,15 @@ document.addEventListener('DOMContentLoaded', function() {
     ['gov', 'cov'].forEach(function(id) {
       var el = $(id); if (el && e.target === el) {
         el.classList.remove('open');
-        if (id === 'cov' && CS.animId) cancelAnimationFrame(CS.animId);
+        if (id === 'cov') {
+          if (CS.animId) { cancelAnimationFrame(CS.animId); CS.animId = null; }
+          if (CS.countdownTimer) { clearInterval(CS.countdownTimer); CS.countdownTimer = null; }
+          CS.running = false; CS.phase = 'waiting';
+          if (CS.betPlaced && CS.bet > 0 && !CS.cashedOut) {
+            var wb = bal() + CS.bet; CD.balance = wb; fbUp('/players/' + CK, {balance: wb}); ub();
+          }
+          CS.betPlaced = false; CS.bet = 0;
+        }
       }
     });
   });
