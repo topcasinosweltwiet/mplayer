@@ -89,9 +89,8 @@
     <!-- Hot games -->
     <div class="slabel" id="hot-section-label" style="display:none;">Hot Games</div>
     <div class="hotscroll" id="hotscroll"></div>
-    <!-- Casino -->
-    <div class="slabel">Casino</div>
-    <div class="cgrid" id="cgrid"></div>
+    <!-- Casino Sections -->
+    <div id="cgrid"></div>
     <div style="height:8px;"></div>
   </div>
 
@@ -106,270 +105,34 @@
 
   <!-- DEPOSIT/WD -->
   <div id="pg-dw" class="mcontent page">
-    <div class="dwpg">
+    <!-- DEPOSIT / WITHDRAWAL TABS -->
+    <div style="display:flex;border-bottom:2px solid var(--border);margin-bottom:0;">
+      <div id="dw-tab-dep" onclick="switchDWTab('dep')" style="flex:1;padding:12px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;color:var(--accent);border-bottom:3px solid var(--accent);margin-bottom:-2px;">Deposit</div>
+      <div id="dw-tab-wd" onclick="switchDWTab('wd')" style="flex:1;padding:12px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;color:var(--txt2);border-bottom:3px solid transparent;margin-bottom:-2px;">Withdraw</div>
+    </div>
+
+    <!-- ══ DEPOSIT PAGE ══ -->
+    <div id="dw-dep" class="dwpg">
+      <!-- Contact Agents -->
       <div class="dwsec">
-        <div class="dwh" style="display:flex;justify-content:space-between;align-items:center;"><span>Contact Agent</span><button onclick="loadContactAgents()" style="background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;">Refresh</button></div>
+        <div class="dwh" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Contact Agent</span>
+          <button onclick="loadContactAgents()" style="background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;">Refresh</button>
+        </div>
         <div class="dwb" id="contact-agents-wrap">
-          <div style="color:var(--txt2);font-size:13px;padding:0.5rem 0;">Loading contact options...</div>
+          <div style="color:var(--txt2);font-size:13px;padding:0.5rem 0;">Loading...</div>
         </div>
       </div>
-      <div class="dwsec">
-        <div class="dwh" style="display:flex;justify-content:space-between;align-items:center;"><span>Crypto Deposit</span><button onclick="loadDeposit()" style="background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;">Refresh</button></div>
-        <div class="dwb" id="depb">
-          <div id="dlist"></div>
-          <div class="addrbox" id="daddr" style="display:none;">
-            <div class="addrlbl">Send to this address</div>
-            <div class="addrval" id="dadrv"></div>
-            <div style="font-size:11px;color:var(--txt2);margin-top:4px;" id="dnetl"></div>
-            <button class="cpbtn" id="dcpbtn">Copy Address</button>
-          </div>
-          <div id="dform" style="display:none;">
-            <div class="field"><label>Amount (Rs. NPR)</label><input type="number" id="damt" placeholder="Minimum Rs. 100"/></div>
-            <div class="field"><label>Transaction Hash / Proof</label><input type="text" id="dtxh" placeholder="Paste tx hash..."/></div>
-            <div class="merr" id="derr"></div>
-            <div class="mok" id="dok"></div>
-            <button class="mbtn" id="dsubmit">Submit Deposit</button>
-          </div>
-        </div>
-      </div>
-      <div class="dwsec">
-        <div class="dwh">💸 Withdraw Funds</div>
-        <div class="dwb">
-          <div class="field">
-            <label>Search City</label>
-            <input type="text" id="wci" placeholder="Type your city..."/>
-            <div id="wcr" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
-          </div>
-          <div class="field" id="wsf" style="display:none;">
-            <label>Search Street</label>
-            <input type="text" id="wsi" placeholder="Type your street..."/>
-            <div id="wsr" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
-          </div>
-          <div id="wcbox" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:1rem;">
-            <div style="font-size:13px;font-weight:700;color:var(--txt);" id="wcs"></div>
-            <div style="font-size:12px;color:var(--txt2);" id="wss"></div>
-          </div>
-          <div class="field"><label>Amount to Withdraw (Rs.)</label><input type="number" id="wamt" placeholder="Enter amount..."/></div>
-          <div class="merr" id="werr"></div>
-          <button class="mbtn orng" id="wgenbtn">Generate Withdrawal Code</button>
-          <div class="wdcbox" id="wdcbox">
-            <div class="wdclbl">Your Withdrawal Code</div>
-            <div class="wdcval" id="wdcval"></div>
-            <div class="wdchint">Show to agent for <strong id="wdcamt"></strong></div>
-            <button class="cpbtn" id="wcpbtn">Copy Code</button>
-            <br/><button class="wdcanbtn" id="wcanbtn">Cancel Withdrawal</button>
-          </div>
-        </div>
-      </div>
+      <!-- Dynamic deposit sections loaded from Firebase -->
+      <div id="deposit-sections-wrap"></div>
     </div>
-  </div>
 
-  <!-- SETTINGS -->
-  <div id="pg-set" class="mcontent page">
-    <div style="padding:1rem 1rem 0.5rem;font-size:12px;color:var(--txt2);">Logged in as <strong id="set-un" style="color:var(--txt);"></strong></div>
-    <div class="setlist">
-      <div class="setitem" id="si-pr">
-        <div class="siico" style="background:rgba(26,58,124,0.1);">👤</div>
-        <div class="sitxt"><div class="siname">My Profile</div><div class="sidesc">Change password, view ID</div></div>
-        <div class="siarw">›</div>
-      </div>
-      <div class="setitem" id="si-kyc">
-        <div class="siico" style="background:rgba(39,174,96,0.1);">🔓</div>
-        <div class="sitxt"><div class="siname">KYC Verification</div><div class="sidesc">Unlock withdrawal feature</div></div>
-        <div class="siarw">›</div>
-      </div>
-      <div class="setitem" id="si-th">
-        <div class="siico" style="background:rgba(246,201,0,0.1);">🎨</div>
-        <div class="sitxt"><div class="siname">Change Theme</div><div class="sidesc">Light or dark mode</div></div>
-        <div class="siarw">›</div>
-      </div>
-      <div class="setitem" id="si-sup">
-        <div class="siico" style="background:rgba(231,76,60,0.1);position:relative;">💬<span id="supp-badge" style="position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;border-radius:50%;width:14px;height:14px;font-size:8px;font-weight:700;display:none;align-items:center;justify-content:center;">!</span></div>
-        <div class="sitxt"><div class="siname">Customer Support</div><div class="sidesc">Chat with our team</div></div>
-        <div class="siarw">›</div>
-      </div>
-      <div class="setitem" id="si-lo" style="border-color:rgba(231,76,60,0.3);">
-        <div class="siico" style="background:rgba(231,76,60,0.1);">🚪</div>
-        <div class="sitxt"><div class="siname" style="color:var(--red);">Logout</div><div class="sidesc">Sign out of your account</div></div>
-        <div class="siarw">›</div>
-      </div>
-    </div>
-  </div>
+    <!-- ══ WITHDRAWAL PAGE ══ -->
+    <div id="dw-wd" class="dwpg" style="display:none;">
+      <!-- Dynamic withdrawal sections loaded from Firebase -->
+      <div id="withdraw-sections-wrap"></div>
+      <!-- Withdrawal options filled by loadWithdrawSections() -->
+    </div><!-- end dw-wd -->
+  </div><!-- end pg-dw -->
 
-  <!-- BOTTOM NAV -->
-  <div class="bnav">
-    <div class="bni active" id="bn-h"><div class="bni-ico">🏠</div>Home</div>
-    <div class="bni" id="bn-hi"><div class="bni-ico">📋</div>History</div>
-    <div class="bni" id="bn-dw"><div class="bni-ico">💳</div>Deposit</div>
-    <div class="bni" id="bn-s"><div class="bni-ico">⚙️</div>Settings</div>
-  </div>
-</div>
 
-<!-- SPORT BET MODAL -->
-<div class="ov" id="ov-sbet">
-  <div class="modal">
-    <div class="mclose" id="sbet-cl">✕</div>
-    <div class="mtitle" id="sbet-ttl">Match Bet</div>
-    <div class="bteams">
-      <div class="bteam"><div class="btflag" id="sf1">⚽</div><div class="btnm" id="st1">Team A</div></div>
-      <div class="bvs">VS</div>
-      <div class="bteam"><div class="btflag" id="sf2">⚽</div><div class="btnm" id="st2">Team B</div></div>
-    </div>
-    <div class="bmkts" id="bmkts"></div>
-    <div class="gbp">
-      <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;margin-bottom:8px;">Bet Amount</div>
-      <div class="bchips">
-        <div class="bchip" data-v="100">100</div>
-        <div class="bchip" data-v="500">500</div>
-        <div class="bchip" data-v="1000">1K</div>
-        <div class="bchip" data-v="5000">5K</div>
-      </div>
-      <input class="gbinp" type="number" id="sbamt" placeholder="Custom amount..."/>
-      <div class="gbbal">Balance: <strong id="sbbal">Rs. 0</strong></div>
-    </div>
-    <div class="bsum">
-      <div><div class="bsl">Selection</div><div class="bsv" id="bsell">—</div></div>
-      <div><div class="bsl">Odds</div><div class="bsv" id="boddsl">—</div></div>
-      <div><div class="bsl">Potential Win</div><div class="bsv" id="bwinl">—</div></div>
-    </div>
-    <div class="merr" id="sberr"></div>
-    <button class="mbtn" id="sbplace">Place Bet</button>
-  </div>
-</div>
-
-<!-- NOTIFICATION MODAL -->
-<div class="ov" id="ov-notif">
-  <div class="modal">
-    <div class="mclose" id="ncl">✕</div>
-    <div class="mtitle">🔔 Notifications</div>
-    <div id="nlist"></div>
-  </div>
-</div>
-
-<!-- PROFILE MODAL -->
-<div class="ov" id="ov-prof">
-  <div class="modal">
-    <div class="mclose" id="prcl">✕</div>
-    <div class="mtitle">👤 My Profile</div>
-    <div class="pav" id="prav">TC</div>
-    <div class="pic">
-      <div class="picr"><span class="picl">Username</span><span class="picv" id="piun"></span></div>
-      <div class="picr"><span class="picl">Player ID</span><span class="picv" id="piid"></span></div>
-      <div class="picr"><span class="picl">Balance</span><span class="picv" id="pibal"></span></div>
-    </div>
-    <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:10px;">Change Password</div>
-    <div class="field"><label>Current Password</label><input type="password" id="pwold" placeholder="Current password"/></div>
-    <div class="field"><label>New Password</label><input type="password" id="pwnew" placeholder="New password (min 4 chars)"/></div>
-    <div class="field"><label>Confirm</label><input type="password" id="pwcf" placeholder="Confirm new password"/></div>
-    <div class="merr" id="pwerr"></div>
-    <div class="mok" id="pwok"></div>
-    <button class="mbtn" id="pwsave">Save Password</button>
-  </div>
-</div>
-
-<!-- KYC MODAL -->
-<div class="ov" id="ov-kyc">
-  <div class="modal">
-    <div class="mclose" id="kyccl">✕</div>
-    <div class="mtitle">🔓 KYC Verification</div>
-    <div class="msub">Submit your details to unlock withdrawal</div>
-    <div id="kycbody">
-      <div class="field"><label>Full Name</label><input type="text" id="kname" placeholder="Your full legal name"/></div>
-      <div class="field"><label>State / Province</label><input type="text" id="kstate" placeholder="Your state"/></div>
-      <div class="field"><label>City</label><input type="text" id="kcity" placeholder="Your city"/></div>
-      <div class="field"><label>Government ID / Citizenship Number</label><input type="text" id="kgid" placeholder="ID number"/></div>
-      <div class="merr" id="kycerr"></div>
-      <button class="mbtn" id="kycsave">Submit & Unlock Withdrawal</button>
-    </div>
-    <div id="kycdone" style="display:none;">
-      <div class="kycon">✅ KYC verified! Withdrawal is now unlocked.</div>
-    </div>
-  </div>
-</div>
-
-<!-- THEME MODAL -->
-<div class="ov" id="ov-theme">
-  <div class="modal">
-    <div class="mclose" id="thcl">✕</div>
-    <div class="mtitle">🎨 Choose Theme</div>
-    <div class="thopts">
-      <div class="thopt" id="th-li">
-        <div class="thprev" style="background:linear-gradient(135deg,#1a3a7c,#e67e22);"></div>
-        <div class="thn">Light</div>
-        <div style="font-size:11px;color:var(--txt2);">Blue & white</div>
-      </div>
-      <div class="thopt" id="th-dk">
-        <div class="thprev" style="background:linear-gradient(135deg,#060d1a,#1a3a7c);"></div>
-        <div class="thn">Dark</div>
-        <div style="font-size:11px;color:var(--txt2);">Dark mode</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- SUPPORT MODAL -->
-<div class="ov" id="ov-sup">
-  <div class="modal">
-    <div class="mclose" id="supcl">✕</div>
-    <div class="mtitle">💬 Customer Support</div>
-    <div class="msub">Send us your issue — we reply ASAP</div>
-    <div id="supmsgs" style="max-height:280px;overflow-y:auto;padding:4px 0;"></div>
-    <div id="supstat" style="font-size:11px;color:var(--txt2);text-align:center;padding:4px;"></div>
-    <div class="sinrow">
-      <input class="sinp" id="supinp" placeholder="Type your message or problem..."/>
-      <button class="ssndbtn" id="supsnd">Send</button>
-    </div>
-  </div>
-</div>
-
-<!-- GAME OVERLAY -->
-<div class="gov" id="gov">
-  <div class="gmodal">
-    <div class="gmcl" id="gclose">✕</div>
-    <div class="gmt" id="gmt"></div>
-    <div class="gms" id="gms"></div>
-    <div class="gma" id="gma"></div>
-    <div class="gbp">
-      <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;margin-bottom:8px;">Bet Amount</div>
-      <div class="gbchips" id="gchips"></div>
-      <input class="gbinp" type="number" id="ginp" placeholder="Custom amount..."/>
-      <div class="gbbal">Balance: <strong id="gbal">Rs. 0</strong></div>
-    </div>
-    <div class="gres" id="gres"><div class="grt" id="grt"></div><div class="grs" id="grs"></div></div>
-    <button class="gpbtn" id="gpbtn">Play</button>
-  </div>
-</div>
-
-<!-- CRASH OVERLAY -->
-<div class="gov" id="cov">
-  <div class="gmodal">
-    <div class="gmcl" id="ccl">✕</div>
-    <div class="gmt" id="ctitle">Rocket Crash</div>
-    <canvas id="ccanvas"></canvas>
-    <div class="chud">
-      <div class="cmult" id="cmult">1.00x</div>
-      <div style="font-size:12px;color:var(--txt2);">
-        Auto cashout: <input type="number" id="cauto" style="width:55px;padding:3px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);font-size:12px;color:var(--txt);" placeholder="0.00"/>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0.75rem;">
-      <button class="mbtn" id="ccashout" disabled>Cash Out</button>
-      <button class="mbtn" id="cplay">Play</button>
-    </div>
-    <div class="gbp">
-      <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;margin-bottom:8px;">Bet Amount</div>
-      <div class="gbchips" id="cchips"></div>
-      <input class="gbinp" type="number" id="cinp" placeholder="Bet amount..."/>
-      <div class="gbbal">Balance: <strong id="cbal">Rs. 0</strong></div>
-    </div>
-    <div class="gres" id="cres"><div class="grt" id="crt"></div><div class="grs" id="crs"></div></div>
-  </div>
-</div>
-
-<script src="tc-firebase.js"></script>
-<script src="tc-core.js"></script>
-<script src="tc-sport.js"></script>
-<script src="tc-deposit.js"></script>
-<script src="tc-games.js"></script>
-</body>
-</html>

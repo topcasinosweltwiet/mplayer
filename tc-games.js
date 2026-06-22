@@ -35,7 +35,7 @@ var ALL_CASINO = [
   {id:'wheel1',name:'Money Wheel',icon:'🎰',type:'wheel'},
   {id:'coin1',name:'Coin Flip',icon:'🪙',type:'coin',mult:2,c1:'HEADS',c2:'TAILS'},
   {id:'coin2',name:'Gold Coin',icon:'💰',type:'coin',mult:3,c1:'GOLD',c2:'SILVER'},
-  {id:'lucky1',name:'Lucky Number',icon:'🔮',type:'lucky',max:10,mult:5},
+  {id:'lucky1',name:'Lucky Number',icon:'🔮',type:'lucky',max:20,mult:5},
   {id:'keno1',name:'Keno',icon:'📊',type:'keno',mult:8},
   {id:'mines1',name:'Mines',icon:'💣',type:'mines',mines:3},
   {id:'mines2',name:'Hard Mines',icon:'BOMB',type:'mines',mines:8},
@@ -99,41 +99,86 @@ function renderHotGames(games) {
 
 function renderCasinoGrid() {
   var wrap = $('cgrid'); if(!wrap)return; wrap.innerHTML = '';
-  ALL_CASINO.forEach(function(g) {
-    var card = document.createElement('div'); card.className = 'ccard';
-    card.innerHTML = '<div class="cico">'+g.icon+'</div><div class="cname">'+g.name+'</div>';
-    card.addEventListener('click', function(){
-      if (!CD) { alert('Please login first.'); return; }
-      openGame(g);
+
+  var sections = [
+    {
+      label: '🚀 Crash Games',
+      color: '#4ade80',
+      games: ALL_CASINO.filter(function(g){return g.type==='crash';})
+    },
+    {
+      label: '🎰 Slot Games',
+      color: '#f6c90e',
+      games: ALL_CASINO.filter(function(g){return g.type==='slots';})
+    },
+    {
+      label: '⭕ Plinko',
+      color: '#3b82f6',
+      games: ALL_CASINO.filter(function(g){return g.type==='plinko';})
+    },
+    {
+      label: '💣 Mines',
+      color: '#e74c3c',
+      games: ALL_CASINO.filter(function(g){return g.type==='mines';})
+    },
+    {
+      label: '🏗 Tower',
+      color: '#9b59b6',
+      games: ALL_CASINO.filter(function(g){return g.type==='tower';})
+    },
+    {
+      label: '🃏 Card Games',
+      color: '#60a5fa',
+      games: ALL_CASINO.filter(function(g){return ['bj','hilo','war','dt','bac'].indexOf(g.type)>=0;})
+    },
+    {
+      label: '🎲 Dice & Numbers',
+      color: '#f97316',
+      games: ALL_CASINO.filter(function(g){return ['dice','lucky','keno','bigsmall','oddeven'].indexOf(g.type)>=0;})
+    },
+    {
+      label: '🎡 Other Games',
+      color: '#a78bfa',
+      games: ALL_CASINO.filter(function(g){return ['roulette','wheel','coin','colorpick','colorball'].indexOf(g.type)>=0;})
+    },
+  ];
+
+  sections.forEach(function(sec) {
+    if(!sec.games.length) return;
+
+    // Section header
+    var hdr = document.createElement('div');
+    hdr.style.cssText = 'display:flex;align-items:center;gap:8px;padding:14px 0 8px;';
+    hdr.innerHTML =
+      '<div style="font-size:14px;font-weight:800;color:var(--txt);">' + sec.label + '</div>' +
+      '<div style="flex:1;height:1px;background:var(--border);"></div>';
+    wrap.appendChild(hdr);
+
+    // Games grid
+    var grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;';
+    sec.games.forEach(function(g) {
+      var card = document.createElement('div');
+      card.style.cssText =
+        'background:var(--card);border:1px solid var(--border);border-radius:12px;' +
+        'padding:14px 8px;text-align:center;cursor:pointer;transition:all 0.15s;' +
+        'position:relative;overflow:hidden;';
+      card.innerHTML =
+        '<div style="font-size:26px;margin-bottom:6px;">' + g.icon + '</div>' +
+        '<div style="font-size:11px;font-weight:700;color:var(--txt);line-height:1.3;">' + g.name + '</div>';
+      if(g.badge || g.type==='crash') {
+        card.innerHTML += '<div style="position:absolute;top:6px;right:6px;background:#e74c3c;color:#fff;font-size:8px;font-weight:800;padding:1px 5px;border-radius:20px;letter-spacing:0.5px;">LIVE</div>';
+      }
+      // Color accent bar at bottom
+      card.innerHTML += '<div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:' + sec.color + ';opacity:0.6;"></div>';
+      card.addEventListener('click', function(){ openGame(g); });
+      card.addEventListener('mouseenter', function(){ card.style.borderColor=sec.color; card.style.transform='scale(1.03)'; });
+      card.addEventListener('mouseleave', function(){ card.style.borderColor='var(--border)'; card.style.transform='scale(1)'; });
+      grid.appendChild(card);
     });
-    wrap.appendChild(card);
+    wrap.appendChild(grid);
   });
 }
-
-// ── HELPERS ──
-function buildChips(wrapId, inpId) {
-  var wrap = $(wrapId); if(!wrap) return; wrap.innerHTML = '';
-  [50,100,500,1000,5000].forEach(function(v) {
-    var c = document.createElement('div'); c.className = 'gbchip';
-    c.textContent = v >= 1000 ? (v/1000)+'K' : v;
-    c.addEventListener('click', function(){var inp=$(inpId);if(inp)inp.value=v;});
-    wrap.appendChild(c);
-  });
-}
-
-function showGRes(resId,titleId,subId,won,title,sub) {
-  var r=$(resId); if(!r)return;
-  r.className = 'gres '+(won?'win':'loss'); r.style.display = 'block';
-  st(titleId,title); st(subId,sub||'');
-}
-
-function getBetVal(inpId) {
-  var inp=$(inpId); if(!inp)return 0;
-  return parseInt(inp.value)||0;
-}
-
-// ── OPEN GAME ──
-var currentGame = null, gState = {};
 
 function openGame(g) {
   if (!CD) { alert('Please login.'); return; }
@@ -639,8 +684,9 @@ function refundBet(bet) {
   var nb=bal()+bet;CD.balance=nb;fbUp('/players/'+CK,{balance:nb});ub();
 }
 
+var MAX_BAL = 10000000; // Rs.10,000,000 max balance cap
 function finishGame(g,bet,won,payout,result,btn) {
-  if(won){var wb=bal()+payout;CD.balance=wb;fbUp('/players/'+CK,{balance:wb});ub();}
+  if(won){var wb=Math.min(bal()+payout,MAX_BAL);CD.balance=wb;fbUp('/players/'+CK,{balance:wb});ub();}
   fbPush('/playerTxns',{playerKey:CK,uid:CD.uid,game:g.name||g.id,bet:bet,win:won,payout:won?payout:0,time:new Date().toISOString()});
   showGRes('gres','grt','grs',won,won?'WIN! +'+fmt(payout):'Result: Lost '+fmt(bet),result);
   if(btn){btn.disabled=false;btn.textContent='Play Again';}

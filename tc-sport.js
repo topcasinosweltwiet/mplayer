@@ -77,10 +77,18 @@ function renderSportCards(events) {
     wrap.innerHTML = '<div style="color:var(--txt2);padding:1rem;font-size:13px;text-align:center;">No events available</div>';
     return;
   }
+  // Horizontal scroll container for mobile
+  var hscroll = document.createElement('div');
+  hscroll.style.cssText = 'display:flex;gap:10px;overflow-x:auto;padding:0 1rem 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;';
+  hscroll.style.setProperty('scrollbar-width','none');
   events.forEach(function(ev) {
     var card = buildSportCard(ev);
-    wrap.appendChild(card);
+    card.style.minWidth = '280px';
+    card.style.maxWidth = '280px';
+    card.style.flexShrink = '0';
+    hscroll.appendChild(card);
   });
+  wrap.appendChild(hscroll);
 }
 
 function buildSportCard(ev) {
