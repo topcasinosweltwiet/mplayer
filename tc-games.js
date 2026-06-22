@@ -716,276 +716,339 @@ function buildWheelSVG(){
   return svg;
 }
 
-// ── CRASH ── (Stake-style with rocket, curve, stars)
-var CS = {running:false,bet:0,mult:1.00,crashAt:1.5,animId:null,cashedOut:false,theme:{name:'Crash',color:'#4ade80',lc:'#4ade80'}};
+// ── CRASH ── (Continuous auto-fly loop like real crash games)
+var CS = {
+  running:false, bet:0, mult:1.00, crashAt:1.5,
+  animId:null, cashedOut:false, betPlaced:false,
+  phase:'waiting', // 'waiting' | 'flying' | 'crashed'
+  countdown:10, countdownTimer:null,
+  theme:{name:'Crash',color:'#4ade80',lc:'#4ade80'}
+};
 
 function openCrash(g) {
-  if (CS.animId) cancelAnimationFrame(CS.animId);
-  CS = {running:false,bet:0,mult:1.00,crashAt:1.5,animId:null,cashedOut:false,
-        theme:g.theme||{name:g.name||'Crash',color:'#4ade80',lc:'#4ade80'}};
-  st('ctitle', g.name||'Crash');
-  var md=$('cmult'); if(md){md.textContent='1.00x';md.style.color='#4ade80';md.style.fontSize='42px';}
-  $('cres').style.display='none'; $('cres').className='gres';
-  $('ccashout').disabled=true; $('cplay').disabled=false; $('cplay').textContent='Place Bet & Play';
-  $('cinp').value=''; $('cauto').value='';
-  buildChips('cchips','cinp'); st('cbal',fmt(bal()));
+  if(CS.animId) cancelAnimationFrame(CS.animId);
+  if(CS.countdownTimer) clearInterval(CS.countdownTimer);
+  CS = {running:false,bet:0,mult:1.00,crashAt:1.5,animId:null,cashedOut:false,betPlaced:false,
+        phase:'waiting',countdown:10,countdownTimer:null,
+        theme:g.theme||{name:g.name||'Rocket Crash',color:'#4ade80',lc:'#4ade80'}};
+  st('ctitle', g.name||'Rocket Crash');
   $('cov').classList.add('open');
-  drawIdle();
+  buildChips('cchips','cinp');
+  st('cbal', fmt(bal()));
+  $('cinp').value=''; $('cauto').value='';
+  var md=$('cmult'); if(md){md.textContent='1.00x';md.style.color='#4ade80';md.style.fontSize='42px';}
+  $('cres').style.display='none';
+  $('ccashout').disabled=true;
+  $('cplay').disabled=false; $('cplay').textContent='Place Bet';
+  // Start the continuous loop immediately
+  startCrashLoop();
 }
 
-function drawIdle() {
+function startCrashLoop() {
+  // Begin a new round - show countdown so player can place bet
+  CS.phase = 'waiting';
+  CS.betPlaced = false;
+  CS.cashedOut = false;
+  CS.mult = 1.00;
+  CS.countdown = 10;
   var c=$('ccanvas'); if(!c)return;
   c.width=c.offsetWidth||400; c.height=220;
-  var ctx=c.getContext('2d'), W=c.width, H=c.height;
-  // Dark space background
-  ctx.fillStyle='#050a18'; ctx.fillRect(0,0,W,H);
-  // Grid lines
-  drawGrid(ctx,W,H,'#0d2040');
-  // Stars
-  drawStars(ctx,W,H,40);
-  // Rocket sitting at bottom-left
-  drawRocket(ctx, W*0.08, H*0.82, -Math.PI/4); // point up-right when idle
-  // "Place bet to start" text
-  ctx.fillStyle='rgba(74,222,128,0.7)'; ctx.font='bold 14px sans-serif';
-  ctx.textAlign='center'; ctx.fillText('Place your bet and press Play',W/2,H/2-10);
-}
 
-function drawGrid(ctx,W,H,color) {
-  ctx.strokeStyle=color; ctx.lineWidth=1;
-  for(var x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-  for(var y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-}
-
-function drawStars(ctx,W,H,count) {
-  ctx.fillStyle='rgba(255,255,255,0.6)';
-  for(var i=0;i<count;i++){
-    var sx=((i*137+W*0.3)%W), sy=((i*97+H*0.2)%(H*0.7));
-    var size=i%3===0?1.5:0.8;
-    ctx.beginPath(); ctx.arc(sx,sy,size,0,Math.PI*2); ctx.fill();
-  }
-}
-
-function drawRocket(ctx, x, y, angle) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(angle); // angle already corrected before call
-  // Body
-  ctx.fillStyle='#e0e8ff';
-  ctx.beginPath(); ctx.ellipse(0,0,8,16,0,0,Math.PI*2); ctx.fill();
-  // Nose
-  ctx.fillStyle='#e74c3c';
-  ctx.beginPath(); ctx.moveTo(0,-16); ctx.lineTo(-6,0); ctx.lineTo(6,0); ctx.closePath(); ctx.fill();
-  // Wings
-  ctx.fillStyle='#3b7dd8';
-  ctx.beginPath(); ctx.moveTo(-8,6); ctx.lineTo(-14,18); ctx.lineTo(-2,10); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(8,6); ctx.lineTo(14,18); ctx.lineTo(2,10); ctx.closePath(); ctx.fill();
-  // Window
-  ctx.fillStyle='#4ade80';
-  ctx.beginPath(); ctx.arc(0,-2,4,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='rgba(74,222,128,0.4)';
-  ctx.beginPath(); ctx.arc(0,-2,2,0,Math.PI*2); ctx.fill();
-  // Flame
-  if(CS.running) {
-    var flameColors=['#f6c90e','#e67e22','#e74c3c'];
-    flameColors.forEach(function(fc,fi){
-      ctx.fillStyle=fc;
-      ctx.beginPath();
-      ctx.ellipse(0,14+fi*4,(4-fi),(8-fi*2),0,0,Math.PI*2);
-      ctx.fill();
-    });
-    // Particles
-    ctx.fillStyle='rgba(246,201,0,0.5)';
-    for(var i=0;i<3;i++){
-      ctx.beginPath();
-      ctx.arc((Math.random()-0.5)*10, 22+Math.random()*10, Math.random()*2+0.5, 0, Math.PI*2);
-      ctx.fill();
-    }
-  }
-  ctx.restore();
-}
-
-function startCrash() {
-  var bet = parseInt($('cinp').value)||0;
-  if(!bet||bet<1){alert('Enter a bet amount.');return;}
-  if(bet>bal()){alert('Insufficient balance!');return;}
-  var auto = parseFloat($('cauto').value)||0;
-
-  // Deduct bet immediately
-  var nb=bal()-bet; CD.balance=nb; fbUp('/players/'+CK,{balance:nb}); ub();
-
-  var won=wc(true);
-  var crashAt;
-  if(won){crashAt=parseFloat((1.50+Math.random()*2.5).toFixed(2));}
-  else{
-    if(Math.random()<0.75)crashAt=parseFloat((1.01+Math.random()*0.10).toFixed(2));
-    else crashAt=parseFloat((1.11+Math.random()*0.38).toFixed(2));
-    if(auto>1&&auto<=crashAt){crashAt=parseFloat((auto-0.01).toFixed(2));if(crashAt<1.01)crashAt=1.01;}
+  // Decide crash point for this round (hidden from player)
+  var won = wc(true);
+  if(won){ CS.crashAt = parseFloat((1.50+Math.random()*3.0).toFixed(2)); }
+  else {
+    if(Math.random()<0.6) CS.crashAt = parseFloat((1.01+Math.random()*0.12).toFixed(2));
+    else CS.crashAt = parseFloat((1.13+Math.random()*0.40).toFixed(2));
   }
 
-  CS.bet=bet; CS.cashedOut=false; CS.running=true; CS.mult=1.00; CS.crashAt=crashAt;
+  $('cplay').disabled=false; $('cplay').textContent='Place Bet';
+  $('ccashout').disabled=true;
+  var md=$('cmult'); if(md){md.textContent='Launching in 10s...';md.style.color='#f6c90e';md.style.fontSize='22px';}
   $('cres').style.display='none';
-  $('cplay').disabled=true; $('cplay').textContent='Running...';
-  $('ccashout').disabled=false;
-  var md=$('cmult'); if(md){md.style.color='#4ade80';md.style.fontSize='42px';}
 
+  if(CS.countdownTimer) clearInterval(CS.countdownTimer);
+  CS.countdownTimer = setInterval(function(){
+    CS.countdown--;
+    var md2=$('cmult');
+    if(md2) md2.textContent='Launching in '+CS.countdown+'s...';
+    drawWaiting(CS.countdown);
+    if(CS.countdown<=0){
+      clearInterval(CS.countdownTimer);
+      CS.countdownTimer=null;
+      beginFlight();
+    }
+  }, 1000);
+  drawWaiting(10);
+}
+
+function drawWaiting(sec) {
+  var c=$('ccanvas'); if(!c)return;
+  var ctx=c.getContext('2d'), W=c.width, H=c.height;
+  ctx.fillStyle='#050a18'; ctx.fillRect(0,0,W,H);
+  drawCrashGrid(ctx,W,H);
+  drawCrashStars(ctx,W,H);
+  // Rocket sitting at launch position
+  drawCrashRocket(ctx, W*0.08, H*0.80, -Math.PI*0.35, false);
+  // Countdown circle
+  var cx2=W/2, cy2=H/2-10;
+  ctx.beginPath(); ctx.arc(cx2,cy2,40,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fill();
+  ctx.strokeStyle='#f6c90e'; ctx.lineWidth=3; ctx.stroke();
+  ctx.fillStyle='#f6c90e'; ctx.font='bold 28px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(sec, cx2, cy2);
+  ctx.font='bold 11px sans-serif'; ctx.fillStyle='rgba(246,201,0,0.7)';
+  ctx.fillText('Place your bet!', cx2, cy2+28);
+  ctx.textBaseline='alphabetic';
+  // Previous crash info
+  if(CS._lastCrash){
+    ctx.font='11px sans-serif'; ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.textAlign='right';
+    ctx.fillText('Last: '+CS._lastCrash+'x', W-10, H-8);
+  }
+}
+
+function beginFlight() {
+  CS.phase = 'flying';
+  CS.running = true;
+  CS.mult = 1.00;
+  // Lock in bet if placed
+  if(CS.betPlaced && CS.bet>0){
+    $('ccashout').disabled=false;
+    $('cplay').disabled=true; $('cplay').textContent='Running...';
+  } else {
+    $('cplay').disabled=true; $('cplay').textContent='Next round...';
+    $('ccashout').disabled=true;
+  }
+  var md=$('cmult'); if(md){md.textContent='1.00x';md.style.color='#4ade80';md.style.fontSize='42px';}
   var c=$('ccanvas'); c.width=c.offsetWidth||400; c.height=220;
   var ctx=c.getContext('2d'), W=c.width, H=c.height;
-  var t0=performance.now();
-  var pts=[]; // path history
-  var trailParticles=[]; // explosion particles on crash
-  var startX=W*0.08, startY=H*0.82;
+  var t0=performance.now(), pts=[];
+  var startX=W*0.08, startY=H*0.80;
+  var auto=parseFloat($('cauto')?$('cauto').value:0)||0;
 
-  function frame(ts) {
+  function frame(ts){
     if(!CS.running)return;
     var el=(ts-t0)/1000;
     CS.mult=parseFloat(Math.max(1.00,Math.pow(1.06,el*6)).toFixed(2));
+    // Auto cashout
+    if(auto>1&&CS.mult>=auto&&!CS.cashedOut&&CS.betPlaced) { doCashout(); return; }
+    if(CS.mult>=CS.crashAt){ doCrashAnim(ctx,W,H,pts,startY); return; }
 
-    if(auto>1&&CS.mult>=auto&&!CS.cashedOut){doCashout();return;}
-    if(CS.mult>=CS.crashAt){doCrash(ctx,W,H,pts);return;}
-
-    // Clear
     ctx.fillStyle='#050a18'; ctx.fillRect(0,0,W,H);
-    drawGrid(ctx,W,H,'#0a1830');
-    drawStars(ctx,W,H,30);
+    drawCrashGrid(ctx,W,H);
+    drawCrashStars(ctx,W,H);
 
-    // Curve progress (exponential feel)
+    // Curve path
     var progress=Math.min(0.92,(CS.mult-1)/(Math.max(1.5,CS.crashAt)-1));
-    // Curve: starts bottom-left, goes up and right exponentially
-    var rx=startX+progress*W*0.85;
-    var ry=startY-Math.pow(progress,0.7)*H*0.78;
+    var rx=startX+progress*W*0.88;
+    var ry=startY-Math.pow(progress,0.65)*H*0.75;
     pts.push({x:rx,y:ry});
 
-    // Draw filled area under curve
     if(pts.length>1){
-      var grad=ctx.createLinearGradient(0,startY-H*0.5,0,startY);
-      grad.addColorStop(0,CS.theme.lc+'33');
-      grad.addColorStop(1,'transparent');
-      ctx.beginPath();
-      ctx.moveTo(startX,startY);
+      // Filled area
+      var grad=ctx.createLinearGradient(0,startY-H*0.6,0,startY);
+      grad.addColorStop(0,CS.theme.lc+'22'); grad.addColorStop(1,'transparent');
+      ctx.beginPath(); ctx.moveTo(startX,startY);
       pts.forEach(function(p){ctx.lineTo(p.x,p.y);});
-      ctx.lineTo(pts[pts.length-1].x,startY);
-      ctx.closePath();
+      ctx.lineTo(pts[pts.length-1].x,startY); ctx.closePath();
       ctx.fillStyle=grad; ctx.fill();
-
-      // Draw curve line with glow
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x,pts[0].y);
+      // Line
+      ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
       pts.forEach(function(p){ctx.lineTo(p.x,p.y);});
-      ctx.strokeStyle=CS.theme.lc;
-      ctx.lineWidth=3;
-      ctx.shadowColor=CS.theme.color;
-      ctx.shadowBlur=12;
-      ctx.stroke();
-      ctx.shadowBlur=0;
+      ctx.strokeStyle=CS.theme.lc; ctx.lineWidth=3;
+      ctx.shadowColor=CS.theme.color; ctx.shadowBlur=10; ctx.stroke(); ctx.shadowBlur=0;
     }
 
-    // X axis line
-    ctx.strokeStyle='rgba(74,222,128,0.2)'; ctx.lineWidth=1;
+    // X axis
+    ctx.strokeStyle='rgba(74,222,128,0.15)'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(startX,startY); ctx.lineTo(W-10,startY); ctx.stroke();
 
-    // Y axis line
-    ctx.beginPath(); ctx.moveTo(startX,startY); ctx.lineTo(startX,10); ctx.stroke();
-
-    // Multiplier labels on Y axis
-    ctx.fillStyle='rgba(74,222,128,0.4)'; ctx.font='10px sans-serif'; ctx.textAlign='left';
-    [1.5,2,3,5].forEach(function(m){
-      if(m<=CS.crashAt){
-        var labelY=startY-Math.pow((m-1)/(Math.max(1.5,CS.crashAt)-1),0.7)*H*0.78;
-        if(labelY>15&&labelY<startY-10){
-          ctx.fillText(m+'x',startX+4,labelY-3);
-          ctx.strokeStyle='rgba(74,222,128,0.1)';ctx.lineWidth=1;
-          ctx.setLineDash([3,3]);
-          ctx.beginPath();ctx.moveTo(startX+30,labelY);ctx.lineTo(W-10,labelY);ctx.stroke();
+    // Multiplier labels
+    ctx.fillStyle='rgba(74,222,128,0.35)'; ctx.font='10px sans-serif'; ctx.textAlign='left';
+    [1.5,2,3,5,10].forEach(function(m){
+      if(m<CS.mult+0.5){
+        var lp2=startY-Math.pow((m-1)/(Math.max(1.5,CS.crashAt)-1),0.65)*H*0.75;
+        if(lp2>15&&lp2<startY-5){
+          ctx.fillText(m+'x',startX+4,lp2-3);
+          ctx.strokeStyle='rgba(74,222,128,0.08)'; ctx.setLineDash([3,3]);
+          ctx.beginPath(); ctx.moveTo(startX+28,lp2); ctx.lineTo(W-10,lp2); ctx.stroke();
           ctx.setLineDash([]);
         }
       }
     });
 
-    // Draw rocket at tip of curve
-    if(pts.length>1){
-      var lp=pts[pts.length-1];
-      var pp=pts[pts.length-2];
-      // angle of travel direction (canvas: y increases downward)
-      var angle=Math.atan2(lp.y-pp.y, lp.x-pp.x);
-      // rocket nose points up in local space (-PI/2), so add PI/2 to align with travel
-      drawRocket(ctx,lp.x,lp.y,angle+Math.PI/2);
+    // Rocket at tip
+    if(pts.length>2){
+      var lp=pts[pts.length-1], pp=pts[pts.length-3]||pts[pts.length-2];
+      // Angle: rocket should point in direction of travel
+      // travel vector: lp - pp
+      var dx=lp.x-pp.x, dy=lp.y-pp.y;
+      // atan2 gives angle of vector. Rocket points up in local (-PI/2).
+      // We want rocket nose to point toward travel direction.
+      // Rotate so local UP aligns with travel direction:
+      // travel angle = atan2(dy,dx), rocket up = atan2(-1,0) = -PI/2
+      // rotation needed = travel_angle - (-PI/2) = travel_angle + PI/2
+      var travelAngle=Math.atan2(dy,dx);
+      drawCrashRocket(ctx,lp.x,lp.y,travelAngle+Math.PI/2,true);
     }
 
-    // Update multiplier display
+    // Multiplier display
     var md2=$('cmult');
     if(md2){
       md2.textContent=CS.mult.toFixed(2)+'x';
-      // Color changes as mult rises
-      if(CS.mult>=3)md2.style.color='#f6c90e';
+      if(CS.mult>=5)md2.style.color='#e74c3c';
+      else if(CS.mult>=3)md2.style.color='#f6c90e';
       else if(CS.mult>=2)md2.style.color='#e67e22';
       else md2.style.color='#4ade80';
     }
-
     CS.animId=requestAnimationFrame(frame);
   }
   CS.animId=requestAnimationFrame(frame);
 }
 
-function doCashout() {
-  if(!CS.running||CS.cashedOut)return;
-  CS.cashedOut=true; CS.running=false;
-  if(CS.animId)cancelAnimationFrame(CS.animId);
-  $('ccashout').disabled=true; $('cplay').disabled=false; $('cplay').textContent='Play Again';
-  var payout=Math.floor(CS.bet*CS.mult);
-  var nb=bal()+payout; CD.balance=nb; fbUp('/players/'+CK,{balance:nb});
-  fbPush('/playerTxns',{playerKey:CK,uid:CD.uid,game:CS.theme.name,bet:CS.bet,win:true,payout:payout,time:new Date().toISOString()});
-  ub();
-  var md=$('cmult'); if(md){md.style.color='#4ade80';}
-  showGRes('cres','crt','crs',true,'Cashed out at '+CS.mult.toFixed(2)+'x — Won '+fmt(payout)+'!','Profit: +'+fmt(payout-CS.bet));
+function drawCrashGrid(ctx,W,H){
+  ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1;
+  for(var x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(var y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
 }
 
-function doCrash(ctx,W,H,pts) {
-  CS.running=false;
+function drawCrashStars(ctx,W,H){
+  for(var i=0;i<35;i++){
+    var sx=((i*137+53)%W), sy=((i*97+17)%(H*0.85));
+    var sz=i%4===0?1.5:0.7;
+    ctx.fillStyle='rgba(255,255,255,'+(0.3+i%3*0.15)+')';
+    ctx.beginPath(); ctx.arc(sx,sy,sz,0,Math.PI*2); ctx.fill();
+  }
+}
+
+function drawCrashRocket(ctx, x, y, rotation, withFlame){
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  // Body - white ellipse
+  ctx.fillStyle='#dde8ff';
+  ctx.beginPath(); ctx.ellipse(0,0,7,15,0,0,Math.PI*2); ctx.fill();
+  // Nose cone - red pointed tip
+  ctx.fillStyle='#e74c3c';
+  ctx.beginPath(); ctx.moveTo(0,-15); ctx.lineTo(-7,0); ctx.lineTo(7,0); ctx.closePath(); ctx.fill();
+  // Left wing
+  ctx.fillStyle='#2255b8';
+  ctx.beginPath(); ctx.moveTo(-7,4); ctx.lineTo(-14,18); ctx.lineTo(-2,9); ctx.closePath(); ctx.fill();
+  // Right wing
+  ctx.beginPath(); ctx.moveTo(7,4); ctx.lineTo(14,18); ctx.lineTo(2,9); ctx.closePath(); ctx.fill();
+  // Window
+  ctx.fillStyle='#4ade80';
+  ctx.beginPath(); ctx.arc(0,-2,4,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(200,255,200,0.6)';
+  ctx.beginPath(); ctx.arc(-1,-3,2,0,Math.PI*2); ctx.fill();
+  // Flame (only when flying)
+  if(withFlame){
+    var t2=Date.now()*0.01;
+    var fh=12+Math.sin(t2)*4;
+    var grad2=ctx.createLinearGradient(0,12,0,12+fh);
+    grad2.addColorStop(0,'#f6c90e'); grad2.addColorStop(0.5,'#e67e22'); grad2.addColorStop(1,'rgba(231,76,60,0)');
+    ctx.fillStyle=grad2;
+    ctx.beginPath(); ctx.moveTo(-5,12); ctx.quadraticCurveTo(0,12+fh+4,5,12); ctx.closePath(); ctx.fill();
+    // Small side flames
+    ctx.fillStyle='rgba(246,201,0,0.4)';
+    ctx.beginPath(); ctx.ellipse(-2,16,2,4,0.3,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(2,16,2,4,-0.3,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function doCrash(){} // override below
+function doCrashAnim(ctx,W,H,pts,startY){
+  CS.running=false; CS.phase='crashed';
+  CS._lastCrash=CS.crashAt.toFixed(2);
   if(CS.animId)cancelAnimationFrame(CS.animId);
-  $('ccashout').disabled=true; $('cplay').disabled=false; $('cplay').textContent='Play Again';
+  $('ccashout').disabled=true;
+  $('cplay').disabled=true;
 
-  // Draw final state
+  // Draw final curve in red
   ctx.fillStyle='#050a18'; ctx.fillRect(0,0,W,H);
-  drawGrid(ctx,W,H,'#0a1830');
-  drawStars(ctx,W,H,30);
-
-  // Draw curve
-  if(pts&&pts.length>1){
+  drawCrashGrid(ctx,W,H); drawCrashStars(ctx,W,H);
+  if(pts.length>1){
     ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
     pts.forEach(function(p){ctx.lineTo(p.x,p.y);});
     ctx.strokeStyle='#e74c3c'; ctx.lineWidth=3;
-    ctx.shadowColor='#e74c3c'; ctx.shadowBlur=10;
-    ctx.stroke(); ctx.shadowBlur=0;
+    ctx.shadowColor='#e74c3c'; ctx.shadowBlur=8; ctx.stroke(); ctx.shadowBlur=0;
   }
-
   // Explosion at last point
-  if(pts&&pts.length>0){
+  if(pts.length>0){
     var lp=pts[pts.length-1];
-    // Explosion rings
-    [30,50,70].forEach(function(r,i){
-      ctx.beginPath(); ctx.arc(lp.x,lp.y,r,0,Math.PI*2);
-      ctx.strokeStyle='rgba(231,76,60,'+(0.6-i*0.2)+')';
-      ctx.lineWidth=3-i; ctx.stroke();
-    });
-    // Explosion flash
-    var expGrad=ctx.createRadialGradient(lp.x,lp.y,0,lp.x,lp.y,40);
-    expGrad.addColorStop(0,'rgba(255,200,0,0.8)');
-    expGrad.addColorStop(0.4,'rgba(231,76,60,0.5)');
-    expGrad.addColorStop(1,'transparent');
-    ctx.fillStyle=expGrad; ctx.fillRect(0,0,W,H);
-    // CRASHED text at explosion point
-    ctx.fillStyle='#e74c3c'; ctx.font='bold 16px sans-serif'; ctx.textAlign='center';
-    ctx.shadowColor='#e74c3c'; ctx.shadowBlur=20;
-    ctx.fillText('CRASHED!',lp.x,lp.y-50); ctx.shadowBlur=0;
+    // Explosion rings animate
+    var rings=0;
+    var expAnim=setInterval(function(){
+      ctx.fillStyle='#050a18'; ctx.fillRect(0,0,W,H);
+      drawCrashGrid(ctx,W,H); drawCrashStars(ctx,W,H);
+      if(pts.length>1){
+        ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+        pts.forEach(function(p){ctx.lineTo(p.x,p.y);});
+        ctx.strokeStyle='#e74c3c'; ctx.lineWidth=3; ctx.stroke();
+      }
+      // Expanding rings
+      [1,2,3].forEach(function(ri){
+        var r2=(rings+ri*8)%(50+ri*10);
+        ctx.beginPath(); ctx.arc(lp.x,lp.y,r2,0,Math.PI*2);
+        ctx.strokeStyle='rgba(231,76,60,'+(1-r2/60)+')';
+        ctx.lineWidth=2; ctx.stroke();
+      });
+      // Flash
+      var fg=ctx.createRadialGradient(lp.x,lp.y,0,lp.x,lp.y,35);
+      fg.addColorStop(0,'rgba(255,200,0,'+Math.max(0,0.6-rings*0.04)+')');
+      fg.addColorStop(1,'transparent');
+      ctx.fillStyle=fg; ctx.fillRect(0,0,W,H);
+      // Bomb emoji style
+      ctx.font='28px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('💥',lp.x,lp.y+10);
+      rings++;
+      if(rings>20)clearInterval(expAnim);
+    },50);
   }
-
+  // Update multiplier display
   var md=$('cmult');
-  if(md){md.textContent='CRASHED '+CS.crashAt.toFixed(2)+'x';md.style.color='#e74c3c';md.style.fontSize='28px';}
+  if(md){md.textContent='CRASHED @ '+CS.crashAt.toFixed(2)+'x';md.style.color='#e74c3c';md.style.fontSize='26px';}
 
-  if(!CS.cashedOut){
-    fbPush('/playerTxns',{playerKey:CK,uid:CD.uid,game:CS.theme.name,bet:CS.bet,win:false,payout:0,time:new Date().toISOString()});
-    showGRes('cres','crt','crs',false,'Crashed at '+CS.crashAt.toFixed(2)+'x — Lost '+fmt(CS.bet),'Play again!');
+  // Handle bet result
+  if(CS.betPlaced && !CS.cashedOut){
+    fbPush('/playerTxns',{playerKey:CK,uid:CD.uid,game:'Rocket Crash',bet:CS.bet,win:false,payout:0,time:new Date().toISOString()});
+    showGRes('cres','crt','crs',false,'Crashed at '+CS.crashAt.toFixed(2)+'x — Lost '+fmt(CS.bet),'Better luck next round!');
   }
+  CS.betPlaced=false; CS.bet=0;
+
+  // Auto restart after 4 seconds (show crash for 4s then 10s countdown)
+  setTimeout(function(){
+    $('cres').style.display='none';
+    $('cplay').disabled=false; $('cplay').textContent='Place Bet';
+    startCrashLoop();
+  }, 4000);
+}
+
+function startCrash(){
+  // Place bet button
+  var bet=parseInt($('cinp').value)||0;
+  if(!bet||bet<1){alert('Enter a bet amount.');return;}
+  if(bet>bal()){alert('Insufficient balance!');return;}
+  if(CS.phase==='flying'){alert('Round in progress! Wait for next round.');return;}
+
+  // Deduct balance
+  var nb=bal()-bet; CD.balance=nb; fbUp('/players/'+CK,{balance:nb}); ub();
+  CS.bet=bet; CS.betPlaced=true;
+  $('cplay').textContent='Bet Placed! ('+fmt(bet)+')';
+  $('cplay').disabled=true;
+  st('cbal',fmt(bal()));
+}
+
+function doCashout(){
+  if(!CS.running||CS.cashedOut||!CS.betPlaced)return;
+  CS.cashedOut=true;
+  $('ccashout').disabled=true;
+  var payout=Math.floor(CS.bet*CS.mult);
+  var nb=bal()+payout; CD.balance=nb; fbUp('/players/'+CK,{balance:nb}); ub();
+  fbPush('/playerTxns',{playerKey:CK,uid:CD.uid,game:'Rocket Crash',bet:CS.bet,win:true,payout:payout,time:new Date().toISOString()});
+  showGRes('cres','crt','crs',true,'Cashed out '+CS.mult.toFixed(2)+'x — Won '+fmt(payout)+'!','Profit: +'+fmt(payout-CS.bet));
+  st('cbal',fmt(bal()));
 }
 
 // ── MINES ──

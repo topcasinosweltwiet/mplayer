@@ -58,6 +58,11 @@ function applyTheme(t) {
 
 // ── AUTH ──
 document.addEventListener('DOMContentLoaded', function() {
+  // Hide loading screen with fade
+  setTimeout(function() {
+    var ls = $('loading-screen');
+    if (ls) { ls.style.transition='opacity 0.5s'; ls.style.opacity='0'; setTimeout(function(){ls.style.display='none';},500); }
+  }, 800);
   $('tl').onclick = function() {
     $('tl').classList.add('active'); $('tr').classList.remove('active');
     $('fl').style.display = ''; $('fr').style.display = 'none'; hd('aerr');
@@ -108,6 +113,7 @@ function refreshCaptcha() {
   var aEl = $('captcha-a'); if (aEl) aEl.value = '';
   var eEl = $('captcha-err'); if (eEl) eEl.style.display = 'none';
 }
+window.refreshCaptcha = refreshCaptcha; // expose for onclick
 
 function doReg() {
   var u = ($('ru').value || '').trim(), p = $('rp').value || '', p2 = $('rp2').value || '';
@@ -116,9 +122,9 @@ function doReg() {
   if (p !== p2) { aerr('Passwords do not match.'); return; }
 
   // ── CAPTCHA CHECK ──
-  var captchaInput = parseInt(($('captcha-a') ? $('captcha-a').value : '')) || null;
+  var captchaRaw = ($('captcha-a') ? $('captcha-a').value : '').trim();
   var captchaErr = $('captcha-err');
-  if (captchaInput === null || captchaInput !== _captchaAnswer) {
+  if (captchaRaw === '' || parseInt(captchaRaw) !== _captchaAnswer) {
     if (captchaErr) captchaErr.style.display = 'block';
     if ($('captcha-a')) $('captcha-a').value = '';
     refreshCaptcha();
