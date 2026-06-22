@@ -58,10 +58,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--tx
 .spcat.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 
 /* ── SPORT SCROLL ── */
-.spscroll{display:flex;flex-direction:column;gap:8px;padding:8px 1rem;}
+.spscroll{padding:4px 0 8px;}
+.spscroll > div{display:flex;gap:10px;overflow-x:auto;padding:0 1rem 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.spscroll > div::-webkit-scrollbar{display:none;}
 
 /* ── SPORT CARD - 1xbet style ── */
-.spcard{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:0 2px 8px var(--sh);transition:transform 0.15s;}
+.spcard{background:var(--card);border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:0 2px 8px var(--sh);transition:transform 0.15s;min-width:280px;max-width:280px;flex-shrink:0;}
 .spcard:active{transform:scale(0.99);}
 
 /* Card top - league + live */

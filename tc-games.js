@@ -180,23 +180,38 @@ function renderCasinoGrid() {
   });
 }
 
+function getBetVal(id) {
+  var el=$(id); if(!el) return 0;
+  return parseInt(el.value)||0;
+}
+
+function buildChips(chipsId, inputId) {
+  var wrap=$(chipsId); if(!wrap)return; wrap.innerHTML='';
+  [50,100,500,1000,5000].forEach(function(v){
+    var b=document.createElement('div'); b.className='chip';
+    b.textContent=v>=1000?Math.floor(v/1000)+'K':v;
+    b.addEventListener('click',function(){var inp=$(inputId);if(inp)inp.value=v;});
+    wrap.appendChild(b);
+  });
+}
+
 function openGame(g) {
   if (!CD) { alert('Please login.'); return; }
   if (g.type === 'crash') { openCrash(g); return; }
   currentGame = g; gState = {};
   $('gov').classList.add('open');
-  st('gmt', g.name||'Game');
-  st('gms', g.sub||'Place your bet and play!');
+  st('gtitle', g.name||'Game');
+  st('gsub', g.sub||'Place your bet and play!');
   $('gres').style.display = 'none'; $('gres').className = 'gres';
-  $('ginp').value = ''; st('gbal', fmt(bal()));
-  buildChips('gchips','ginp');
+  $('gbinp').value = ''; st('gbal', fmt(bal()));
+  buildChips('gchips','gbinp');
   buildGameArea(g);
   $('gpbtn').disabled = false; $('gpbtn').textContent = 'Play';
   $('gpbtn').onclick = function(){doPlayGame(g);};
 }
 
 function doPlayGame(g) {
-  var bet = getBetVal('ginp');
+  var bet = getBetVal('gbinp');
   if (!bet || bet < 1) { alert('Enter a bet amount.'); return; }
   if (bet > bal()) { alert('Insufficient balance! Balance: '+fmt(bal())); return; }
 

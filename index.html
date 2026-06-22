@@ -62,7 +62,7 @@
 
 <!-- MAIN APP -->
 <div id="app" style="display:none;">
-  <div class="top-header">
+  <div class="top-header" id="top-header">
     <div class="brand">Top<span>Casinos</span></div>
     <div class="hdr-r">
       <div id="notifbtn" class="hbtn" style="position:relative;">🔔<span class="nbadge" id="nbadge">0</span></div>
@@ -126,7 +126,7 @@
 
   <!-- SETTINGS -->
   <div id="pg-set" class="mcontent page">
-    <div class="setlist">
+    <div class="setlist" id="setlist">
       <div class="setitem" id="si-prof"><div class="siico" style="background:rgba(126,179,255,0.1);">👤</div><div class="sitxt"><div class="siname">Profile</div><div class="sidesc">Change password</div></div><div class="siarw">›</div></div>
       <div class="setitem" id="si-kyc"><div class="siico" style="background:rgba(246,201,0,0.1);">🪪</div><div class="sitxt"><div class="siname">KYC Verification</div><div class="sidesc">Verify your identity</div></div><div class="siarw">›</div></div>
       <div class="setitem" id="si-theme"><div class="siico" style="background:rgba(155,89,182,0.1);">🎨</div><div class="sitxt"><div class="siname">Theme</div><div class="sidesc">Light or dark mode</div></div><div class="siarw">›</div></div>
@@ -154,6 +154,7 @@
   <div class="gmodal">
     <button class="gclose" id="gclose">✕</button>
     <div class="gtitle" id="gtitle"></div>
+    <div class="gbal" id="gsub" style="font-size:12px;color:var(--txt2);margin-bottom:4px;"></div>
     <div class="gbal">Balance: <span id="gbal"></span></div>
     <div id="gma"></div>
     <div class="gres" id="gres" style="display:none;">
