@@ -11,6 +11,19 @@ function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function pick(arr){return arr[rnd(0,arr.length-1)];}
 function om(i){var e=$(i);if(e)e.classList.add('open');}
 function cm(i){var e=$(i);if(e)e.classList.remove('open');}
+function closeCrashGame(){
+  if(typeof CS==='undefined')return;
+  if(CS.animId){cancelAnimationFrame(CS.animId);CS.animId=null;}
+  if(CS.countdownTimer){clearInterval(CS.countdownTimer);CS.countdownTimer=null;}
+  CS.running=false; CS.phase='idle';
+  if(CS.betPlaced&&CS.bet>0&&!CS.cashedOut&&typeof bal==='function'){
+    var wb=bal()+CS.bet; if(typeof CD!=='undefined'){CD.balance=wb;} 
+    if(typeof fbUp==='function'&&typeof CK!=='undefined')fbUp('/players/'+CK,{balance:wb});
+    if(typeof ub==='function')ub();
+  }
+  CS.betPlaced=false; CS.bet=0;
+  var cov=$('cov'); if(cov)cov.classList.remove('open');
+}
 
 // ── WIN RATES — VERY LOW ──
 var _streak = 0;
@@ -239,18 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
   $('gpbtn').onclick = function() { if (currentGame) playGame(currentGame); };
 
   // Crash
-  $('cclose').onclick = function() {
-    // Stop all crash timers and animations
-    if (CS.animId) { cancelAnimationFrame(CS.animId); CS.animId = null; }
-    if (CS.countdownTimer) { clearInterval(CS.countdownTimer); CS.countdownTimer = null; }
-    CS.running = false; CS.phase = 'waiting';
-    // Refund bet if active
-    if (CS.betPlaced && CS.bet > 0 && !CS.cashedOut) {
-      var wb = bal() + CS.bet; CD.balance = wb; fbUp('/players/' + CK, {balance: wb}); ub();
-    }
-    CS.betPlaced = false; CS.bet = 0;
-    $('cov').classList.remove('open');
-  };
+  $('cclose').onclick = closeCrashGame;
   $('cplay').onclick = startCrash;
   $('ccashout').onclick = doCashout;
 

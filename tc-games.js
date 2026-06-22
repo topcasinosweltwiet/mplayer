@@ -782,25 +782,29 @@ function openCrash(g) {
   buildChips('cchips','cinp');
   st('cbal', fmt(bal()));
   $('cinp').value=''; $('cauto').value='';
-  var md=$('cmult'); if(md){md.textContent='1.00x';md.style.color='#4ade80';md.style.fontSize='42px';}
+  var md=$('cmult'); if(md){md.textContent='Place bet to join next round';md.style.color='#4ade80';md.style.fontSize='18px';}
   $('cres').style.display='none';
   $('ccashout').disabled=true;
   $('cplay').disabled=false; $('cplay').textContent='Place Bet';
-  // Start the continuous loop immediately
-  startCrashLoop();
+  // Wait for modal to render then init canvas
+  setTimeout(function(){ initCrashCanvas(); startCrashLoop(); }, 100);
+}
+
+function initCrashCanvas(){
+  var c=$('ccanvas'); if(!c)return;
+  // Get actual width after render
+  var W=c.parentElement?c.parentElement.offsetWidth-32:400;
+  c.width=W||400; c.height=220;
 }
 
 function startCrashLoop() {
-  // Begin a new round - show countdown so player can place bet
   CS.phase = 'waiting';
   CS.betPlaced = false;
   CS.cashedOut = false;
   CS.mult = 1.00;
-  CS.countdown = 10;
-  var c=$('ccanvas'); if(!c)return;
-  c.width=c.offsetWidth||400; c.height=220;
+  CS.countdown = 8;
 
-  // Decide crash point for this round (hidden from player)
+  // Set crash point for this round
   var won = wc(true);
   if(won){ CS.crashAt = parseFloat((1.50+Math.random()*3.0).toFixed(2)); }
   else {
@@ -810,48 +814,68 @@ function startCrashLoop() {
 
   $('cplay').disabled=false; $('cplay').textContent='Place Bet';
   $('ccashout').disabled=true;
-  var md=$('cmult'); if(md){md.textContent='Launching in 10s...';md.style.color='#f6c90e';md.style.fontSize='22px';}
+  var md=$('cmult');
+  if(md){md.textContent='Next round in '+CS.countdown+'s';md.style.color='#f6c90e';md.style.fontSize='20px';}
   $('cres').style.display='none';
+
+  // Draw idle rocket during countdown
+  initCrashCanvas();
+  drawWaiting(CS.countdown);
 
   if(CS.countdownTimer) clearInterval(CS.countdownTimer);
   CS.countdownTimer = setInterval(function(){
+    if(!$('cov').classList.contains('open')){clearInterval(CS.countdownTimer);CS.countdownTimer=null;return;}
     CS.countdown--;
     var md2=$('cmult');
-    if(md2) md2.textContent='Launching in '+CS.countdown+'s...';
+    if(md2) md2.textContent='Next round in '+CS.countdown+'s';
     drawWaiting(CS.countdown);
     if(CS.countdown<=0){
-      clearInterval(CS.countdownTimer);
-      CS.countdownTimer=null;
+      clearInterval(CS.countdownTimer); CS.countdownTimer=null;
       beginFlight();
     }
   }, 1000);
-  drawWaiting(10);
 }
+
 
 function drawWaiting(sec) {
   var c=$('ccanvas'); if(!c)return;
-  var ctx=c.getContext('2d'), W=c.width, H=c.height;
+  if(!c.width||c.width<10) initCrashCanvas();
+  var W=c.width, H=c.height;
+  if(!W||!H)return;
+  var ctx=c.getContext('2d');
+  // Background
   ctx.fillStyle='#050a18'; ctx.fillRect(0,0,W,H);
   drawCrashGrid(ctx,W,H);
   drawCrashStars(ctx,W,H);
-  // Rocket sitting at launch position
-  drawCrashRocket(ctx, W*0.08, H*0.80, Math.PI*0.15, false); // slight tilt up-right
+
+  // Draw rocket/plane pointing up-right (idle)
+  drawCrashRocket(ctx, W*0.1, H*0.78, -Math.PI*0.35, false);
+
   // Countdown circle
-  var cx2=W/2, cy2=H/2-10;
-  ctx.beginPath(); ctx.arc(cx2,cy2,40,0,Math.PI*2);
-  ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fill();
-  ctx.strokeStyle='#f6c90e'; ctx.lineWidth=3; ctx.stroke();
-  ctx.fillStyle='#f6c90e'; ctx.font='bold 28px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText(sec, cx2, cy2);
-  ctx.font='bold 11px sans-serif'; ctx.fillStyle='rgba(246,201,0,0.7)';
-  ctx.fillText('Place your bet!', cx2, cy2+28);
+  var cx=W/2, cy=H*0.42;
+  ctx.beginPath(); ctx.arc(cx,cy,38,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,10,30,0.85)'; ctx.fill();
+  ctx.strokeStyle='#f6c90e'; ctx.lineWidth=3;
+  // Progress arc
+  var prog=(8-Math.min(sec,8))/8;
+  ctx.beginPath(); ctx.arc(cx,cy,38,-Math.PI/2,-Math.PI/2+prog*Math.PI*2);
+  ctx.strokeStyle='#f6c90e'; ctx.stroke();
+  // Number
+  ctx.fillStyle='#f6c90e'; ctx.font='bold 26px sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(Math.max(0,sec), cx, cy);
+  ctx.font='bold 10px sans-serif'; ctx.fillStyle='rgba(246,201,0,0.7)';
+  ctx.fillText('PLACE BET NOW', cx, cy+22);
   ctx.textBaseline='alphabetic';
-  // Previous crash info
+
+  // Previous crash
   if(CS._lastCrash){
-    ctx.font='11px sans-serif'; ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.textAlign='right';
+    ctx.font='11px sans-serif'; ctx.fillStyle='rgba(255,255,255,0.3)';
+    ctx.textAlign='right';
     ctx.fillText('Last: '+CS._lastCrash+'x', W-10, H-8);
   }
 }
+
 
 function beginFlight() {
   CS.phase = 'flying';
