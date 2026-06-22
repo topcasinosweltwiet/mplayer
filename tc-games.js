@@ -187,6 +187,15 @@ function getBetVal(id) {
   return parseInt(el.value)||0;
 }
 
+function showGRes(resId, titleId, subId, won, title, sub) {
+  var res=$(resId); if(!res)return;
+  res.style.display='block';
+  res.className='gres '+(won?'win':'lose');
+  var t=$(titleId); if(t){t.textContent=title||'';}
+  var s=$(subId); if(s){s.textContent=sub||'';}
+}
+
+
 function buildChips(chipsId, inputId) {
   var wrap=$(chipsId); if(!wrap)return; wrap.innerHTML='';
   [50,100,500,1000,5000].forEach(function(v){
@@ -866,7 +875,7 @@ function drawWaiting(sec) {
   drawCrashStars(ctx,W,H);
 
   // Draw rocket/plane pointing up-right (idle)
-  drawCrashRocket(ctx, W*0.1, H*0.78, -Math.PI*0.25, false);
+  drawCrashRocket(ctx, W*0.1, H*0.78, -Math.PI/4, false);
 
   // Countdown circle
   var cx=W/2, cy=H*0.42;
@@ -976,7 +985,7 @@ function beginFlight() {
       // travel angle = atan2(dy,dx), rocket up = atan2(-1,0) = -PI/2
       // rotation needed = travel_angle - (-PI/2) = travel_angle + PI/2
       var travelAngle=Math.atan2(dy,dx);
-      drawCrashRocket(ctx,lp.x,lp.y,travelAngle-Math.PI/2,true);
+      drawCrashRocket(ctx,lp.x,lp.y,travelAngle,true);
     }
 
     // Multiplier display
@@ -1009,102 +1018,67 @@ function drawCrashStars(ctx,W,H){
 }
 
 function drawCrashRocket(ctx, x, y, rotation, withFlame){
-  var vehicle = CS.vehicle || 'rocket';
-  if(vehicle==='plane') { drawPlane(ctx,x,y,rotation,withFlame); return; }
-  if(vehicle==='lightning') { drawLightningBolt(ctx,x,y,rotation,withFlame); return; }
-  // Default: Rocket
+  var vehicle = (typeof CS !== 'undefined' && CS.vehicle) ? CS.vehicle : 'rocket';
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(rotation);
-  // Body
-  ctx.fillStyle='#dde8ff';
-  ctx.beginPath(); ctx.ellipse(0,0,7,15,0,0,Math.PI*2); ctx.fill();
-  // Nose cone
-  ctx.fillStyle='#e74c3c';
-  ctx.beginPath(); ctx.moveTo(0,-15); ctx.lineTo(-7,0); ctx.lineTo(7,0); ctx.closePath(); ctx.fill();
-  // Wings
-  ctx.fillStyle='#2255b8';
-  ctx.beginPath(); ctx.moveTo(-7,4); ctx.lineTo(-14,18); ctx.lineTo(-2,9); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(7,4); ctx.lineTo(14,18); ctx.lineTo(2,9); ctx.closePath(); ctx.fill();
-  // Window
-  ctx.fillStyle='#4ade80';
-  ctx.beginPath(); ctx.arc(0,-2,4,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='rgba(200,255,200,0.6)';
-  ctx.beginPath(); ctx.arc(-1,-3,2,0,Math.PI*2); ctx.fill();
-  // Flame
-  if(withFlame){
-    var t2=Date.now()*0.012;
-    var fh=12+Math.sin(t2)*4;
-    var grad2=ctx.createLinearGradient(0,12,0,12+fh);
-    grad2.addColorStop(0,'#f6c90e'); grad2.addColorStop(0.5,'#e67e22'); grad2.addColorStop(1,'rgba(231,76,60,0)');
-    ctx.fillStyle=grad2;
-    ctx.beginPath(); ctx.moveTo(-5,12); ctx.quadraticCurveTo(0,12+fh+4,5,12); ctx.closePath(); ctx.fill();
-  }
-  ctx.restore();
-}
-
-// ── PLANE (Aviator style) ──
-function drawPlane(ctx, x, y, rotation, withFlame){
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(rotation);
-  // Fuselage
-  ctx.fillStyle='#c8d8ff';
-  ctx.beginPath(); ctx.ellipse(0,0,5,18,0,0,Math.PI*2); ctx.fill();
-  // Nose
-  ctx.fillStyle='#fff';
-  ctx.beginPath(); ctx.moveTo(0,-18); ctx.lineTo(-4,-8); ctx.lineTo(4,-8); ctx.closePath(); ctx.fill();
-  // Main wings (wide)
-  ctx.fillStyle='#3b82f6';
-  ctx.beginPath(); ctx.moveTo(-5,0); ctx.lineTo(-22,6); ctx.lineTo(-22,10); ctx.lineTo(-5,8); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(5,0); ctx.lineTo(22,6); ctx.lineTo(22,10); ctx.lineTo(5,8); ctx.closePath(); ctx.fill();
-  // Tail wings
-  ctx.fillStyle='#2255b8';
-  ctx.beginPath(); ctx.moveTo(-3,12); ctx.lineTo(-10,18); ctx.lineTo(-3,16); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(3,12); ctx.lineTo(10,18); ctx.lineTo(3,16); ctx.closePath(); ctx.fill();
-  // Windows
-  ctx.fillStyle='#93c5fd';
-  [-6,-2,2].forEach(function(wy){
-    ctx.beginPath(); ctx.ellipse(0,wy,2.5,2,0,0,Math.PI*2); ctx.fill();
-  });
-  // Engine exhaust trail
-  if(withFlame){
-    ctx.fillStyle='rgba(150,200,255,0.4)';
-    ctx.beginPath(); ctx.ellipse(-18,8,3,6,0.2,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(18,8,3,6,-0.2,0,Math.PI*2); ctx.fill();
-    // Contrail
-    ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=2; ctx.setLineDash([4,4]);
-    ctx.beginPath(); ctx.moveTo(-22,8); ctx.lineTo(-35,12); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(22,8); ctx.lineTo(35,12); ctx.stroke();
-    ctx.setLineDash([]);
-  }
-  ctx.restore();
-}
-
-// ── LIGHTNING BOLT (Lightning crash) ──
-function drawLightningBolt(ctx, x, y, rotation, withFlame){
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(rotation);
-  // Main bolt shape
-  ctx.fillStyle='#f6c90e';
-  ctx.shadowColor='#f6c90e'; ctx.shadowBlur=15;
-  ctx.beginPath();
-  ctx.moveTo(4,-18); ctx.lineTo(-2,-2); ctx.lineTo(4,-2);
-  ctx.lineTo(-4,18); ctx.lineTo(2,2); ctx.lineTo(-4,2);
-  ctx.closePath(); ctx.fill();
-  // Inner highlight
-  ctx.fillStyle='#fff';
-  ctx.shadowBlur=0;
-  ctx.beginPath();
-  ctx.moveTo(2,-14); ctx.lineTo(-1,-2); ctx.lineTo(2,-2);
-  ctx.lineTo(-2,12); ctx.lineTo(1,2); ctx.lineTo(-2,2);
-  ctx.closePath(); ctx.fill();
-  // Glow effect when flying
-  if(withFlame){
-    ctx.strokeStyle='rgba(246,201,0,0.6)'; ctx.lineWidth=4; ctx.shadowColor='#f6c90e'; ctx.shadowBlur=20;
-    ctx.beginPath(); ctx.moveTo(0,-18); ctx.lineTo(0,18); ctx.stroke();
+  if(vehicle === 'plane') {
+    // Plane body
+    ctx.fillStyle='#c8d8ff'; ctx.beginPath(); ctx.ellipse(0,0,5,18,0,0,Math.PI*2); ctx.fill();
+    // Nose
+    ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.moveTo(0,-20); ctx.lineTo(-5,-8); ctx.lineTo(5,-8); ctx.closePath(); ctx.fill();
+    // Wings
+    ctx.fillStyle='#3b82f6';
+    ctx.beginPath(); ctx.moveTo(-3,2); ctx.lineTo(-22,8); ctx.lineTo(-22,12); ctx.lineTo(-3,10); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(3,2); ctx.lineTo(22,8); ctx.lineTo(22,12); ctx.lineTo(3,10); ctx.closePath(); ctx.fill();
+    // Tail
+    ctx.beginPath(); ctx.moveTo(-3,14); ctx.lineTo(-10,20); ctx.lineTo(-3,18); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(3,14); ctx.lineTo(10,20); ctx.lineTo(3,18); ctx.closePath(); ctx.fill();
+    // Windows
+    ctx.fillStyle='rgba(147,197,253,0.8)';
+    for(var wi=-4;wi<=4;wi+=4){ctx.beginPath();ctx.ellipse(0,wi,2,1.5,0,0,Math.PI*2);ctx.fill();}
+    // Engine glow
+    if(withFlame){
+      ctx.fillStyle='rgba(150,200,255,0.5)';
+      ctx.beginPath(); ctx.ellipse(-20,10,3,5,0.3,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(20,10,3,5,-0.3,0,Math.PI*2); ctx.fill();
+    }
+  } else if(vehicle === 'lightning') {
+    // Lightning bolt
+    ctx.shadowColor='#f6c90e'; ctx.shadowBlur=withFlame?20:10;
+    ctx.fillStyle='#f6c90e';
+    ctx.beginPath();
+    ctx.moveTo(4,-20); ctx.lineTo(-3,-2); ctx.lineTo(4,-2);
+    ctx.lineTo(-4,20); ctx.lineTo(3,2); ctx.lineTo(-4,2);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.8)';
+    ctx.beginPath();
+    ctx.moveTo(2,-15); ctx.lineTo(-1,-2); ctx.lineTo(2,-2);
+    ctx.lineTo(-2,15); ctx.lineTo(1,2); ctx.lineTo(-2,2);
+    ctx.closePath(); ctx.fill();
     ctx.shadowBlur=0;
+  } else {
+    // Rocket (default)
+    // Body
+    ctx.fillStyle='#dde8ff'; ctx.beginPath(); ctx.ellipse(0,0,7,15,0,0,Math.PI*2); ctx.fill();
+    // Nose cone
+    ctx.fillStyle='#e74c3c'; ctx.beginPath(); ctx.moveTo(0,-20); ctx.lineTo(-7,-5); ctx.lineTo(7,-5); ctx.closePath(); ctx.fill();
+    // Fins
+    ctx.fillStyle='#2255b8';
+    ctx.beginPath(); ctx.moveTo(-7,8); ctx.lineTo(-14,20); ctx.lineTo(-3,12); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(7,8); ctx.lineTo(14,20); ctx.lineTo(3,12); ctx.closePath(); ctx.fill();
+    // Window
+    ctx.fillStyle='#4ade80'; ctx.beginPath(); ctx.arc(0,-2,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(200,255,200,0.6)'; ctx.beginPath(); ctx.arc(-1,-3,2,0,Math.PI*2); ctx.fill();
+    // Flame
+    if(withFlame){
+      var t=Date.now()*0.015;
+      var fh=14+Math.sin(t)*5;
+      var g2=ctx.createLinearGradient(0,14,0,14+fh);
+      g2.addColorStop(0,'#f6c90e'); g2.addColorStop(0.5,'#e67e22'); g2.addColorStop(1,'rgba(231,76,60,0)');
+      ctx.fillStyle=g2;
+      ctx.beginPath(); ctx.moveTo(-5,14); ctx.quadraticCurveTo(0,14+fh+5,5,14); ctx.closePath(); ctx.fill();
+    }
   }
   ctx.restore();
 }

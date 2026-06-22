@@ -205,33 +205,33 @@ document.addEventListener('DOMContentLoaded', function() {
   $('bn-s').onclick = function() { showPage('pg-set'); var sb=$('set-bal');if(sb)sb.textContent=fmt(bal()); };
 
   // Settings items
-  $('si-pr').onclick = openProfile;
+  $('si-prof').onclick = openProfile;
   $('si-kyc').onclick = openKYC;
-  $('si-th').onclick = function() { om('ov-theme'); };
+  $('si-theme').onclick = function() { om('ov-theme'); };
   $('si-sup').onclick = openSupport;
-  $('si-lo').onclick = function() { if (confirm('Logout?')) doLogout(); };
+  $('si-out').onclick = function() { if (confirm('Logout?')) doLogout(); };
 
   // Theme
-  $('thcl').onclick = function() { cm('ov-theme'); };
+  $('theme-cl').onclick = function() { cm('ov-theme'); };
   $('th-li').onclick = function() { applyTheme('light'); cm('ov-theme'); };
   $('th-dk').onclick = function() { applyTheme('dark'); cm('ov-theme'); };
 
   // Notif
   $('notifbtn').onclick = openNotif;
-  $('ncl').onclick = function() { cm('ov-notif'); };
+  $('notif-cl').onclick = function() { cm('ov-notif'); };
 
   // Profile
-  $('prcl').onclick = function() { cm('ov-prof'); };
-  $('pwsave').onclick = savePassword;
+  $('prof-cl').onclick = function() { cm('ov-prof'); };
+  $('prof-save').onclick = savePassword;
 
   // KYC
-  $('kyccl').onclick = function() { cm('ov-kyc'); };
+  $('kyc-cl').onclick = function() { cm('ov-kyc'); };
   $('kycsave').onclick = saveKYC;
 
   // Support
-  $('supcl').onclick = function() { cm('ov-sup'); };
-  $('supsnd').onclick = sendSupport;
-  $('supinp').onkeydown = function(e) { if (e.key === 'Enter') sendSupport(); };
+  $('sup-cl').onclick = function() { cm('ov-sup'); };
+  $('sup-send').onclick = sendSupport;
+  $('sup-inp').onkeydown = function(e) { if (e.key === 'Enter') sendSupport(); };
 
   // Sport bet
   $('sbet-cl').onclick = function() { cm('ov-sbet'); };
@@ -257,15 +257,8 @@ document.addEventListener('DOMContentLoaded', function() {
   $('ccashout').onclick = doCashout;
 
   // WD
-  $('wci').oninput = onCityInput;
-  $('wsi').oninput = onStreetInput;
-  $('wgenbtn').onclick = genWdCode;
-  $('wcpbtn').onclick = function() { navigator.clipboard.writeText($('wdcval').textContent).then(function() { $('wcpbtn').textContent = 'Copied!'; setTimeout(function() { $('wcpbtn').textContent = 'Copy'; }, 2000); }); };
-  $('wcanbtn').onclick = cancelWdCode;
 
   // Deposit
-  $('dsubmit').onclick = submitDeposit;
-  $('dcpbtn').onclick = function() { if (!depCrypto) return; navigator.clipboard.writeText(depCrypto.address).then(function() { $('dcpbtn').textContent = 'Copied!'; setTimeout(function() { $('dcpbtn').textContent = 'Copy Address'; }, 2000); }); };
 
   // History tabs
   $('ht-sp').onclick = function() { $('ht-sp').classList.add('active'); $('ht-ca').classList.remove('active'); loadHistory('sport'); };
@@ -301,24 +294,24 @@ document.addEventListener('DOMContentLoaded', function() {
 function openProfile() {
   if (!CD) return;
   st('piun', CD.username || ''); st('piid', '#' + CD.uid); st('pibal', fmt(bal()));
-  var av = $('prav'); if (av) av.textContent = (CD.username || '?')[0].toUpperCase();
-  $('pwold').value = ''; $('pwnew').value = ''; $('pwcf').value = '';
-  hd('pwerr'); hd('pwok');
+  var av = $('prof-user'); if (av) av.textContent = (CD.username || '?')[0].toUpperCase();
+  $('prof-cp').value = ''; $('prof-np').value = ''; $('prof-cp').value = '';
+  hd('prof-err'); hd('pwok');
   om('ov-prof');
 }
 function savePassword() {
-  var old = $('pwold').value, nw = $('pwnew').value, cf = $('pwcf').value;
-  hd('pwerr'); hd('pwok');
-  if (!old || !nw || !cf) { sh('pwerr', 'Fill all fields.'); return; }
-  if (old !== CD.password) { sh('pwerr', 'Current password incorrect.'); return; }
-  if (nw.length < 4) { sh('pwerr', 'Min 4 characters.'); return; }
-  if (nw !== cf) { sh('pwerr', 'Passwords do not match.'); return; }
-  $('pwsave').textContent = 'Saving...'; $('pwsave').disabled = true;
+  var old = $('prof-cp').value, nw = $('prof-np').value, cf = $('prof-cp').value;
+  hd('prof-err'); hd('pwok');
+  if (!old || !nw || !cf) { sh('prof-err', 'Fill all fields.'); return; }
+  if (old !== CD.password) { sh('prof-err', 'Current password incorrect.'); return; }
+  if (nw.length < 4) { sh('prof-err', 'Min 4 characters.'); return; }
+  if (nw !== cf) { sh('prof-err', 'Passwords do not match.'); return; }
+  $('prof-save').textContent = 'Saving...'; $('prof-save').disabled = true;
   fbUp('/players/' + CK, { password: nw }).then(function() {
     CD.password = nw; sh('pwok', 'Password changed successfully!');
-    $('pwold').value = ''; $('pwnew').value = ''; $('pwcf').value = '';
-    $('pwsave').textContent = 'Save Password'; $('pwsave').disabled = false;
-  }).catch(function(e) { sh('pwerr', 'Error: ' + e.message); $('pwsave').textContent = 'Save Password'; $('pwsave').disabled = false; });
+    $('prof-cp').value = ''; $('prof-np').value = ''; $('prof-cp').value = '';
+    $('prof-save').textContent = 'Save Password'; $('prof-save').disabled = false;
+  }).catch(function(e) { sh('prof-err', 'Error: ' + e.message); $('prof-save').textContent = 'Save Password'; $('prof-save').disabled = false; });
 }
 
 // ── KYC ──
@@ -372,7 +365,7 @@ function checkNotifCount() {
 }
 function openNotif() {
   om('ov-notif');
-  var list = $('nlist'); list.innerHTML = '<div style="text-align:center;color:var(--txt2);padding:1.5rem;">Loading...</div>';
+  var list = $('notif-list'); list.innerHTML = '<div style="text-align:center;color:var(--txt2);padding:1.5rem;">Loading...</div>';
   fbGet('/notifications/' + CK).then(function(data) {
     if (!data || !Object.keys(data).length) { list.innerHTML = '<div style="text-align:center;color:var(--txt2);padding:2rem;">No notifications yet.</div>'; return; }
     var entries = Object.entries(data).sort(function(a, b) { return new Date(b[1].time) - new Date(a[1].time); });
@@ -417,7 +410,7 @@ function openSupport() {
 function loadSupportMsgs() {
   if (!CK) return;
   fbGet('/support/' + CK).then(function(data) {
-    var wrap = $('supmsgs');
+    var wrap = $('sup-msgs');
     if (!data || !Object.keys(data).length) { wrap.innerHTML = '<div style="text-align:center;color:var(--txt2);padding:1.5rem;font-size:13px;">No messages yet. Tell us your problem!</div>'; return; }
     var entries = Object.entries(data).sort(function(a, b) { return new Date(a[1].time) - new Date(b[1].time); });
     wrap.innerHTML = entries.map(function(e) {
@@ -431,9 +424,9 @@ function loadSupportMsgs() {
   }).catch(function() {});
 }
 function sendSupport() {
-  var msg = $('supinp').value.trim(); if (!msg || !CK) return;
-  $('supsnd').disabled = true; $('supinp').value = '';
+  var msg = $('sup-inp').value.trim(); if (!msg || !CK) return;
+  $('sup-send').disabled = true; $('sup-inp').value = '';
   fbPush('/support/' + CK, { msg: msg, sender: 'player', playerName: CD.username, playerUid: CD.uid, time: new Date().toISOString() }).then(function() {
-    loadSupportMsgs(); $('supsnd').disabled = false;
-  }).catch(function() { $('supsnd').disabled = false; });
+    loadSupportMsgs(); $('sup-send').disabled = false;
+  }).catch(function() { $('sup-send').disabled = false; });
 }
