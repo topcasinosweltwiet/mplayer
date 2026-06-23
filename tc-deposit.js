@@ -7,7 +7,7 @@ function renderIcon(icon, size){
   size = size || 40;
   if(!icon) return '<span style="font-size:'+(size*0.7)+'px;">💰</span>';
   if(icon.startsWith('http')){
-    return '<img src="'+icon+'" style="width:'+size+'px;height:'+size+'px;border-radius:8px;object-fit:contain;display:block;"/>';
+    return '<img src="'+icon+'" style="width:'+size+'px;height:'+size+'px;border-radius:10px;object-fit:contain;display:block;"/>';
   }
   return '<span style="font-size:'+(size*0.7)+'px;">'+icon+'</span>';
 }
@@ -111,12 +111,23 @@ window.loadDepositSections=loadDepositSections;
 
 function buildDepositCard(key,sec){
   var card=document.createElement('div');
-  card.style.cssText='background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all 0.15s;';
-  card.innerHTML='<div style="margin-bottom:8px;display:flex;align-items:center;justify-content:center;">'+renderIcon(sec.icon,44)+'</div>'+
-    '<div style="font-size:12px;font-weight:700;color:var(--txt);">'+(sec.title||'')+'</div>';
+  card.style.cssText='background:var(--card);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.15s;overflow:hidden;position:relative;';
+
+  // Bonus badge if set
+  var badge=sec.badge?'<div style="position:absolute;top:6px;right:6px;background:#e74c3c;color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;z-index:2;">'+sec.badge+'</div>':'';
+
+  // Icon area — white background like 1xbet
+  var iconHtml='<div style="background:#fff;padding:18px 10px 14px;display:flex;align-items:center;justify-content:center;min-height:80px;">'+renderIcon(sec.icon,60)+'</div>';
+
+  // Name bar — dark blue like 1xbet
+  var nameBar='<div style="background:#1a3a6a;padding:6px 6px;text-align:center;">'+
+    '<div style="font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(sec.title||'')+'</div>'+
+  '</div>';
+
+  card.innerHTML=badge+iconHtml+nameBar;
   card.addEventListener('click',function(){openDepositModal(key,sec);});
-  card.addEventListener('mouseenter',function(){card.style.borderColor='var(--accent)';});
-  card.addEventListener('mouseleave',function(){card.style.borderColor='var(--border)';});
+  card.addEventListener('mouseenter',function(){card.style.borderColor='var(--accent)';card.style.transform='scale(1.03)';});
+  card.addEventListener('mouseleave',function(){card.style.borderColor='var(--border)';card.style.transform='scale(1)';});
   return card;
 }
 
@@ -378,10 +389,11 @@ function loadWithdrawSections(){
         var override=allowedOverrides[key];
         var allowed=override==='allowed'?true:override==='blocked'?false:usedToDeposit;
         var card=document.createElement('div');
-        card.style.cssText='background:var(--card);border:1.5px solid '+(allowed?'var(--border)':'rgba(231,76,60,0.3)')+';border-radius:12px;padding:14px 10px;text-align:center;cursor:'+(allowed?'pointer':'default')+';position:relative;transition:all 0.15s;';
-        card.innerHTML='<div style="margin-bottom:8px;display:flex;align-items:center;justify-content:center;">'+renderIcon(sec.icon,44)+'</div>'+
-          '<div style="font-size:12px;font-weight:700;color:'+(allowed?'var(--txt)':'var(--txt2)')+';">'+(sec.title||'')+'</div>'+
-          (!allowed?'<div style="font-size:9px;color:#e74c3c;margin-top:4px;">🔒 Not unlocked</div>':'');
+        card.style.cssText='background:var(--card);border:1px solid '+(allowed?'var(--border)':'rgba(231,76,60,0.3)')+';border-radius:10px;cursor:'+(allowed?'pointer':'default')+';position:relative;overflow:hidden;transition:all 0.15s;';
+        var wdBadge=!allowed?'<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);border-radius:10px;display:flex;align-items:center;justify-content:center;z-index:2;"><div style="font-size:24px;">🔒</div></div>':'';
+        card.innerHTML=wdBadge+
+          '<div style="background:#fff;padding:18px 10px 14px;display:flex;align-items:center;justify-content:center;min-height:80px;">'+renderIcon(sec.icon,60)+'</div>'+
+          '<div style="background:#1a3a6a;padding:6px;text-align:center;"><div style="font-size:11px;font-weight:700;color:'+(allowed?'#fff':'rgba(255,255,255,0.5)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(sec.title||'')+'</div></div>';
         if(allowed){
           card.addEventListener('click',function(){openWithdrawModal(key,sec);});
           card.addEventListener('mouseenter',function(){card.style.borderColor='var(--accent)';});
