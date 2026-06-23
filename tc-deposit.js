@@ -1,6 +1,16 @@
 // tc-deposit.js — Deposit & Withdrawal
 
 var _depLoaded=false, _wdLoaded=false;
+
+// Render icon - supports emoji OR image URL
+function renderIcon(icon, size){
+  size = size || 40;
+  if(!icon) return '<span style="font-size:'+(size*0.7)+'px;">💰</span>';
+  if(icon.startsWith('http')){
+    return '<img src="'+icon+'" style="width:'+size+'px;height:'+size+'px;border-radius:8px;object-fit:contain;display:block;"/>';
+  }
+  return '<span style="font-size:'+(size*0.7)+'px;">'+icon+'</span>';
+}
 var MIN_WD_EWALLET = 5000;   // Rs. 5000 min for eWallets
 var MIN_WD_CRYPTO  = 30;     // $30 min for crypto
 var MIN_WD_AGENT   = 500;    // Rs. 500 min for agent
@@ -102,7 +112,7 @@ window.loadDepositSections=loadDepositSections;
 function buildDepositCard(key,sec){
   var card=document.createElement('div');
   card.style.cssText='background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all 0.15s;';
-  card.innerHTML='<div style="font-size:26px;margin-bottom:6px;">'+(sec.icon||'💰')+'</div>'+
+  card.innerHTML='<div style="margin-bottom:8px;display:flex;align-items:center;justify-content:center;">'+renderIcon(sec.icon,44)+'</div>'+
     '<div style="font-size:12px;font-weight:700;color:var(--txt);">'+(sec.title||'')+'</div>';
   card.addEventListener('click',function(){openDepositModal(key,sec);});
   card.addEventListener('mouseenter',function(){card.style.borderColor='var(--accent)';});
@@ -125,7 +135,7 @@ function openDepositModal(key,sec){
 
   // Header
   var header='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">'+
-    '<div style="font-size:18px;font-weight:800;color:var(--txt);">'+(sec.icon||'💰')+' '+(sec.title||'Deposit')+'</div>'+
+    '<div style="display:flex;align-items:center;gap:10px;">'+renderIcon(sec.icon,32)+'<div style="font-size:18px;font-weight:800;color:var(--txt);">'+(sec.title||'Deposit')+'</div></div>'+
     '<button id="dep-modal-close" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>'+
   '</div>';
 
@@ -369,7 +379,7 @@ function loadWithdrawSections(){
         var allowed=override==='allowed'?true:override==='blocked'?false:usedToDeposit;
         var card=document.createElement('div');
         card.style.cssText='background:var(--card);border:1.5px solid '+(allowed?'var(--border)':'rgba(231,76,60,0.3)')+';border-radius:12px;padding:14px 10px;text-align:center;cursor:'+(allowed?'pointer':'default')+';position:relative;transition:all 0.15s;';
-        card.innerHTML='<div style="font-size:26px;margin-bottom:6px;">'+(sec.icon||'💸')+'</div>'+
+        card.innerHTML='<div style="margin-bottom:8px;display:flex;align-items:center;justify-content:center;">'+renderIcon(sec.icon,44)+'</div>'+
           '<div style="font-size:12px;font-weight:700;color:'+(allowed?'var(--txt)':'var(--txt2)')+';">'+(sec.title||'')+'</div>'+
           (!allowed?'<div style="font-size:9px;color:#e74c3c;margin-top:4px;">🔒 Not unlocked</div>':'');
         if(allowed){
@@ -441,7 +451,7 @@ function openWithdrawModal(key,sec){
 
   box.innerHTML=
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">'+
-      '<div style="font-size:18px;font-weight:800;color:var(--txt);">'+(sec.icon||'💸')+' '+sec.title+'</div>'+
+      '<div style="display:flex;align-items:center;gap:10px;">'+renderIcon(sec.icon,32)+'<div style="font-size:18px;font-weight:800;color:var(--txt);">'+sec.title+'</div></div>'+
       '<button id="wd-modal-close" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:16px;cursor:pointer;">✕</button>'+
     '</div>'+
     '<div style="background:rgba(246,201,0,0.08);border:1px solid rgba(246,201,0,0.2);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:#f6c90e;">Minimum withdrawal: <strong>'+minLabel+'</strong></div>'+
