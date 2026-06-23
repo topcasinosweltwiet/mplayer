@@ -154,7 +154,28 @@ function doReg() {
       aerr('Username already taken.'); $('rbtn').textContent = 'Create Account'; $('rbtn').disabled = false; return;
     }
     var uid = Date.now();
-    return fbPush('/players', { username: u, password: p, uid: uid, balance: 0, createdAt: new Date().toISOString() });
+    var promoEl = $('rpromo');
+    var promoCode = promoEl ? (promoEl.value||'').trim().toUpperCase() : '';
+    var bonusBalance = 0;
+    // Validate promo code if entered
+    var regSave = function(bonus){
+      return fbPush('/players', { username: u, password: p, uid: uid, balance: bonus, promoCode: promoCode||null, createdAt: new Date().toISOString() });
+    };
+    if(promoCode){
+      // Verify promo code exists and is unlimited usage
+      return fbGet('/affiliates').then(function(affs){
+        var found = null;
+        if(affs) Object.values(affs).forEach(function(a){ if((a.promoCode||'').toUpperCase()===promoCode&&!a.disabled)found=a; });
+        if(found){
+          // Valid code - save with code (unlimited uses)
+          return regSave(0);
+        } else {
+          aerr('Invalid promo code. Please check and try again.');
+          return Promise.resolve(null);
+        }
+      });
+    }
+    return regSave(0);
   }).then(function(res) {
     if (!res) return;
     CK = res.name;
