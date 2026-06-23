@@ -98,10 +98,11 @@
 
   <!-- DEPOSIT / WITHDRAWAL -->
   <div id="pg-dw" class="mcontent page">
-    <!-- TAB BUTTONS -->
-    <div style="display:flex;gap:10px;padding:1rem 1rem 0;">
-      <button id="dw-btn-dep" onclick="switchDWTab('dep')" style="flex:1;padding:14px;border-radius:12px;border:2px solid var(--accent);background:var(--accent);color:#fff;font-size:14px;font-weight:800;cursor:pointer;">Deposit</button>
-      <button id="dw-btn-wd" onclick="switchDWTab('wd')" style="flex:1;padding:14px;border-radius:12px;border:2px solid var(--border);background:var(--bg2);color:var(--txt2);font-size:14px;font-weight:800;cursor:pointer;">Withdraw</button>
+    <!-- 3 NAV BUTTONS -->
+    <div style="display:flex;gap:8px;padding:1rem 1rem 0;">
+      <button id="dw-btn-dep" onclick="switchDWTab('dep')" style="flex:1;padding:12px 6px;border-radius:12px;border:2px solid var(--accent);background:var(--accent);color:#fff;font-size:13px;font-weight:800;cursor:pointer;">💰 Deposit</button>
+      <button id="dw-btn-wd" onclick="switchDWTab('wd')" style="flex:1;padding:12px 6px;border-radius:12px;border:2px solid var(--border);background:var(--bg2);color:var(--txt2);font-size:13px;font-weight:800;cursor:pointer;">💸 Withdraw</button>
+      <button id="dw-btn-hist" onclick="switchDWTab('hist')" style="flex:1;padding:12px 6px;border-radius:12px;border:2px solid var(--border);background:var(--bg2);color:var(--txt2);font-size:13px;font-weight:800;cursor:pointer;">📋 History</button>
     </div>
 
     <!-- DEPOSIT CONTENT -->
@@ -123,13 +124,13 @@
       <div id="withdraw-sections-wrap"></div>
     </div>
 
-    <!-- TRANSACTION HISTORY -->
-    <div style="padding:0 1rem 1rem;">
-      <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:0.8px;padding:14px 0 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-        <span>Transaction History</span>
-        <button onclick="loadTxHistory()" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:700;">Refresh</button>
+    <!-- HISTORY TAB -->
+    <div id="dw-hist" class="dwpg" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0 10px;border-bottom:1px solid var(--border);margin-bottom:10px;">
+        <div style="font-size:14px;font-weight:800;color:var(--txt);">Transaction History</div>
+        <button onclick="loadTxHistory()" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:700;">↻ Refresh</button>
       </div>
-      <div id="tx-history-wrap"><div style="color:var(--txt2);font-size:12px;padding:12px;text-align:center;">No transactions yet.</div></div>
+      <div id="tx-history-wrap"><div style="color:var(--txt2);font-size:13px;padding:20px;text-align:center;">Loading...</div></div>
     </div>
   </div>
 

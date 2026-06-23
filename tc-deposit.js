@@ -7,21 +7,21 @@ var MIN_WD_AGENT   = 500;    // Rs. 500 min for agent
 
 // ── TAB SWITCHING ──
 function switchDWTab(tab){
-  var depEl=$('dw-dep'), wdEl=$('dw-wd');
-  var depBtn=$('dw-btn-dep'), wdBtn=$('dw-btn-wd');
-  if(tab==='dep'){
-    if(depEl)depEl.style.display='';
-    if(wdEl)wdEl.style.display='none';
-    if(depBtn){depBtn.style.background='var(--accent)';depBtn.style.color='#fff';depBtn.style.borderColor='var(--accent)';}
-    if(wdBtn){wdBtn.style.background='var(--bg2)';wdBtn.style.color='var(--txt2)';wdBtn.style.borderColor='var(--border)';}
-    if(!_depLoaded){_depLoaded=true;loadContactAgents();loadDepositSections();}
-  } else {
-    if(depEl)depEl.style.display='none';
-    if(wdEl)wdEl.style.display='';
-    if(depBtn){depBtn.style.background='var(--bg2)';depBtn.style.color='var(--txt2)';depBtn.style.borderColor='var(--border)';}
-    if(wdBtn){wdBtn.style.background='var(--accent)';wdBtn.style.color='#fff';wdBtn.style.borderColor='var(--accent)';}
-    if(!_wdLoaded){_wdLoaded=true;loadWithdrawSections();}
-  }
+  var panels={dep:$('dw-dep'),wd:$('dw-wd'),hist:$('dw-hist')};
+  var btns={dep:$('dw-btn-dep'),wd:$('dw-btn-wd'),hist:$('dw-btn-hist')};
+  // Hide all panels
+  Object.values(panels).forEach(function(p){if(p)p.style.display='none';});
+  // Reset all buttons
+  Object.values(btns).forEach(function(b){
+    if(b){b.style.background='var(--bg2)';b.style.color='var(--txt2)';b.style.borderColor='var(--border)';}
+  });
+  // Show active
+  if(panels[tab])panels[tab].style.display='';
+  if(btns[tab]){btns[tab].style.background='var(--accent)';btns[tab].style.color='#fff';btns[tab].style.borderColor='var(--accent)';}
+  // Load data
+  if(tab==='dep'&&!_depLoaded){_depLoaded=true;loadContactAgents();loadDepositSections();}
+  if(tab==='wd'&&!_wdLoaded){_wdLoaded=true;loadWithdrawSections();}
+  if(tab==='hist'){loadTxHistory();}
 }
 function resetDWTabs(){_depLoaded=false;_wdLoaded=false;}
 window.switchDWTab=switchDWTab;
@@ -118,10 +118,10 @@ function openDepositModal(key,sec){
 
   var ov=document.createElement('div');
   ov.id='dep-modal-ov';
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,10,30,0.85);z-index:9000;display:flex;align-items:flex-end;justify-content:center;';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,10,30,0.85);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;';
 
   var box=document.createElement('div');
-  box.style.cssText='background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:20px;max-height:92vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,20px);';
+  box.style.cssText='background:var(--card);border-radius:16px;width:100%;max-width:480px;padding:20px;max-height:85vh;overflow-y:auto;';
 
   // Header
   var header='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">'+
@@ -381,10 +381,10 @@ function openWithdrawModal(key,sec){
   var minLabel=isCrypto?'$'+MIN_WD_CRYPTO+' USD':'Rs. '+minAmt.toLocaleString('en-NP');
 
   var ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,10,30,0.85);z-index:9000;display:flex;align-items:flex-end;justify-content:center;';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,10,30,0.85);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;';
 
   var box=document.createElement('div');
-  box.style.cssText='background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:20px;max-height:90vh;overflow-y:auto;';
+  box.style.cssText='background:var(--card);border-radius:16px;width:100%;max-width:480px;padding:20px;max-height:85vh;overflow-y:auto;';
 
   // Build fields HTML
   var fieldsHtml='';
@@ -514,9 +514,9 @@ window.openWithdrawModal=openWithdrawModal;
 // ── AGENT WITHDRAWAL MODAL ──
 function openAgentWithdrawalModal(){
   var ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,10,30,0.85);z-index:9000;display:flex;align-items:flex-end;justify-content:center;';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,10,30,0.85);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;';
   var box=document.createElement('div');
-  box.style.cssText='background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:20px;max-height:92vh;overflow-y:auto;';
+  box.style.cssText='background:var(--card);border-radius:16px;width:100%;max-width:480px;padding:20px;max-height:85vh;overflow-y:auto;';
 
   box.innerHTML=
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">'+
@@ -708,31 +708,50 @@ function loadTxHistory(){
     Object.values(deps).forEach(function(d){
       if(d.playerKey===CK){items.push({type:'deposit',amount:d.amount,status:d.status,section:d.section,time:d.time});}
     });
-    Object.values(wds).forEach(function(w){
-      if(w.playerKey===CK){items.push({type:'withdrawal',amount:w.amount,status:w.status,section:w.section,time:w.time});}
+    Object.entries(wds).forEach(function(e){
+      var k=e[0],w=e[1];
+      if(w.playerKey===CK){items.push({type:'withdrawal',amount:w.amount,status:w.status,section:w.section,time:w.time,key:k});}
     });
     // Sort by time desc
     items.sort(function(a,b){return new Date(b.time)-new Date(a.time);});
     if(!items.length){wrap.innerHTML='<div style="color:var(--txt2);font-size:12px;padding:12px;text-align:center;">No transactions yet.</div>';return;}
     wrap.innerHTML='';
-    items.slice(0,20).forEach(function(item){
+    items.slice(0,30).forEach(function(item){
       var isDeposit=item.type==='deposit';
-      var statusColor=item.status==='pending'?'#f6c90e':item.status==='approved'||item.status==='completed'?'#4ade80':'#e74c3c';
-      var statusLabel=item.status==='pending'?'Pending':item.status==='approved'||item.status==='completed'?'Completed':'Rejected';
+      var isPending=item.status==='pending';
+      var statusColor=isPending?'#f6c90e':(item.status==='approved'||item.status==='completed')?'#4ade80':'#e74c3c';
+      var statusLabel=isPending?'Pending':(item.status==='approved'||item.status==='completed')?'Completed':'Rejected';
       var row=document.createElement('div');
-      row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);';
-      row.innerHTML=
+      row.style.cssText='padding:12px 0;border-bottom:1px solid var(--border);';
+      var mainRow=document.createElement('div');
+      mainRow.style.cssText='display:flex;align-items:center;justify-content:space-between;';
+      mainRow.innerHTML=
         '<div style="display:flex;align-items:center;gap:10px;">'+
-          '<div style="width:34px;height:34px;border-radius:50%;background:'+(isDeposit?'rgba(74,222,128,0.1)':'rgba(231,76,60,0.1)')+';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">'+(isDeposit?'↓':'↑')+'</div>'+
+          '<div style="width:36px;height:36px;border-radius:50%;background:'+(isDeposit?'rgba(74,222,128,0.12)':'rgba(231,76,60,0.12)')+';display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">'+(isDeposit?'↓':'↑')+'</div>'+
           '<div>'+
             '<div style="font-size:13px;font-weight:700;color:var(--txt);">'+(item.section||item.type)+'</div>'+
-            '<div style="font-size:10px;color:'+statusColor+';font-weight:600;margin-top:2px;">'+statusLabel+'</div>'+
+            '<div style="font-size:11px;color:'+statusColor+';font-weight:600;margin-top:2px;">'+statusLabel+' · '+new Date(item.time).toLocaleDateString()+'</div>'+
           '</div>'+
         '</div>'+
         '<div style="text-align:right;">'+
-          '<div style="font-size:14px;font-weight:800;color:'+(isDeposit?'#4ade80':'#e74c3c')+'">'+(isDeposit?'+':'-')+fmt(item.amount||0)+'</div>'+
-          '<div style="font-size:10px;color:var(--txt2);margin-top:2px;">'+new Date(item.time).toLocaleDateString()+'</div>'+
+          '<div style="font-size:15px;font-weight:800;color:'+(isDeposit?'#4ade80':'#e74c3c')+'">'+(isDeposit?'+':'-')+fmt(item.amount||0)+'</div>'+
         '</div>';
+      row.appendChild(mainRow);
+      // Cancel button for pending withdrawal
+      if(!isDeposit&&isPending&&item.key){
+        var cancelBtn=document.createElement('button');
+        cancelBtn.textContent='Cancel Withdrawal';
+        cancelBtn.style.cssText='margin-top:8px;padding:6px 14px;background:rgba(231,76,60,0.1);color:#e74c3c;border:1.5px solid rgba(231,76,60,0.3);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;';
+        cancelBtn.addEventListener('click',(function(k){return function(){
+          if(!confirm('Cancel this withdrawal request?'))return;
+          fbUp('/withdrawalRequests/'+k,{status:'cancelled'}).then(function(){
+            cancelBtn.textContent='Cancelled'; cancelBtn.disabled=true;
+            row.querySelector('div div div:last-child').textContent='Cancelled';
+            loadTxHistory();
+          });
+        };})(item.key));
+        row.appendChild(cancelBtn);
+      }
       wrap.appendChild(row);
     });
   }).catch(function(){wrap.innerHTML='<div style="color:var(--txt2);font-size:12px;padding:8px;text-align:center;">Could not load history.</div>';});
