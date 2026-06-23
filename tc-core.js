@@ -267,8 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
       Object.assign(filterEl.style,styles);Object.assign(textEl.style,styles);
       var ico=li.querySelector('.gni-ico');
       var lbl=li.querySelector('.gni-lbl');
-      textEl.innerHTML=(ico?'<span style="font-size:20px;line-height:1;">'+ico.textContent+'</span>':'')+
-        (lbl?'<span style="font-size:9px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;">'+lbl.textContent+'</span>':'');
+      // gtext hidden - no-op
     };
 
     var lis=ul.querySelectorAll('li');
@@ -287,9 +286,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clear old particles
         filterEl.querySelectorAll('.gparticle').forEach(function(p){try{filterEl.removeChild(p);}catch(e){}});
         filterEl.classList.remove('active');
-        textEl.classList.remove('active');
+        // textEl.classList.remove('active'); // hidden
         void textEl.offsetWidth;
-        textEl.classList.add('active');
+        // textEl.classList.add('active'); // hidden
         makeParticles(filterEl);
       });
     });
