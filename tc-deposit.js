@@ -589,171 +589,125 @@ function openAgentWithdrawalModal(){
   // Load all agents
   fbGet('/agents').then(function(data){allAgents=data||{};}).catch(function(){});
 
-  // City search
-  document.getElementById('agent-city-search').onclick=function(){
+  // Live search as user types
+  function doAgentSearch(){
     var q=(document.getElementById('agent-city-inp').value||'').trim().toLowerCase();
     var res=document.getElementById('agent-city-results');
     res.innerHTML='';
-    if(!q){res.innerHTML='<div style="color:var(--txt2);font-size:13px;padding:8px;">Enter a city name.</div>';return;}
-    var matches={};
+    if(q.length<1)return;
+
+    // Collect all matching cities and streets (no agent names shown)
+    var cityMatches={};
     Object.entries(allAgents).forEach(function(e){
-      var a=e[1];
-      if((a.city||'').toLowerCase().indexOf(q)>=0){
-        if(!matches[a.city])matches[a.city]=[];
-        matches[a.city].push({id:e[0],agent:a});
+      var id=e[0], a=e[1];
+      var city=(a.city||'').toLowerCase();
+      var street=(a.street||'').toLowerCase();
+      if(city.indexOf(q)>=0||street.indexOf(q)>=0){
+        var cityKey=a.city||'Unknown';
+        if(!cityMatches[cityKey])cityMatches[cityKey]=[];
+        cityMatches[cityKey].push({id:id,agent:a});
       }
     });
-    if(!Object.keys(matches).length){res.innerHTML='<div style="color:var(--txt2);font-size:13px;padding:8px;">No agents found in "'+q+'".</div>';return;}
-    Object.entries(matches).forEach(function(m){
-      var city=m[0], agents=m[1];
-      var btn=document.createElement('div');
-      btn.style.cssText='background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;';
-      btn.innerHTML='<div><div style="font-size:14px;font-weight:700;color:var(--txt);">'+city+'</div>'+
-        '<div style="font-size:11px;color:var(--txt2);">'+agents.length+' agent(s) available</div></div>'+
-        '<div style="color:var(--accent);font-size:20px;">›</div>';
-      btn.addEventListener('click',function(){
-        // Show agent list for this city
-        var list=document.getElementById('agent-list');
-        list.innerHTML='';
-        agents.forEach(function(item){
-          var a=item.agent;
-          var aCard=document.createElement('div');
-          aCard.style.cssText='background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;';
-          aCard.innerHTML='<div style="display:flex;align-items:center;gap:12px;">'+
-            '<div style="width:40px;height:40px;border-radius:50%;background:rgba(74,222,128,0.1);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🧑‍💼</div>'+
-            '<div><div style="font-size:14px;font-weight:700;color:var(--txt);">'+(a.name||'Agent')+'</div>'+
-            '<div style="font-size:11px;color:var(--txt2);">'+city+(a.street?' · '+a.street:'')+'</div>'+
-            '</div><div style="margin-left:auto;color:var(--accent);">Select →</div>'+
-            '</div>';
-          aCard.addEventListener('click',function(){
-            selectedAgent={id:item.id,name:a.name,city:city,street:a.street||''};
-            document.getElementById('agent-selected-text').textContent=(a.name||'Agent')+' · '+city+(a.street?' · '+a.street:'');
-            document.getElementById('agent-step1').style.display='none';
-            document.getElementById('agent-step2').style.display='none';
-            document.getElementById('agent-step3').style.display='block';
-          });
-          list.appendChild(aCard);
-        });
-        document.getElementById('agent-step1').style.display='none';
-        document.getElementById('agent-step2').style.display='block';
-      });
-      res.appendChild(btn);
-    });
-  };
 
-  // Also search on enter key
-  document.getElementById('agent-city-inp').onkeydown=function(e){
-    if(e.key==='Enter')document.getElementById('agent-city-search').click();
-  };
+    if(!Object.keys(cityMatches).length){
+      res.innerHTML='<div style="color:var(--txt2);font-size:13px;padding:10px;text-align:center;">No results for "'+q+'"</div>';
+      return;
+    }
+
+    // Show city groups with streets (NO agent names)
+    Object.entries(cityMatches).forEach(function(m){
+      var city=m[0], agents=m[1];
+      var grp=document.createElement('div');
+      grp.style.cssText='margin-bottom:8px;';
+
+      // City header
+      var cityHdr=document.createElement('div');
+      cityHdr.style.cssText='font-size:10px;font-weight:800;color:var(--txt2);text-transform:uppercase;letter-spacing:1px;padding:8px 4px 4px;';
+      cityHdr.textContent=city;
+      grp.appendChild(cityHdr);
+
+      // Street cards (not showing agent name)
+      agents.forEach(function(item){
+        var a=item.agent;
+        var card=document.createElement('div');
+        card.style.cssText='background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:border-color 0.15s;';
+        card.innerHTML=
+          '<div>'+
+            '<div style="font-size:14px;font-weight:700;color:var(--txt);">'+city+'</div>'+
+            '<div style="font-size:12px;color:var(--txt2);margin-top:2px;">'+(a.street||'Street not specified')+'</div>'+
+          '</div>'+
+          '<div style="color:var(--accent);font-size:13px;font-weight:700;">Select →</div>';
+        card.addEventListener('mouseenter',function(){card.style.borderColor='var(--accent)';});
+        card.addEventListener('mouseleave',function(){card.style.borderColor='var(--border)';});
+        card.addEventListener('click',function(){
+          // Select this location - store agent id internally but show only city+street to player
+          selectedAgent={id:item.id,city:city,street:a.street||''};
+          // Show in step3 - only city and street, no agent name
+          document.getElementById('agent-selected-text').textContent=city+(a.street?' · '+a.street:'');
+          document.getElementById('agent-city-results').innerHTML='';
+          document.getElementById('agent-city-inp').value=city+(a.street?' — '+a.street:'');
+          document.getElementById('agent-step1').style.display='none';
+          document.getElementById('agent-step2').style.display='none';
+          document.getElementById('agent-step3').style.display='block';
+        });
+        grp.appendChild(card);
+      });
+      res.appendChild(grp);
+    });
+  }
+
+  // Search on button click
+  document.getElementById('agent-city-search').onclick=doAgentSearch;
+  // Live search as typing
+  document.getElementById('agent-city-inp').oninput=doAgentSearch;
+  // Also search on Enter
+  document.getElementById('agent-city-inp').onkeydown=function(e){if(e.key==='Enter')doAgentSearch();};
+
+
 
   // Back buttons
-  document.getElementById('agent-back-btn').onclick=function(){
+  var backBtn=document.getElementById('agent-back-btn');
+  if(backBtn){backBtn.onclick=function(){
     document.getElementById('agent-step2').style.display='none';
     document.getElementById('agent-step1').style.display='block';
-  };
-  document.getElementById('agent-back-btn2').onclick=function(){
+  };}
+  var backBtn2=document.getElementById('agent-back-btn2');
+  if(backBtn2){backBtn2.onclick=function(){
     document.getElementById('agent-step3').style.display='none';
     document.getElementById('agent-step2').style.display='block';
-  };
+  };}
 
   // Generate code
   document.getElementById('agent-gen-btn').onclick=function(){
     var amt=parseFloat(document.getElementById('agent-wd-amt').value)||0;
     var errEl=document.getElementById('agent-wd-err');
     errEl.style.display='none';
-    if(!selectedAgent){errEl.textContent='Please select an agent first.';errEl.style.display='block';return;}
+    if(!selectedAgent){errEl.textContent='Please select a location first.';errEl.style.display='block';return;}
     if(amt<500){errEl.textContent='Minimum withdrawal is Rs. 500.';errEl.style.display='block';return;}
-    if(amt>bal()){errEl.textContent='Insufficient balance. Your balance: '+fmt(bal());errEl.style.display='block';return;}
+    if(amt>bal()){errEl.textContent='Insufficient balance: '+fmt(bal());errEl.style.display='block';return;}
     if(CD.wdBlocked){errEl.textContent='Withdrawal blocked. Contact support.';errEl.style.display='block';return;}
     fbGet('/players/'+CK+'/kyc').then(function(kyc){
       if(!kyc||!kyc.name){errEl.textContent='Complete KYC in Settings first.';errEl.style.display='block';return;}
-      var code='';var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      for(var i=0;i<6;i++)code+=chars[Math.floor(Math.random()*chars.length)];
+      // Generate 4-digit code
+      var code='';var nums='0123456789';
+      for(var i=0;i<4;i++)code+=nums[Math.floor(Math.random()*nums.length)];
       return fbPush('/withdrawalCodes',{
         code:code,amount:amt,
         playerKey:CK,playerUid:CD.uid,playerName:CD.username,
-        agentId:selectedAgent.id,agentName:selectedAgent.name,
+        agentId:selectedAgent.id,
         agentCity:selectedAgent.city,agentStreet:selectedAgent.street,
         status:'pending',createdAt:new Date().toISOString()
       }).then(function(){
         document.getElementById('agent-code-val').textContent=code;
-        document.getElementById('agent-code-sub').textContent='Amount: Rs. '+amt.toLocaleString('en-NP')+' · Agent: '+selectedAgent.name;
+        document.getElementById('agent-code-sub').textContent='Amount: Rs. '+amt.toLocaleString('en-NP')+' · '+selectedAgent.city+(selectedAgent.street?' · '+selectedAgent.street:'');
         document.getElementById('agent-code-box').style.display='block';
         document.getElementById('agent-gen-btn').style.display='none';
-        var cpBtn=document.getElementById('agent-copy-btn');if(cpBtn){cpBtn.onclick=function(){navigator.clipboard.writeText(code).then(function(){alert('Code copied!');});};}
         document.getElementById('agent-wd-amt').disabled=true;
-        pushNotif('Withdrawal code '+code+' generated for Rs. '+fmt(amt)+' via agent '+selectedAgent.name+'.','withdrawal');
+        var cpBtn=document.getElementById('agent-copy-btn');
+        if(cpBtn){cpBtn.onclick=function(){navigator.clipboard.writeText(code).then(function(){alert('Code copied!');});};}
+        pushNotif('Withdrawal code '+code+' generated for Rs. '+fmt(amt)+'.','withdrawal');
       });
     }).catch(function(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';});
   };
 }
-
 window.openAgentWithdrawalModal=openAgentWithdrawalModal;
-
-window.loadContactAgents=loadContactAgents;
-window.loadDepositSections=loadDepositSections;
-window.loadWithdrawSections=loadWithdrawSections;
-
-// ── TRANSACTION HISTORY ──
-function loadTxHistory(){
-  var wrap=$('tx-history-wrap');if(!wrap)return;
-  wrap.innerHTML='<div style="color:var(--txt2);font-size:12px;padding:8px;text-align:center;">Loading...</div>';
-  Promise.all([
-    fbGet('/playerCryptoDeposits'),
-    fbGet('/withdrawalRequests')
-  ]).then(function(res){
-    var deps=res[0]||{}, wds=res[1]||{};
-    var items=[];
-    // Filter by this player
-    Object.values(deps).forEach(function(d){
-      if(d.playerKey===CK){items.push({type:'deposit',amount:d.amount,status:d.status,section:d.section,time:d.time});}
-    });
-    Object.entries(wds).forEach(function(e){
-      var k=e[0],w=e[1];
-      if(w.playerKey===CK){items.push({type:'withdrawal',amount:w.amount,status:w.status,section:w.section,time:w.time,key:k});}
-    });
-    // Sort by time desc
-    items.sort(function(a,b){return new Date(b.time)-new Date(a.time);});
-    if(!items.length){wrap.innerHTML='<div style="color:var(--txt2);font-size:12px;padding:12px;text-align:center;">No transactions yet.</div>';return;}
-    wrap.innerHTML='';
-    items.slice(0,30).forEach(function(item){
-      var isDeposit=item.type==='deposit';
-      var isPending=item.status==='pending';
-      var statusColor=isPending?'#f6c90e':(item.status==='approved'||item.status==='completed')?'#4ade80':'#e74c3c';
-      var statusLabel=isPending?'Pending':(item.status==='approved'||item.status==='completed')?'Completed':'Rejected';
-      var row=document.createElement('div');
-      row.style.cssText='padding:12px 0;border-bottom:1px solid var(--border);';
-      var mainRow=document.createElement('div');
-      mainRow.style.cssText='display:flex;align-items:center;justify-content:space-between;';
-      mainRow.innerHTML=
-        '<div style="display:flex;align-items:center;gap:10px;">'+
-          '<div style="width:36px;height:36px;border-radius:50%;background:'+(isDeposit?'rgba(74,222,128,0.12)':'rgba(231,76,60,0.12)')+';display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">'+(isDeposit?'↓':'↑')+'</div>'+
-          '<div>'+
-            '<div style="font-size:13px;font-weight:700;color:var(--txt);">'+(item.section||item.type)+'</div>'+
-            '<div style="font-size:11px;color:'+statusColor+';font-weight:600;margin-top:2px;">'+statusLabel+' · '+new Date(item.time).toLocaleDateString()+'</div>'+
-          '</div>'+
-        '</div>'+
-        '<div style="text-align:right;">'+
-          '<div style="font-size:15px;font-weight:800;color:'+(isDeposit?'#4ade80':'#e74c3c')+'">'+(isDeposit?'+':'-')+fmt(item.amount||0)+'</div>'+
-        '</div>';
-      row.appendChild(mainRow);
-      // Cancel button for pending withdrawal
-      if(!isDeposit&&isPending&&item.key){
-        var cancelBtn=document.createElement('button');
-        cancelBtn.textContent='Cancel Withdrawal';
-        cancelBtn.style.cssText='margin-top:8px;padding:6px 14px;background:rgba(231,76,60,0.1);color:#e74c3c;border:1.5px solid rgba(231,76,60,0.3);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;';
-        cancelBtn.addEventListener('click',(function(k){return function(){
-          if(!confirm('Cancel this withdrawal request?'))return;
-          fbUp('/withdrawalRequests/'+k,{status:'cancelled'}).then(function(){
-            cancelBtn.textContent='Cancelled'; cancelBtn.disabled=true;
-            row.querySelector('div div div:last-child').textContent='Cancelled';
-            loadTxHistory();
-          });
-        };})(item.key));
-        row.appendChild(cancelBtn);
-      }
-      wrap.appendChild(row);
-    });
-  }).catch(function(){wrap.innerHTML='<div style="color:var(--txt2);font-size:12px;padding:8px;text-align:center;">Could not load history.</div>';});
-}
-window.loadTxHistory=loadTxHistory;
