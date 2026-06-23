@@ -207,10 +207,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var colors=[1,2,3,1,2,3,1,4];
     var animationTime=600,particleCount=15,particleDistances=[90,10],particleR=100,timeVariance=300;
     var container=document.getElementById('gnc');
-    var filterEl=document.getElementById('gfilter');
-    var textEl=document.getElementById('gtext');
     var ul=document.getElementById('gnul');
-    if(!container||!filterEl||!textEl||!ul)return;
+    if(!container||!ul)return;
 
     var pages={
       'bn-h':function(){showPage('pg-home');loadHome();},
@@ -264,10 +262,8 @@ document.addEventListener('DOMContentLoaded', function() {
       var cr=container.getBoundingClientRect();
       var pos=li.getBoundingClientRect();
       var styles={left:(pos.x-cr.x)+'px',top:(pos.y-cr.y)+'px',width:pos.width+'px',height:pos.height+'px'};
-      Object.assign(filterEl.style,styles);Object.assign(textEl.style,styles);
       var ico=li.querySelector('.gni-ico');
       var lbl=li.querySelector('.gni-lbl');
-      // gtext hidden - no-op
     };
 
     var lis=ul.querySelectorAll('li');
@@ -284,12 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
         li.classList.add('active');
         updatePos(li);
         // Clear old particles
-        filterEl.querySelectorAll('.gparticle').forEach(function(p){try{filterEl.removeChild(p);}catch(e){}});
-        filterEl.classList.remove('active');
-        // textEl.classList.remove('active'); // hidden
-        void textEl.offsetWidth;
-        // textEl.classList.add('active'); // hidden
-        makeParticles(filterEl);
+          void textEl.offsetWidth;
       });
     });
 

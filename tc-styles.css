@@ -47,15 +47,15 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--tx
 .gni.active,.gni.active a{color:#000 !important;}
 .gni.active::after{opacity:1;transform:scale(1);}
 /* Gooey effect elements */
-.geffect{position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;display:none;z-index:1;}
-.gtext{display:none !important;}
-.gtext .gni-ico{font-size:20px;}
-.gtext.active{color:#000 !important;}
+
+
+
+
 .gfilter{filter:blur(6px) contrast(20) blur(0);mix-blend-mode:lighten;pointer-events:none;}
-.gfilter::before{content:'';position:absolute;inset:-50px;z-index:-2;background:var(--hdr);}
-.gfilter::after{content:'';position:absolute;inset:0;background:var(--accent);transform:scale(0);opacity:0;z-index:-1;border-radius:100vw;}
-.gfilter.active::after{animation:gpill 0.3s ease both;}
-@keyframes gpill{to{transform:scale(1);opacity:1;}}
+
+
+
+
 /* Particles */
 :root{--color-1:#4ade80;--color-2:#3b82f6;--color-3:#f6c90e;--color-4:#e74c3c;}
 .gparticle,.gpoint{display:block;opacity:0;width:14px;height:14px;border-radius:100%;transform-origin:center;}
