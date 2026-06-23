@@ -258,37 +258,17 @@ document.addEventListener('DOMContentLoaded', function() {
         })(createParticle(i,animationTime*2+noise(timeVariance*2),d,r));
       }
     };
-    var updatePos=function(li){
-      var cr=container.getBoundingClientRect();
-      var pos=li.getBoundingClientRect();
-      var styles={left:(pos.x-cr.x)+'px',top:(pos.y-cr.y)+'px',width:pos.width+'px',height:pos.height+'px'};
-      var ico=li.querySelector('.gni-ico');
-      var lbl=li.querySelector('.gni-lbl');
-    };
-
     var lis=ul.querySelectorAll('li');
     lis.forEach(function(li){
       li.addEventListener('click',function(e){
         e.preventDefault();
         var id=li.id;
-        // Run page switch
         if(pages[id])pages[id]();
-        // Already active? skip animation
         if(li.classList.contains('active'))return;
-        // Switch active
         lis.forEach(function(l){l.classList.remove('active');});
         li.classList.add('active');
-        updatePos(li);
-        // Clear old particles
-          void textEl.offsetWidth;
       });
     });
-
-    // Init position on first active
-    setTimeout(function(){
-      var activeLi=ul.querySelector('li.active');
-      if(activeLi){updatePos(activeLi);textEl.classList.add('active');}
-    },200);
   })();
 
   // Settings items
