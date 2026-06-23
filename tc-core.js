@@ -296,23 +296,31 @@ document.addEventListener('DOMContentLoaded', function() {
 // ── PROFILE ──
 function openProfile() {
   if (!CD) return;
-  st('piun', CD.username || ''); st('piid', '#' + CD.uid); st('pibal', fmt(bal()));
-  var av = $('prof-user'); if (av) av.textContent = (CD.username || '?')[0].toUpperCase();
-  $('prof-cp').value = ''; $('prof-np').value = ''; $('prof-cp').value = '';
-  hd('prof-err'); hd('pwok');
+  // Player info card
+  var uname = CD.username || '?';
+  st('piun', uname);
+  st('piid', 'ID: ' + (CD.uid || CK || '—'));
+  st('piid2', CD.uid || CK || '—');
+  st('pibal', fmt(bal()));
+  // Avatar letter
+  var av = $('prof-avatar'); if(av) av.textContent = uname[0].toUpperCase();
+  // Clear password fields
+  if($('prof-cp')) $('prof-cp').value = '';
+  if($('prof-np')) $('prof-np').value = '';
+  hd('prof-err'); hd('prof-ok');
   om('ov-prof');
 }
 function savePassword() {
-  var old = $('prof-cp').value, nw = $('prof-np').value, cf = $('prof-cp').value;
-  hd('prof-err'); hd('pwok');
-  if (!old || !nw || !cf) { sh('prof-err', 'Fill all fields.'); return; }
+  var old = $('prof-cp') ? $('prof-cp').value : '';
+  var nw = $('prof-np') ? $('prof-np').value : '';
+  hd('prof-err'); hd('prof-ok');
+  if (!old || !nw) { sh('prof-err', 'Fill all fields.'); return; }
   if (old !== CD.password) { sh('prof-err', 'Current password incorrect.'); return; }
   if (nw.length < 4) { sh('prof-err', 'Min 4 characters.'); return; }
-  if (nw !== cf) { sh('prof-err', 'Passwords do not match.'); return; }
   $('prof-save').textContent = 'Saving...'; $('prof-save').disabled = true;
   fbUp('/players/' + CK, { password: nw }).then(function() {
-    CD.password = nw; sh('pwok', 'Password changed successfully!');
-    $('prof-cp').value = ''; $('prof-np').value = ''; $('prof-cp').value = '';
+    CD.password = nw; sh('prof-ok', 'Password changed successfully!');
+    $('prof-cp').value = ''; $('prof-np').value = '';
     $('prof-save').textContent = 'Save Password'; $('prof-save').disabled = false;
   }).catch(function(e) { sh('prof-err', 'Error: ' + e.message); $('prof-save').textContent = 'Save Password'; $('prof-save').disabled = false; });
 }

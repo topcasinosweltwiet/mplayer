@@ -122,6 +122,15 @@
     <div id="dw-wd" class="dwpg" style="display:none;">
       <div id="withdraw-sections-wrap"></div>
     </div>
+
+    <!-- TRANSACTION HISTORY -->
+    <div style="padding:0 1rem 1rem;">
+      <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:0.8px;padding:14px 0 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <span>Transaction History</span>
+        <button onclick="loadTxHistory()" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:700;">Refresh</button>
+      </div>
+      <div id="tx-history-wrap"><div style="color:var(--txt2);font-size:12px;padding:12px;text-align:center;">No transactions yet.</div></div>
+    </div>
   </div>
 
   <!-- SETTINGS -->
@@ -241,10 +250,31 @@
 <div class="gov" id="ov-prof">
   <div class="gmodal">
     <button class="gclose" id="prof-cl">✕</button>
-    <div class="modal-title">Profile</div>
-    <div class="field"><label>Username</label><input type="text" id="prof-user" disabled style="opacity:0.6;"/></div>
-    <div class="field"><label>New Password</label><input type="password" id="prof-np" placeholder="Enter new password"/></div>
-    <div class="field"><label>Confirm Password</label><input type="password" id="prof-cp" placeholder="Confirm new password"/></div>
+    <div class="modal-title">My Profile</div>
+    <!-- Player Info Card -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+        <div id="prof-avatar" style="width:52px;height:52px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;flex-shrink:0;">?</div>
+        <div>
+          <div id="piun" style="font-size:17px;font-weight:800;color:var(--txt);"></div>
+          <div id="piid" style="font-size:12px;color:var(--txt2);margin-top:2px;font-family:monospace;"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:var(--card);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Balance</div>
+          <div id="pibal" style="font-size:15px;font-weight:800;color:var(--accent);"></div>
+        </div>
+        <div style="background:var(--card);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:10px;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Player ID</div>
+          <div id="piid2" style="font-size:13px;font-weight:800;color:var(--txt);font-family:monospace;"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Change Password -->
+    <div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">Change Password</div>
+    <div class="field"><label>Current Password</label><input type="password" id="prof-cp" placeholder="Enter current password"/></div>
+    <div class="field"><label>New Password</label><input type="password" id="prof-np" placeholder="Enter new password (min 4 chars)"/></div>
     <div class="merr" id="prof-err"></div>
     <div class="mok" id="prof-ok"></div>
     <button class="mbtn" id="prof-save">Save Password</button>

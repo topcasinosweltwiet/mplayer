@@ -114,116 +114,183 @@ function buildDepositCard(key,sec){
 var _activeDepKey=null;
 function openDepositModal(key,sec){
   _activeDepKey=key;
-  // Build modal
+  var isCrypto=(sec.category||'').toLowerCase().includes('crypto');
+
   var ov=document.createElement('div');
   ov.id='dep-modal-ov';
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,10,30,0.85);z-index:9000;display:flex;align-items:flex-end;justify-content:center;';
+
   var box=document.createElement('div');
-  box.style.cssText='background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:20px;max-height:90vh;overflow-y:auto;';
+  box.style.cssText='background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:20px;max-height:92vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,20px);';
 
-  var isCrypto = (sec.category||'').toLowerCase().includes('crypto');
-  var minWd = isCrypto ? MIN_WD_CRYPTO : MIN_WD_EWALLET;
-  var minLabel = isCrypto ? '$'+MIN_WD_CRYPTO+' USD' : 'Rs. '+MIN_WD_EWALLET.toLocaleString('en-NP');
+  // Header
+  var header='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">'+
+    '<div style="font-size:18px;font-weight:800;color:var(--txt);">'+(sec.icon||'💰')+' '+(sec.title||'Deposit')+'</div>'+
+    '<button id="dep-modal-close" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>'+
+  '</div>';
 
-  box.innerHTML=
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">'+
-      '<div style="font-size:18px;font-weight:800;color:var(--txt);">'+(sec.icon||'💰')+' '+(sec.title||'Deposit')+'</div>'+
-      '<button id="dep-modal-close" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:16px;cursor:pointer;">✕</button>'+
-    '</div>'+
-    // QR if set
+  // STEP 1: Show address/network/QR — must see before paying
+  var step1='<div id="dep-step1">'+
+    // Warning for crypto
+    (isCrypto?'<div style="background:rgba(231,76,60,0.1);border:1.5px solid rgba(231,76,60,0.4);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start;">'+
+      '<div style="font-size:18px;flex-shrink:0;">⚠️</div>'+
+      '<div style="font-size:12px;color:#e74c3c;line-height:1.5;"><strong>IMPORTANT:</strong> Only send on the correct network. Sending on a different network will result in permanent loss of funds.</div>'+
+    '</div>':'')+
+    // QR
     (sec.qrImageUrl?'<div style="text-align:center;margin-bottom:14px;"><img src="'+sec.qrImageUrl+'" style="max-width:160px;border-radius:10px;border:2px solid var(--border);"/><div style="font-size:11px;color:var(--txt2);margin-top:6px;">Scan to pay</div></div>':'')+
     // Description
     (sec.description?'<div style="font-size:12px;color:var(--txt2);margin-bottom:12px;background:var(--bg2);border-radius:8px;padding:8px 12px;">'+sec.description+'</div>':'')+
-    // Options (addresses)
+    // Address options
     (sec.options&&sec.options.length?
-      '<div style="margin-bottom:12px;">'+
+      '<div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Select Payment Option</div>'+
       sec.options.map(function(opt,oi){
-        return '<div class="dep-opt-card" data-addr="'+(opt.address||'')+'" data-label="'+(opt.label||'')+'" style="background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">'+
-          '<div><div style="font-size:13px;font-weight:700;color:var(--txt);">'+(opt.label||'')+'</div>'+
-          (opt.sub?'<div style="font-size:11px;color:var(--txt2);">'+(opt.sub||'')+'</div>':'')+
-          '</div><div style="font-size:11px;color:var(--accent);">Select</div></div>';
-      }).join('')+
-      '</div>':'')+ 
-    // Address display box
-    '<div id="dep-addr-box" style="display:none;background:var(--bg2);border:1.5px solid var(--accent);border-radius:10px;padding:12px;margin-bottom:12px;">'+
-      '<div style="font-size:10px;color:var(--txt2);margin-bottom:4px;" id="dep-addr-lbl">Address</div>'+
-      '<div style="font-size:12px;font-weight:700;color:var(--txt);word-break:break-all;margin-bottom:8px;" id="dep-addr-val"></div>'+
-      '<button onclick="navigator.clipboard.writeText(document.getElementById(\'dep-addr-val\').textContent).then(function(){alert(\'Copied!\');})" style="padding:5px 12px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Copy Address</button>'+
-    '</div>'+
+        return '<div class="dep-opt-row" data-addr="'+(opt.address||'')+'" data-net="'+(opt.sub||'')+'" data-label="'+(opt.label||'')+'" style="background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;">'+
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:'+(opt.address?'10':'0')+'px;">'+
+            '<div><div style="font-size:13px;font-weight:700;color:var(--txt);">'+(opt.label||'')+'</div>'+
+            (opt.sub?'<div style="font-size:11px;color:var(--txt2);margin-top:2px;">Network: '+opt.sub+'</div>':'')+
+            '</div><div style="color:var(--accent);font-size:12px;font-weight:700;">Select →</div>'+
+          '</div>'+
+          (opt.address?
+            '<div style="background:var(--card);border-radius:8px;padding:8px 10px;border:1px solid var(--border);">'+
+              '<div style="font-size:10px;color:var(--txt2);margin-bottom:4px;">Address</div>'+
+              '<div style="font-size:11px;font-weight:700;color:var(--txt);word-break:break-all;font-family:monospace;">'+(opt.address||'')+'</div>'+
+            '</div>':'')+
+        '</div>';
+      }).join('')
+    : // No options - single address
+      (sec.address?
+        '<div id="dep-single-addr" style="background:var(--bg2);border:1.5px solid var(--accent);border-radius:10px;padding:14px;margin-bottom:14px;">'+
+          '<div style="font-size:10px;color:var(--txt2);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Deposit Address</div>'+
+          '<div style="font-size:12px;font-weight:700;color:var(--txt);word-break:break-all;font-family:monospace;margin-bottom:8px;">'+(sec.address||'')+'</div>'+
+          (sec.network?'<div style="font-size:11px;color:var(--txt2);margin-bottom:10px;">Network: <strong style="color:var(--txt);">'+sec.network+'</strong></div>':'')+
+          '<button id="dep-s-ca" style="padding:6px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;margin-right:8px;">Copy Address</button>'+
+          (sec.network?'<button id="dep-s-cn" style="padding:6px 14px;background:var(--bg2);color:var(--txt);border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Copy Network</button>':'')+
+        '</div>':'')
+    )+
     // Link buttons
     (sec.links&&sec.links.length?
-      sec.links.map(function(lnk){
-        return '<a href="'+(lnk.url||'#')+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;text-decoration:none;">'+
-          '<div style="font-size:22px;">'+(lnk.icon||'🔗')+'</div>'+
-          '<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:var(--txt);">'+(lnk.label||'')+'</div>'+
-          (lnk.sub?'<div style="font-size:11px;color:var(--txt2);">'+(lnk.sub||'')+'</div>':'')+
-          '</div><div style="color:var(--txt2);">›</div></a>';
-      }).join(''):'')+ 
-    // Amount field
-    '<div style="margin-bottom:10px;">'+
-      '<label style="font-size:11px;font-weight:700;color:var(--txt2);display:block;margin-bottom:6px;">AMOUNT</label>'+
-      '<input type="number" id="dep-amt" placeholder="Enter amount..." style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:14px;outline:none;box-sizing:border-box;"/>'+
-    '</div>'+
-    // Proof field
-    '<div style="margin-bottom:14px;">'+
-      '<label style="font-size:11px;font-weight:700;color:var(--txt2);display:block;margin-bottom:6px;">'+(sec.proofLabel||'TRANSACTION ID / PROOF').toUpperCase()+'</label>'+
-      '<input type="text" id="dep-proof" placeholder="'+(sec.proofPlaceholder||'Enter proof or TX hash')+'" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:14px;outline:none;box-sizing:border-box;"/>'+
-    '</div>'+
-    '<div id="dep-err" style="display:none;color:#e74c3c;font-size:12px;margin-bottom:8px;padding:8px;background:rgba(231,76,60,0.08);border-radius:6px;"></div>'+
-    '<div id="dep-ok" style="display:none;color:#4ade80;font-size:12px;margin-bottom:8px;padding:8px;background:rgba(74,222,128,0.08);border-radius:6px;"></div>'+
-    '<button id="dep-submit-btn" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">Submit Deposit Request</button>';
+      sec.links.map(function(lnk){return '<a href="'+(lnk.url||'#')+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;text-decoration:none;"><div style="font-size:22px;">'+(lnk.icon||'🔗')+'</div><div style="flex:1;"><div style="font-size:13px;font-weight:700;color:var(--txt);">'+(lnk.label||'')+'</div></div><div style="color:var(--txt2);">›</div></a>';}).join(''):'')+
+    '<button id="dep-continue-btn" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;">I have paid — Continue ›</button>'+
+  '</div>';
 
+  // STEP 2: Amount + Proof
+  var step2='<div id="dep-step2" style="display:none;">'+
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">'+
+      '<button id="dep-back-btn" style="padding:7px 14px;background:var(--bg2);border:1.5px solid var(--border);color:var(--txt);border-radius:8px;font-size:12px;cursor:pointer;">← Back</button>'+
+      '<div style="font-size:14px;font-weight:700;color:var(--txt);">Confirm Your Deposit</div>'+
+    '</div>'+
+    // Selected option summary
+    '<div id="dep-selected-summary" style="background:var(--bg2);border:1.5px solid var(--accent);border-radius:10px;padding:12px;margin-bottom:14px;display:none;">'+
+      '<div style="font-size:10px;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">You are depositing via</div>'+
+      '<div id="dep-selected-label" style="font-size:14px;font-weight:700;color:var(--txt);"></div>'+
+      '<div id="dep-selected-addr" style="font-size:11px;color:var(--txt2);font-family:monospace;margin-top:4px;word-break:break-all;"></div>'+
+    '</div>'+
+    '<div style="margin-bottom:12px;">'+
+      '<label style="font-size:11px;font-weight:700;color:var(--txt2);display:block;margin-bottom:6px;">AMOUNT</label>'+
+      '<input type="number" id="dep-amt" placeholder="Enter amount you sent..." style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:15px;outline:none;box-sizing:border-box;"/>'+
+    '</div>'+
+    '<div style="margin-bottom:16px;">'+
+      '<label style="font-size:11px;font-weight:700;color:var(--txt2);display:block;margin-bottom:6px;">'+(sec.proofLabel||'TRANSACTION ID / PROOF').toUpperCase()+'</label>'+
+      '<input type="text" id="dep-proof" placeholder="Paste TX hash or screenshot ID..." style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:14px;outline:none;box-sizing:border-box;"/>'+
+      '<div style="font-size:11px;color:var(--txt2);margin-top:6px;">We will verify your payment within 30 minutes.</div>'+
+    '</div>'+
+    '<div id="dep-err" style="display:none;color:#e74c3c;font-size:12px;margin-bottom:10px;padding:10px;background:rgba(231,76,60,0.08);border-radius:8px;border:1px solid rgba(231,76,60,0.2);"></div>'+
+    '<div id="dep-ok" style="display:none;color:#4ade80;font-size:12px;margin-bottom:10px;padding:10px;background:rgba(74,222,128,0.08);border-radius:8px;border:1px solid rgba(74,222,128,0.2);"></div>'+
+    '<button id="dep-submit-btn" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">Confirm Deposit</button>'+
+  '</div>';
+
+  box.innerHTML = header + step1 + step2;
   ov.appendChild(box);
   document.body.appendChild(ov);
 
-  // Wire close
-  document.getElementById('dep-modal-close').onclick=function(){
-    var o=document.getElementById('dep-modal-ov');if(o)o.remove();
-  };
-  ov.onclick=function(e){if(e.target===ov){ov.remove();}};
+  // Close
+  document.getElementById('dep-modal-close').onclick=function(){ov.remove();};
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  // Wire single address copy buttons
+  var sca=document.getElementById('dep-single-copy-addr');
+  if(sca&&sec.address){sca.onclick=function(){navigator.clipboard.writeText(sec.address).then(function(){alert('Address copied!');});};}
+  var scn=document.getElementById('dep-single-copy-net');
+  if(scn&&sec.network){scn.onclick=function(){navigator.clipboard.writeText(sec.network).then(function(){alert('Network copied!');});};}
 
-  // Wire address options
-  box.querySelectorAll('.dep-opt-card').forEach(function(card){
-    card.onclick=function(){
-      box.querySelectorAll('.dep-opt-card').forEach(function(c){c.style.borderColor='var(--border)';});
-      card.style.borderColor='var(--accent)';
-      var addrBox=document.getElementById('dep-addr-box');
-      var addrVal=document.getElementById('dep-addr-val');
-      var addrLbl=document.getElementById('dep-addr-lbl');
-      if(addrBox&&addrVal){
-        addrBox.style.display='block';
-        addrVal.textContent=card.dataset.addr||'';
-        if(addrLbl)addrLbl.textContent=card.dataset.label||'Address';
+  var selectedOpt=null;
+
+  // Wire option rows
+  box.querySelectorAll('.dep-opt-row').forEach(function(row){
+    row.onclick=function(){
+      // Highlight selected
+      box.querySelectorAll('.dep-opt-row').forEach(function(r){r.style.borderColor='var(--border)';});
+      row.style.borderColor='var(--accent)';
+      selectedOpt={label:row.dataset.label, addr:row.dataset.addr, net:row.dataset.net};
+      // Copy buttons
+      var existingCopy=box.querySelector('#dep-copy-area');
+      if(existingCopy)existingCopy.remove();
+      if(row.dataset.addr){
+        var copyArea=document.createElement('div');
+        copyArea.id='dep-copy-area';
+        copyArea.style.cssText='background:rgba(74,222,128,0.05);border:1.5px solid rgba(74,222,128,0.3);border-radius:10px;padding:12px;margin-top:8px;';
+        copyArea.innerHTML='<div style="font-size:12px;font-weight:700;color:var(--txt);margin-bottom:6px;">Selected: '+row.dataset.label+'</div>'+
+          '<div style="font-size:11px;color:var(--txt2);font-family:monospace;word-break:break-all;margin-bottom:8px;">'+row.dataset.addr+'</div>'+
+          (row.dataset.net?'<div style="font-size:11px;color:#e74c3c;font-weight:600;margin-bottom:8px;">⚠️ Network: '+row.dataset.net+' — Only use this network</div>':'')+
+          '<div style="display:flex;gap:8px;">'+
+            '<button id="copy-addr-btn" style="flex:1;padding:7px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Copy Address</button>'+
+            (row.dataset.net?'<button id="copy-net-btn" style="flex:1;padding:7px;background:var(--bg2);color:var(--txt);border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Copy Network</button>':'')+
+          '</div>';
+        row.appendChild(copyArea);
+        document.getElementById('copy-addr-btn').onclick=function(e){e.stopPropagation();navigator.clipboard.writeText(row.dataset.addr).then(function(){alert('Address copied!');});};
+        var cnb=document.getElementById('copy-net-btn');
+        if(cnb)cnb.onclick=function(e){e.stopPropagation();navigator.clipboard.writeText(row.dataset.net).then(function(){alert('Network copied!');});};
       }
     };
   });
 
-  // Wire submit
+  // Continue button
+  document.getElementById('dep-continue-btn').onclick=function(){
+    document.getElementById('dep-step1').style.display='none';
+    document.getElementById('dep-step2').style.display='block';
+    // Fill summary
+    var sum=document.getElementById('dep-selected-summary');
+    var lbl=document.getElementById('dep-selected-label');
+    var addr=document.getElementById('dep-selected-addr');
+    if(selectedOpt&&sum&&lbl){
+      sum.style.display='block';
+      lbl.textContent=selectedOpt.label+(selectedOpt.net?' ('+selectedOpt.net+')':'');
+      if(addr)addr.textContent=selectedOpt.addr||'';
+    }
+  };
+
+  // Back button
+  document.getElementById('dep-back-btn').onclick=function(){
+    document.getElementById('dep-step2').style.display='none';
+    document.getElementById('dep-step1').style.display='block';
+  };
+
+  // Submit
   document.getElementById('dep-submit-btn').onclick=function(){
     var amt=parseFloat(document.getElementById('dep-amt').value)||0;
     var proof=(document.getElementById('dep-proof').value||'').trim();
-    var errEl=document.getElementById('dep-err');
-    var okEl=document.getElementById('dep-ok');
+    var errEl=document.getElementById('dep-err'), okEl=document.getElementById('dep-ok');
     errEl.style.display='none'; okEl.style.display='none';
-    if(amt<1){errEl.textContent='Please enter a valid amount.';errEl.style.display='block';return;}
-    if(!proof){errEl.textContent='Please enter proof / transaction ID.';errEl.style.display='block';return;}
+    if(amt<1){errEl.textContent='Please enter the amount you sent.';errEl.style.display='block';return;}
+    if(!proof){errEl.textContent='Please enter the transaction ID or proof.';errEl.style.display='block';return;}
     var btn=document.getElementById('dep-submit-btn');
     btn.textContent='Submitting...';btn.disabled=true;
+    var optInfo=selectedOpt||{};
     fbPush('/playerCryptoDeposits',{
       playerKey:CK,playerUid:CD.uid,playerName:CD.username,
       sectionKey:key,section:sec.title,category:sec.category||'Other',
+      selectedOption:optInfo.label||'',network:optInfo.net||'',address:optInfo.addr||'',
       amount:amt,proof:proof,status:'pending',time:new Date().toISOString()
     }).then(function(){
-      // Track deposit method
       return fbUp('/players/'+CK+'/depositMethods/'+key,{title:sec.title,category:sec.category||'Other',key:key,usedAt:new Date().toISOString()});
     }).then(function(){
-      okEl.textContent='Submitted! Admin will verify and credit your balance.';
+      okEl.textContent='✓ Deposit submitted! We will verify and credit your balance within 30 minutes.';
       okEl.style.display='block';
       btn.textContent='Submitted ✓';
       pushNotif('Deposit of '+fmt(amt)+' submitted via '+sec.title+'. Awaiting verification.','deposit');
-    }).catch(function(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';btn.textContent='Submit Deposit Request';btn.disabled=false;});
+    }).catch(function(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';btn.textContent='Confirm Deposit';btn.disabled=false;});
   };
 }
+
 window.openDepositModal=openDepositModal;
 
 // ── LOAD WITHDRAWAL SECTIONS ──
@@ -378,6 +445,11 @@ function openWithdrawModal(key,sec){
 
   document.getElementById('wd-modal-close').onclick=function(){ov.remove();};
   ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  // Wire single address copy buttons
+  var sca=document.getElementById('dep-single-copy-addr');
+  if(sca&&sec.address){sca.onclick=function(){navigator.clipboard.writeText(sec.address).then(function(){alert('Address copied!');});};}
+  var scn=document.getElementById('dep-single-copy-net');
+  if(scn&&sec.network){scn.onclick=function(){navigator.clipboard.writeText(sec.network).then(function(){alert('Network copied!');});};}
 
   document.getElementById('wd-submit-btn').onclick=function(){
     var amt=parseFloat(document.getElementById('wd-amt').value)||0;
@@ -444,57 +516,225 @@ function openAgentWithdrawalModal(){
   var ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,10,30,0.85);z-index:9000;display:flex;align-items:flex-end;justify-content:center;';
   var box=document.createElement('div');
-  box.style.cssText='background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:20px;max-height:90vh;overflow-y:auto;';
+  box.style.cssText='background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:20px;max-height:92vh;overflow-y:auto;';
+
   box.innerHTML=
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">'+
       '<div style="font-size:18px;font-weight:800;color:var(--txt);">🤝 Agent Withdrawal</div>'+
       '<button id="agent-wd-close" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:16px;cursor:pointer;">✕</button>'+
     '</div>'+
-    '<div style="background:rgba(246,201,0,0.08);border:1px solid rgba(246,201,0,0.2);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:#f6c90e;">Minimum withdrawal: <strong>Rs. '+MIN_WD_AGENT.toLocaleString('en-NP')+'</strong></div>'+
-    '<div style="margin-bottom:10px;">'+
-      '<label style="font-size:11px;font-weight:700;color:var(--txt2);display:block;margin-bottom:6px;">AMOUNT (Rs.)</label>'+
-      '<input type="number" id="agent-wd-amt" placeholder="Minimum Rs. '+MIN_WD_AGENT+'" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:14px;outline:none;box-sizing:border-box;"/>'+
+    '<div style="background:rgba(246,201,0,0.08);border:1px solid rgba(246,201,0,0.2);border-radius:8px;padding:8px 12px;margin-bottom:16px;font-size:12px;color:#f6c90e;">'+
+      'Minimum withdrawal: <strong>Rs. 500</strong> · Show code to agent'+
     '</div>'+
-    '<div id="agent-wd-err" style="display:none;color:#e74c3c;font-size:12px;margin-bottom:8px;padding:8px;background:rgba(231,76,60,0.08);border-radius:6px;"></div>'+
-    '<div id="agent-wd-code-box" style="display:none;background:var(--bg2);border:2px solid var(--accent);border-radius:12px;padding:16px;text-align:center;margin-bottom:14px;">'+
-      '<div style="font-size:11px;color:var(--txt2);margin-bottom:6px;">Your Withdrawal Code</div>'+
-      '<div id="agent-wd-code" style="font-size:32px;font-weight:900;color:var(--accent);letter-spacing:6px;margin-bottom:8px;"></div>'+
-      '<div id="agent-wd-code-amt" style="font-size:13px;color:var(--txt2);margin-bottom:10px;"></div>'+
-      '<button onclick="var v=document.getElementById(\'agent-wd-code\');if(v)navigator.clipboard.writeText(v.textContent).then(function(){alert(\'Code copied!\');})" style="padding:7px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Copy Code</button>'+
+
+    // Step 1: Search City
+    '<div id="agent-step1">'+
+      '<div style="font-size:12px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Step 1 — Find Agent by City</div>'+
+      '<div style="display:flex;gap:8px;margin-bottom:8px;">'+
+        '<input type="text" id="agent-city-inp" placeholder="Type city name..." style="flex:1;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:14px;outline:none;"/>'+
+        '<button id="agent-city-search" style="padding:11px 16px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">Search</button>'+
+      '</div>'+
+      '<div id="agent-city-results" style="max-height:180px;overflow-y:auto;"></div>'+
     '</div>'+
-    '<button id="agent-wd-btn" style="width:100%;padding:14px;background:#f6c90e;color:#000;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">Generate Withdrawal Code</button>';
+
+    // Step 2: Select Agent
+    '<div id="agent-step2" style="display:none;">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">'+
+        '<button id="agent-back-btn" style="padding:6px 12px;background:var(--bg2);border:1.5px solid var(--border);color:var(--txt);border-radius:8px;font-size:12px;cursor:pointer;">← Back</button>'+
+        '<div style="font-size:12px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;">Step 2 — Select Agent</div>'+
+      '</div>'+
+      '<div id="agent-list" style="max-height:220px;overflow-y:auto;margin-bottom:12px;"></div>'+
+    '</div>'+
+
+    // Step 3: Amount & Generate Code
+    '<div id="agent-step3" style="display:none;">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">'+
+        '<button id="agent-back-btn2" style="padding:6px 12px;background:var(--bg2);border:1.5px solid var(--border);color:var(--txt);border-radius:8px;font-size:12px;cursor:pointer;">← Back</button>'+
+        '<div style="font-size:12px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;">Step 3 — Enter Amount</div>'+
+      '</div>'+
+      // Selected agent info
+      '<div id="agent-selected-info" style="background:var(--bg2);border:1.5px solid var(--accent);border-radius:12px;padding:12px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">'+
+        '<div style="font-size:28px;">🧑‍💼</div>'+
+        '<div id="agent-selected-text" style="font-size:13px;color:var(--txt);font-weight:700;"></div>'+
+      '</div>'+
+      '<div style="margin-bottom:12px;">'+
+        '<label style="font-size:11px;font-weight:700;color:var(--txt2);display:block;margin-bottom:6px;">AMOUNT (Rs.)</label>'+
+        '<input type="number" id="agent-wd-amt" placeholder="Minimum Rs. 500" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:14px;outline:none;box-sizing:border-box;"/>'+
+      '</div>'+
+      '<div id="agent-wd-err" style="display:none;color:#e74c3c;font-size:12px;margin-bottom:8px;padding:8px;background:rgba(231,76,60,0.08);border-radius:6px;"></div>'+
+      // Code display
+      '<div id="agent-code-box" style="display:none;background:var(--bg2);border:2px solid var(--accent);border-radius:14px;padding:20px;text-align:center;margin-bottom:14px;">'+
+        '<div style="font-size:11px;color:var(--txt2);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Your Withdrawal Code</div>'+
+        '<div id="agent-code-val" style="font-size:36px;font-weight:900;color:var(--accent);letter-spacing:8px;margin-bottom:8px;font-family:monospace;"></div>'+
+        '<div id="agent-code-sub" style="font-size:13px;color:var(--txt2);margin-bottom:14px;"></div>'+
+        '<div style="font-size:11px;color:var(--txt2);background:rgba(246,201,0,0.08);border:1px solid rgba(246,201,0,0.2);border-radius:8px;padding:8px;">Show this code to your agent to receive cash</div>'+
+        '<button id="agent-copy-btn" style="margin-top:12px;padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Copy Code</button>'+
+      '</div>'+
+      '<button id="agent-gen-btn" style="width:100%;padding:14px;background:#f6c90e;color:#000;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">Generate Withdrawal Code</button>'+
+    '</div>';
 
   ov.appendChild(box);
   document.body.appendChild(ov);
+
   document.getElementById('agent-wd-close').onclick=function(){ov.remove();};
   ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  // Wire single address copy buttons
+  var sca=document.getElementById('dep-single-copy-addr');
+  if(sca&&sec.address){sca.onclick=function(){navigator.clipboard.writeText(sec.address).then(function(){alert('Address copied!');});};}
+  var scn=document.getElementById('dep-single-copy-net');
+  if(scn&&sec.network){scn.onclick=function(){navigator.clipboard.writeText(sec.network).then(function(){alert('Network copied!');});};}
 
-  document.getElementById('agent-wd-btn').onclick=function(){
+  var allAgents={}, selectedAgent=null;
+
+  // Load all agents
+  fbGet('/agents').then(function(data){allAgents=data||{};}).catch(function(){});
+
+  // City search
+  document.getElementById('agent-city-search').onclick=function(){
+    var q=(document.getElementById('agent-city-inp').value||'').trim().toLowerCase();
+    var res=document.getElementById('agent-city-results');
+    res.innerHTML='';
+    if(!q){res.innerHTML='<div style="color:var(--txt2);font-size:13px;padding:8px;">Enter a city name.</div>';return;}
+    var matches={};
+    Object.entries(allAgents).forEach(function(e){
+      var a=e[1];
+      if((a.city||'').toLowerCase().indexOf(q)>=0){
+        if(!matches[a.city])matches[a.city]=[];
+        matches[a.city].push({id:e[0],agent:a});
+      }
+    });
+    if(!Object.keys(matches).length){res.innerHTML='<div style="color:var(--txt2);font-size:13px;padding:8px;">No agents found in "'+q+'".</div>';return;}
+    Object.entries(matches).forEach(function(m){
+      var city=m[0], agents=m[1];
+      var btn=document.createElement('div');
+      btn.style.cssText='background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;';
+      btn.innerHTML='<div><div style="font-size:14px;font-weight:700;color:var(--txt);">'+city+'</div>'+
+        '<div style="font-size:11px;color:var(--txt2);">'+agents.length+' agent(s) available</div></div>'+
+        '<div style="color:var(--accent);font-size:20px;">›</div>';
+      btn.addEventListener('click',function(){
+        // Show agent list for this city
+        var list=document.getElementById('agent-list');
+        list.innerHTML='';
+        agents.forEach(function(item){
+          var a=item.agent;
+          var aCard=document.createElement('div');
+          aCard.style.cssText='background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;';
+          aCard.innerHTML='<div style="display:flex;align-items:center;gap:12px;">'+
+            '<div style="width:40px;height:40px;border-radius:50%;background:rgba(74,222,128,0.1);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🧑‍💼</div>'+
+            '<div><div style="font-size:14px;font-weight:700;color:var(--txt);">'+(a.name||'Agent')+'</div>'+
+            '<div style="font-size:11px;color:var(--txt2);">'+city+(a.street?' · '+a.street:'')+'</div>'+
+            '</div><div style="margin-left:auto;color:var(--accent);">Select →</div>'+
+            '</div>';
+          aCard.addEventListener('click',function(){
+            selectedAgent={id:item.id,name:a.name,city:city,street:a.street||''};
+            document.getElementById('agent-selected-text').textContent=(a.name||'Agent')+' · '+city+(a.street?' · '+a.street:'');
+            document.getElementById('agent-step1').style.display='none';
+            document.getElementById('agent-step2').style.display='none';
+            document.getElementById('agent-step3').style.display='block';
+          });
+          list.appendChild(aCard);
+        });
+        document.getElementById('agent-step1').style.display='none';
+        document.getElementById('agent-step2').style.display='block';
+      });
+      res.appendChild(btn);
+    });
+  };
+
+  // Also search on enter key
+  document.getElementById('agent-city-inp').onkeydown=function(e){
+    if(e.key==='Enter')document.getElementById('agent-city-search').click();
+  };
+
+  // Back buttons
+  document.getElementById('agent-back-btn').onclick=function(){
+    document.getElementById('agent-step2').style.display='none';
+    document.getElementById('agent-step1').style.display='block';
+  };
+  document.getElementById('agent-back-btn2').onclick=function(){
+    document.getElementById('agent-step3').style.display='none';
+    document.getElementById('agent-step2').style.display='block';
+  };
+
+  // Generate code
+  document.getElementById('agent-gen-btn').onclick=function(){
     var amt=parseFloat(document.getElementById('agent-wd-amt').value)||0;
     var errEl=document.getElementById('agent-wd-err');
     errEl.style.display='none';
-    if(amt<MIN_WD_AGENT){errEl.textContent='Minimum withdrawal is Rs. '+MIN_WD_AGENT.toLocaleString('en-NP')+'.';errEl.style.display='block';return;}
-    if(amt>bal()){errEl.textContent='Insufficient balance.';errEl.style.display='block';return;}
+    if(!selectedAgent){errEl.textContent='Please select an agent first.';errEl.style.display='block';return;}
+    if(amt<500){errEl.textContent='Minimum withdrawal is Rs. 500.';errEl.style.display='block';return;}
+    if(amt>bal()){errEl.textContent='Insufficient balance. Your balance: '+fmt(bal());errEl.style.display='block';return;}
     if(CD.wdBlocked){errEl.textContent='Withdrawal blocked. Contact support.';errEl.style.display='block';return;}
     fbGet('/players/'+CK+'/kyc').then(function(kyc){
       if(!kyc||!kyc.name){errEl.textContent='Complete KYC in Settings first.';errEl.style.display='block';return;}
       var code='';var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       for(var i=0;i<6;i++)code+=chars[Math.floor(Math.random()*chars.length)];
       return fbPush('/withdrawalCodes',{
-        code:code,amount:amt,playerKey:CK,playerUid:CD.uid,playerName:CD.username,
+        code:code,amount:amt,
+        playerKey:CK,playerUid:CD.uid,playerName:CD.username,
+        agentId:selectedAgent.id,agentName:selectedAgent.name,
+        agentCity:selectedAgent.city,agentStreet:selectedAgent.street,
         status:'pending',createdAt:new Date().toISOString()
       }).then(function(){
-        document.getElementById('agent-wd-code').textContent=code;
-        document.getElementById('agent-wd-code-amt').textContent='Show this code to agent for Rs. '+amt.toLocaleString('en-NP');
-        document.getElementById('agent-wd-code-box').style.display='block';
-        document.getElementById('agent-wd-btn').style.display='none';
-        pushNotif('Withdrawal code '+code+' generated for Rs. '+fmt(amt)+'.','withdrawal');
+        document.getElementById('agent-code-val').textContent=code;
+        document.getElementById('agent-code-sub').textContent='Amount: Rs. '+amt.toLocaleString('en-NP')+' · Agent: '+selectedAgent.name;
+        document.getElementById('agent-code-box').style.display='block';
+        document.getElementById('agent-gen-btn').style.display='none';
+        var cpBtn=document.getElementById('agent-copy-btn');if(cpBtn){cpBtn.onclick=function(){navigator.clipboard.writeText(code).then(function(){alert('Code copied!');});};}
+        document.getElementById('agent-wd-amt').disabled=true;
+        pushNotif('Withdrawal code '+code+' generated for Rs. '+fmt(amt)+' via agent '+selectedAgent.name+'.','withdrawal');
       });
     }).catch(function(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';});
   };
 }
+
 window.openAgentWithdrawalModal=openAgentWithdrawalModal;
 
 window.loadContactAgents=loadContactAgents;
 window.loadDepositSections=loadDepositSections;
 window.loadWithdrawSections=loadWithdrawSections;
+
+// ── TRANSACTION HISTORY ──
+function loadTxHistory(){
+  var wrap=$('tx-history-wrap');if(!wrap)return;
+  wrap.innerHTML='<div style="color:var(--txt2);font-size:12px;padding:8px;text-align:center;">Loading...</div>';
+  Promise.all([
+    fbGet('/playerCryptoDeposits'),
+    fbGet('/withdrawalRequests')
+  ]).then(function(res){
+    var deps=res[0]||{}, wds=res[1]||{};
+    var items=[];
+    // Filter by this player
+    Object.values(deps).forEach(function(d){
+      if(d.playerKey===CK){items.push({type:'deposit',amount:d.amount,status:d.status,section:d.section,time:d.time});}
+    });
+    Object.values(wds).forEach(function(w){
+      if(w.playerKey===CK){items.push({type:'withdrawal',amount:w.amount,status:w.status,section:w.section,time:w.time});}
+    });
+    // Sort by time desc
+    items.sort(function(a,b){return new Date(b.time)-new Date(a.time);});
+    if(!items.length){wrap.innerHTML='<div style="color:var(--txt2);font-size:12px;padding:12px;text-align:center;">No transactions yet.</div>';return;}
+    wrap.innerHTML='';
+    items.slice(0,20).forEach(function(item){
+      var isDeposit=item.type==='deposit';
+      var statusColor=item.status==='pending'?'#f6c90e':item.status==='approved'||item.status==='completed'?'#4ade80':'#e74c3c';
+      var statusLabel=item.status==='pending'?'Pending':item.status==='approved'||item.status==='completed'?'Completed':'Rejected';
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);';
+      row.innerHTML=
+        '<div style="display:flex;align-items:center;gap:10px;">'+
+          '<div style="width:34px;height:34px;border-radius:50%;background:'+(isDeposit?'rgba(74,222,128,0.1)':'rgba(231,76,60,0.1)')+';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">'+(isDeposit?'↓':'↑')+'</div>'+
+          '<div>'+
+            '<div style="font-size:13px;font-weight:700;color:var(--txt);">'+(item.section||item.type)+'</div>'+
+            '<div style="font-size:10px;color:'+statusColor+';font-weight:600;margin-top:2px;">'+statusLabel+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div style="text-align:right;">'+
+          '<div style="font-size:14px;font-weight:800;color:'+(isDeposit?'#4ade80':'#e74c3c')+'">'+(isDeposit?'+':'-')+fmt(item.amount||0)+'</div>'+
+          '<div style="font-size:10px;color:var(--txt2);margin-top:2px;">'+new Date(item.time).toLocaleDateString()+'</div>'+
+        '</div>';
+      wrap.appendChild(row);
+    });
+  }).catch(function(){wrap.innerHTML='<div style="color:var(--txt2);font-size:12px;padding:8px;text-align:center;">Could not load history.</div>';});
+}
+window.loadTxHistory=loadTxHistory;
