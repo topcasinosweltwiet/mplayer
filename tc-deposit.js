@@ -218,14 +218,10 @@ function openDepositModal(key,sec){
       '<div id="dep-selected-label" style="font-size:14px;font-weight:700;color:var(--txt);"></div>'+
       '<div id="dep-selected-addr" style="font-size:11px;color:var(--txt2);font-family:monospace;margin-top:4px;word-break:break-all;"></div>'+
     '</div>'+
-    '<div style="margin-bottom:12px;">'+
-      '<label style="font-size:11px;font-weight:700;color:var(--txt2);display:block;margin-bottom:6px;">AMOUNT</label>'+
-      '<input type="number" id="dep-amt" placeholder="Enter amount you sent..." style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:15px;outline:none;box-sizing:border-box;"/>'+
-    '</div>'+
     '<div style="margin-bottom:16px;">'+
-      '<label style="font-size:11px;font-weight:700;color:var(--txt2);display:block;margin-bottom:6px;">'+(sec.proofLabel||'TRANSACTION ID / PROOF').toUpperCase()+'</label>'+
-      '<input type="text" id="dep-proof" placeholder="Paste TX hash or screenshot ID..." style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:14px;outline:none;box-sizing:border-box;"/>'+
-      '<div style="font-size:11px;color:var(--txt2);margin-top:6px;">We will verify your payment within 30 minutes.</div>'+
+      '<label style="font-size:11px;font-weight:700;color:var(--txt2);display:block;margin-bottom:6px;">TRANSACTION ID / TX HASH</label>'+
+      '<input type="text" id="dep-proof" placeholder="Paste your TX hash / transaction ID here..." style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:13px;font-family:monospace;outline:none;box-sizing:border-box;"/>'+
+      '<div style="font-size:11px;color:var(--txt2);margin-top:6px;">Admin will verify your transaction and credit the correct amount after checking exchange rate.</div>'+
     '</div>'+
     '<div id="dep-err" style="display:none;color:#e74c3c;font-size:12px;margin-bottom:10px;padding:10px;background:rgba(231,76,60,0.08);border-radius:8px;border:1px solid rgba(231,76,60,0.2);"></div>'+
     '<div id="dep-ok" style="display:none;color:#4ade80;font-size:12px;margin-bottom:10px;padding:10px;background:rgba(74,222,128,0.08);border-radius:8px;border:1px solid rgba(74,222,128,0.2);"></div>'+
@@ -301,12 +297,10 @@ function openDepositModal(key,sec){
 
   // Submit
   document.getElementById('dep-submit-btn').onclick=function(){
-    var amt=parseFloat(document.getElementById('dep-amt').value)||0;
     var proof=(document.getElementById('dep-proof').value||'').trim();
     var errEl=document.getElementById('dep-err'), okEl=document.getElementById('dep-ok');
     errEl.style.display='none'; okEl.style.display='none';
-    if(amt<1){errEl.textContent='Please enter the amount you sent.';errEl.style.display='block';return;}
-    if(!proof){errEl.textContent='Please enter the transaction ID or proof.';errEl.style.display='block';return;}
+    if(!proof){errEl.textContent='Please paste your TX hash / transaction ID.';errEl.style.display='block';return;}
     var btn=document.getElementById('dep-submit-btn');
     btn.textContent='Submitting...';btn.disabled=true;
     var optInfo=selectedOpt||{};
@@ -314,14 +308,14 @@ function openDepositModal(key,sec){
       playerKey:CK,playerUid:CD.uid,playerName:CD.username,
       sectionKey:key,section:sec.title,category:sec.category||'Other',
       selectedOption:optInfo.label||'',network:optInfo.net||'',address:optInfo.addr||'',
-      amount:amt,proof:proof,status:'pending',time:new Date().toISOString()
+      txHash:proof,status:'pending',creditedAmount:0,time:new Date().toISOString()
     }).then(function(){
       return fbUp('/players/'+CK+'/depositMethods/'+key,{title:sec.title,category:sec.category||'Other',key:key,usedAt:new Date().toISOString()});
     }).then(function(){
-      okEl.textContent='✓ Deposit submitted! We will verify and credit your balance within 30 minutes.';
+      okEl.textContent='✓ TX ID submitted! Admin will verify your transaction, calculate the exchange rate, and credit your balance shortly.';
       okEl.style.display='block';
       btn.textContent='Submitted ✓';
-      pushNotif('Deposit of '+fmt(amt)+' submitted via '+sec.title+'. Awaiting verification.','deposit');
+      pushNotif('Deposit TX submitted via '+sec.title+'. Admin will verify and credit your balance.','deposit');
     }).catch(function(e){errEl.textContent='Error: '+e.message;errEl.style.display='block';btn.textContent='Confirm Deposit';btn.disabled=false;});
   };
 }
