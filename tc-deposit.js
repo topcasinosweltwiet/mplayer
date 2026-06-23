@@ -129,48 +129,60 @@ function openDepositModal(key,sec){
     '<button id="dep-modal-close" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>'+
   '</div>';
 
-  // STEP 1: Show address/network/QR — must see before paying
+  // STEP 1: Show address/network/QR — 1xbet style
+  var isCrypto=(sec.category||'').toLowerCase().includes('crypto');
+  var warningMsg=sec.warningMsg||(isCrypto?'Only send '+sec.title+' on the correct network. Sending on a different network will result in PERMANENT LOSS of funds.':'');
+  var minAmtLabel=sec.minAmount?'Minimum deposit: <strong>'+sec.minAmount+'</strong>':'';
+
   var step1='<div id="dep-step1">'+
-    // Warning for crypto
-    (isCrypto?'<div style="background:rgba(231,76,60,0.1);border:1.5px solid rgba(231,76,60,0.4);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start;">'+
-      '<div style="font-size:18px;flex-shrink:0;">⚠️</div>'+
-      '<div style="font-size:12px;color:#e74c3c;line-height:1.5;"><strong>IMPORTANT:</strong> Only send on the correct network. Sending on a different network will result in permanent loss of funds.</div>'+
-    '</div>':'')+
-    // QR
-    (sec.qrImageUrl?'<div style="text-align:center;margin-bottom:14px;"><img src="'+sec.qrImageUrl+'" style="max-width:160px;border-radius:10px;border:2px solid var(--border);"/><div style="font-size:11px;color:var(--txt2);margin-top:6px;">Scan to pay</div></div>':'')+
-    // Description
-    (sec.description?'<div style="font-size:12px;color:var(--txt2);margin-bottom:12px;background:var(--bg2);border-radius:8px;padding:8px 12px;">'+sec.description+'</div>':'')+
-    // Address options
-    (sec.options&&sec.options.length?
-      '<div style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Select Payment Option</div>'+
-      sec.options.map(function(opt,oi){
-        return '<div class="dep-opt-row" data-addr="'+(opt.address||'')+'" data-net="'+(opt.sub||'')+'" data-label="'+(opt.label||'')+'" style="background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;">'+
-          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:'+(opt.address?'10':'0')+'px;">'+
-            '<div><div style="font-size:13px;font-weight:700;color:var(--txt);">'+(opt.label||'')+'</div>'+
-            (opt.sub?'<div style="font-size:11px;color:var(--txt2);margin-top:2px;">Network: '+opt.sub+'</div>':'')+
-            '</div><div style="color:var(--accent);font-size:12px;font-weight:700;">Select →</div>'+
+    // Big red warning
+    (warningMsg?
+      '<div style="background:rgba(231,76,60,0.08);border:1.5px solid rgba(231,76,60,0.35);border-radius:10px;padding:12px 14px;margin-bottom:14px;">'+
+        '<div style="font-size:13px;font-weight:800;color:#e74c3c;margin-bottom:6px;">⚠️ IMPORTANT</div>'+
+        '<div style="font-size:12px;color:#e74c3c;line-height:1.6;">'+warningMsg+'</div>'+
+      '</div>':'')+
+    // Network badge
+    (sec.network?
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">'+
+        '<div style="font-size:11px;color:var(--txt2);">Network:</div>'+
+        '<div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;color:#4ade80;">'+sec.network+'</div>'+
+        '<div style="font-size:11px;color:#e74c3c;font-weight:600;">ONLY use this network</div>'+
+      '</div>':'')+
+    // Address + copy
+    (sec.address?
+      '<div style="margin-bottom:14px;">'+
+        '<div style="font-size:11px;color:var(--txt2);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Deposit Address — Copy and send here:</div>'+
+        '<div style="background:var(--bg2);border:1.5px solid var(--accent);border-radius:10px;padding:12px 14px;">'+
+          '<div style="font-size:13px;font-weight:700;color:var(--accent);word-break:break-all;font-family:monospace;line-height:1.6;margin-bottom:10px;" id="dep-addr-display">'+sec.address+'</div>'+
+          '<div style="display:flex;gap:8px;">'+
+            '<button id="dep-copy-addr-btn" style="flex:1;padding:8px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">📋 Copy Address</button>'+
+            (sec.network?'<button id="dep-copy-net-btn" style="padding:8px 12px;background:var(--bg2);color:var(--txt);border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Copy Network</button>':'')+
           '</div>'+
-          (opt.address?
-            '<div style="background:var(--card);border-radius:8px;padding:8px 10px;border:1px solid var(--border);">'+
-              '<div style="font-size:10px;color:var(--txt2);margin-bottom:4px;">Address</div>'+
-              '<div style="font-size:11px;font-weight:700;color:var(--txt);word-break:break-all;font-family:monospace;">'+(opt.address||'')+'</div>'+
-            '</div>':'')+
-        '</div>';
-      }).join('')
-    : // No options - single address
-      (sec.address?
-        '<div id="dep-single-addr" style="background:var(--bg2);border:1.5px solid var(--accent);border-radius:10px;padding:14px;margin-bottom:14px;">'+
-          '<div style="font-size:10px;color:var(--txt2);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Deposit Address</div>'+
-          '<div style="font-size:12px;font-weight:700;color:var(--txt);word-break:break-all;font-family:monospace;margin-bottom:8px;">'+(sec.address||'')+'</div>'+
-          (sec.network?'<div style="font-size:11px;color:var(--txt2);margin-bottom:10px;">Network: <strong style="color:var(--txt);">'+sec.network+'</strong></div>':'')+
-          '<button id="dep-s-ca" style="padding:6px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;margin-right:8px;">Copy Address</button>'+
-          (sec.network?'<button id="dep-s-cn" style="padding:6px 14px;background:var(--bg2);color:var(--txt);border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Copy Network</button>':'')+
-        '</div>':'')
-    )+
-    // Link buttons
-    (sec.links&&sec.links.length?
-      sec.links.map(function(lnk){return '<a href="'+(lnk.url||'#')+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;text-decoration:none;"><div style="font-size:22px;">'+(lnk.icon||'🔗')+'</div><div style="flex:1;"><div style="font-size:13px;font-weight:700;color:var(--txt);">'+(lnk.label||'')+'</div></div><div style="color:var(--txt2);">›</div></a>';}).join(''):'')+
-    '<button id="dep-continue-btn" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;">I have paid — Continue ›</button>'+
+        '</div>'+
+      '</div>':'')+ 
+    // QR code
+    (sec.qrImageUrl?
+      '<div style="text-align:center;margin-bottom:14px;">'+
+        '<div style="font-size:11px;color:var(--txt2);margin-bottom:8px;">Or scan QR code:</div>'+
+        '<img src="'+sec.qrImageUrl+'" style="max-width:180px;width:100%;border-radius:10px;border:2px solid var(--border);"/>'+
+      '</div>':'')+ 
+    // E-wallet account info
+    (!isCrypto&&sec.ewalletAccount?
+      '<div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;">'+
+        '<div style="font-size:11px;color:var(--txt2);margin-bottom:4px;">Send to this account:</div>'+
+        '<div style="font-size:16px;font-weight:800;color:var(--txt);font-family:monospace;">'+sec.ewalletAccount+'</div>'+
+        (sec.ewalletName?'<div style="font-size:12px;color:var(--txt2);margin-top:4px;">Name: '+sec.ewalletName+'</div>':'')+
+        '<button id="dep-copy-ewallet-btn" style="margin-top:8px;padding:6px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Copy Number</button>'+
+      '</div>':'')+ 
+    // Description
+    (sec.description?'<div style="font-size:12px;color:var(--txt2);background:var(--bg2);border-radius:8px;padding:10px 12px;margin-bottom:12px;">'+sec.description+'</div>':'')+
+    // Min amount
+    (minAmtLabel?'<div style="background:rgba(246,201,0,0.08);border:1px solid rgba(246,201,0,0.2);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#f6c90e;">'+minAmtLabel+'</div>':'')+
+    // Confirm paid button
+    '<div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:var(--txt2);">'+
+      'By clicking Confirm, you agree that you have sent the correct amount to the address above.'+
+    '</div>'+
+    '<button id="dep-continue-btn" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">✓ I Have Paid — Continue</button>'+
   '</div>';
 
   // STEP 2: Amount + Proof
@@ -206,11 +218,13 @@ function openDepositModal(key,sec){
   // Close
   document.getElementById('dep-modal-close').onclick=function(){ov.remove();};
   ov.onclick=function(e){if(e.target===ov)ov.remove();};
-  // Wire single address copy buttons
-  var sca=document.getElementById('dep-single-copy-addr');
-  if(sca&&sec.address){sca.onclick=function(){navigator.clipboard.writeText(sec.address).then(function(){alert('Address copied!');});};}
-  var scn=document.getElementById('dep-single-copy-net');
-  if(scn&&sec.network){scn.onclick=function(){navigator.clipboard.writeText(sec.network).then(function(){alert('Network copied!');});};}
+  // Wire copy buttons
+  var cab=document.getElementById('dep-copy-addr-btn');
+  if(cab){cab.onclick=function(){navigator.clipboard.writeText(sec.address||'').then(function(){cab.textContent='✓ Copied!';setTimeout(function(){cab.textContent='📋 Copy Address';},2000);});};}
+  var cnb=document.getElementById('dep-copy-net-btn');
+  if(cnb){cnb.onclick=function(){navigator.clipboard.writeText(sec.network||'').then(function(){alert('Network copied: '+sec.network);});};}
+  var ceb=document.getElementById('dep-copy-ewallet-btn');
+  if(ceb){ceb.onclick=function(){navigator.clipboard.writeText(sec.ewalletAccount||'').then(function(){alert('Account number copied!');});};}
 
   var selectedOpt=null;
 
@@ -445,11 +459,13 @@ function openWithdrawModal(key,sec){
 
   document.getElementById('wd-modal-close').onclick=function(){ov.remove();};
   ov.onclick=function(e){if(e.target===ov)ov.remove();};
-  // Wire single address copy buttons
-  var sca=document.getElementById('dep-single-copy-addr');
-  if(sca&&sec.address){sca.onclick=function(){navigator.clipboard.writeText(sec.address).then(function(){alert('Address copied!');});};}
-  var scn=document.getElementById('dep-single-copy-net');
-  if(scn&&sec.network){scn.onclick=function(){navigator.clipboard.writeText(sec.network).then(function(){alert('Network copied!');});};}
+  // Wire copy buttons
+  var cab=document.getElementById('dep-copy-addr-btn');
+  if(cab){cab.onclick=function(){navigator.clipboard.writeText(sec.address||'').then(function(){cab.textContent='✓ Copied!';setTimeout(function(){cab.textContent='📋 Copy Address';},2000);});};}
+  var cnb=document.getElementById('dep-copy-net-btn');
+  if(cnb){cnb.onclick=function(){navigator.clipboard.writeText(sec.network||'').then(function(){alert('Network copied: '+sec.network);});};}
+  var ceb=document.getElementById('dep-copy-ewallet-btn');
+  if(ceb){ceb.onclick=function(){navigator.clipboard.writeText(sec.ewalletAccount||'').then(function(){alert('Account number copied!');});};}
 
   document.getElementById('wd-submit-btn').onclick=function(){
     var amt=parseFloat(document.getElementById('wd-amt').value)||0;
@@ -578,11 +594,13 @@ function openAgentWithdrawalModal(){
 
   document.getElementById('agent-wd-close').onclick=function(){ov.remove();};
   ov.onclick=function(e){if(e.target===ov)ov.remove();};
-  // Wire single address copy buttons
-  var sca=document.getElementById('dep-single-copy-addr');
-  if(sca&&sec.address){sca.onclick=function(){navigator.clipboard.writeText(sec.address).then(function(){alert('Address copied!');});};}
-  var scn=document.getElementById('dep-single-copy-net');
-  if(scn&&sec.network){scn.onclick=function(){navigator.clipboard.writeText(sec.network).then(function(){alert('Network copied!');});};}
+  // Wire copy buttons
+  var cab=document.getElementById('dep-copy-addr-btn');
+  if(cab){cab.onclick=function(){navigator.clipboard.writeText(sec.address||'').then(function(){cab.textContent='✓ Copied!';setTimeout(function(){cab.textContent='📋 Copy Address';},2000);});};}
+  var cnb=document.getElementById('dep-copy-net-btn');
+  if(cnb){cnb.onclick=function(){navigator.clipboard.writeText(sec.network||'').then(function(){alert('Network copied: '+sec.network);});};}
+  var ceb=document.getElementById('dep-copy-ewallet-btn');
+  if(ceb){ceb.onclick=function(){navigator.clipboard.writeText(sec.ewalletAccount||'').then(function(){alert('Account number copied!');});};}
 
   var allAgents={}, selectedAgent=null;
 
