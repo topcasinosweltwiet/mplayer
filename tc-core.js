@@ -192,7 +192,8 @@ function startSession() {
   $('app').style.display = 'block';
   applyTheme(localStorage.getItem('tc_theme') || 'light');
   st('set-un', CD.username || '');
-  ub(); loadHome(); loadDeposit(); loadContactAgents(); startNotifPoll();
+  ub(); loadHome();
+  setTimeout(function(){if(window.loadLiveGames)window.loadLiveGames();},500); loadDeposit(); loadContactAgents(); startNotifPoll();
   if (ptimer) clearInterval(ptimer);
   ptimer = setInterval(function() {
     if (!CK) { clearInterval(ptimer); return; }

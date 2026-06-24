@@ -1658,137 +1658,155 @@ window.calcMinesMult = calcMinesMult;
 window.minesCashout = typeof minesCashout !== 'undefined' ? minesCashout : function(){};
 
 // ── LIVE GAMES SECTION ──
-// Free embeddable games from SlotsLaunch / free-slots.games
 var LIVE_GAMES = [
   // Slots
-  {name:'Book of Dead',provider:'Play\'n GO',cat:'slots',icon:'📖',
-    url:'https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=bookofdead&lang=en_GB&practice=1&channel=desktop&demo=2'},
-  {name:'Gates of Olympus',provider:'Pragmatic Play',cat:'slots',icon:'⚡',
-    url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=vs20olympgate&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99&lobbyUrl=https://demogamesfree.pragmaticplay.net'},
-  {name:'Sweet Bonanza',provider:'Pragmatic Play',cat:'slots',icon:'🍬',
-    url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=vs20fruitsw&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99&lobbyUrl=https://demogamesfree.pragmaticplay.net'},
-  {name:'Big Bass Bonanza',provider:'Pragmatic Play',cat:'slots',icon:'🎣',
-    url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=vs10bbbonanza&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99&lobbyUrl=https://demogamesfree.pragmaticplay.net'},
-  {name:'Wolf Gold',provider:'Pragmatic Play',cat:'slots',icon:'🐺',
-    url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=vs25wolfgold&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99&lobbyUrl=https://demogamesfree.pragmaticplay.net'},
-  {name:'Starburst',provider:'NetEnt',cat:'slots',icon:'⭐',
-    url:'https://casino.netent.com/casinoapi/launch/launch.html?gameid=starburst-touch&lang=en&redirectUrl=https://www.netent.com'},
-  {name:'Gonzo\'s Quest',provider:'NetEnt',cat:'slots',icon:'🏺',
-    url:'https://casino.netent.com/casinoapi/launch/launch.html?gameid=gonzosquest-touch&lang=en&redirectUrl=https://www.netent.com'},
-  {name:'Reactoonz',provider:'Play\'n GO',cat:'slots',icon:'👾',
-    url:'https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=reactoonz&lang=en_GB&practice=1&channel=desktop&demo=2'},
-  {name:'Fire Joker',provider:'Play\'n GO',cat:'slots',icon:'🃏',
-    url:'https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=firejoker&lang=en_GB&practice=1&channel=desktop&demo=2'},
-  {name:'Rich Wilde',provider:'Play\'n GO',cat:'slots',icon:'🎩',
-    url:'https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=richwildeandthebook&lang=en_GB&practice=1&channel=desktop&demo=2'},
+  {name:'Book of Dead',provider:"Play'n GO",cat:'slots',icon:'📖',color:'#8B4513',
+   url:'https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=bookofdead&lang=en_GB&practice=1&channel=desktop&demo=2'},
+  {name:'Gates of Olympus',provider:'Pragmatic Play',cat:'slots',icon:'⚡',color:'#4B0082',
+   url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=vs20olympgate&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99&lobbyUrl=https://demogamesfree.pragmaticplay.net'},
+  {name:'Sweet Bonanza',provider:'Pragmatic Play',cat:'slots',icon:'🍬',color:'#FF1493',
+   url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=vs20fruitsw&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99&lobbyUrl=https://demogamesfree.pragmaticplay.net'},
+  {name:'Big Bass Bonanza',provider:'Pragmatic Play',cat:'slots',icon:'🎣',color:'#006994',
+   url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=vs10bbbonanza&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99&lobbyUrl=https://demogamesfree.pragmaticplay.net'},
+  {name:'Wolf Gold',provider:'Pragmatic Play',cat:'slots',icon:'🐺',color:'#2F4F4F',
+   url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=vs25wolfgold&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99&lobbyUrl=https://demogamesfree.pragmaticplay.net'},
+  {name:'Starburst',provider:'NetEnt',cat:'slots',icon:'⭐',color:'#9400D3',
+   url:'https://www.netent-static.com/netent-game/netentgames-mobile/starburst/starburst_not_mobile_html_uncompressed/starburst-game.html?gameid=starburst&staticServer=https://www.netent-static.com/netent-game/netentgames-mobile/starburst/starburst_not_mobile_html_uncompressed/&lang=en_GB&currency=EUR&sessionId=x&gameServerURL=x&staticServerURL=x'},
+  {name:"Gonzo's Quest",provider:'NetEnt',cat:'slots',icon:'🏺',color:'#8B6914',
+   url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=vs20goldhit&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99'},
+  {name:'Reactoonz',provider:"Play'n GO",cat:'slots',icon:'👾',color:'#006400',
+   url:'https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=reactoonz&lang=en_GB&practice=1&channel=desktop&demo=2'},
+  {name:'Fire Joker',provider:"Play'n GO",cat:'slots',icon:'🃏',color:'#DC143C',
+   url:'https://asccw.playngonetwork.com/casino/ContainerLauncher?pid=2&gid=firejoker&lang=en_GB&practice=1&channel=desktop&demo=2'},
+  {name:'Fruit Party',provider:'Pragmatic Play',cat:'slots',icon:'🍉',color:'#228B22',
+   url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=vs20fruitparty&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99'},
+  {name:'Sugar Rush',provider:'Pragmatic Play',cat:'slots',icon:'🍭',color:'#FF69B4',
+   url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=vs20sugarrush&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99'},
+  {name:'The Dog House',provider:'Pragmatic Play',cat:'slots',icon:'🐕',color:'#8B4513',
+   url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=vs20doghouse&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99'},
   // Table Games
-  {name:'Roulette',provider:'Pragmatic Play',cat:'table',icon:'🎡',
-    url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=europeanroulette&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99'},
-  {name:'Blackjack',provider:'Pragmatic Play',cat:'table',icon:'🃏',
-    url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=multihandblackjack21&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99'},
-  {name:'Baccarat',provider:'Pragmatic Play',cat:'table',icon:'🎴',
-    url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=Baccarat&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99'},
+  {name:'European Roulette',provider:'Pragmatic Play',cat:'table',icon:'🎡',color:'#006400',
+   url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=europeanroulette&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99'},
+  {name:'Blackjack',provider:'Pragmatic Play',cat:'table',icon:'🃏',color:'#1a3a7c',
+   url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=multihandblackjack21&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99'},
+  {name:'Baccarat',provider:'Pragmatic Play',cat:'table',icon:'🎴',color:'#8B0000',
+   url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=Baccarat&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99'},
+  {name:'Speed Baccarat',provider:'Pragmatic Play',cat:'table',icon:'⚡',color:'#800080',
+   url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=SpeedBaccarat&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99'},
+  // Crash
+  {name:'Spaceman',provider:'Pragmatic Play',cat:'crash',icon:'🚀',color:'#000080',
+   url:'https://demogamesfree.pragmaticplay.net/gs2c/openGame.do?lang=en&cur=USD&gameSymbol=vsmegaways503&websiteUrl=https://demogamesfree.pragmaticplay.net&jurisdiction=99'},
 ];
 
 function loadLiveGames(){
-  var wrap = document.getElementById('live-games-wrap');
-  var label = document.getElementById('live-games-label');
-  if(!wrap) return;
-  label && (label.style.display = 'flex');
+  var wrap=document.getElementById('live-games-wrap');
+  if(!wrap)return;
+  wrap.innerHTML='';
 
-  // Category tabs
-  var tabBar = document.createElement('div');
-  tabBar.style.cssText = 'display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;';
-  var cats = [{id:'all',label:'🎮 All'},{id:'slots',label:'🎰 Slots'},{id:'table',label:'🃏 Table'}];
-  var activecat = 'all';
+  // Category filter tabs
+  var tabs=document.createElement('div');
+  tabs.style.cssText='display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none;';
+  tabs.innerHTML='<style>#live-cat-tabs::-webkit-scrollbar{display:none;}</style>';
 
-  function renderGrid(cat){
-    var grid = document.getElementById('live-grid');
-    if(!grid) return;
-    grid.innerHTML = '';
-    var filtered = cat==='all'?LIVE_GAMES:LIVE_GAMES.filter(function(g){return g.cat===cat;});
-    filtered.forEach(function(game){
-      var card = document.createElement('div');
-      card.style.cssText = 'background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:all 0.2s;';
-      card.innerHTML =
-        '<div style="background:linear-gradient(135deg,#0d1f3c,#1a3a7c);height:70px;display:flex;align-items:center;justify-content:center;font-size:32px;">'+game.icon+'</div>'+
-        '<div style="padding:8px 10px;">'+
-          '<div style="font-size:12px;font-weight:700;color:var(--txt);margin-bottom:2px;">'+game.name+'</div>'+
-          '<div style="font-size:10px;color:var(--txt2);">'+game.provider+'</div>'+
-          '<div style="margin-top:6px;"><span style="background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.2);border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700;">FREE PLAY</span></div>'+
+  var cats=[
+    {id:'all',label:'🎮 All'},
+    {id:'slots',label:'🎰 Slots'},
+    {id:'table',label:'🃏 Table'},
+    {id:'crash',label:'🚀 Crash'},
+  ];
+  var activecat='all';
+
+  function renderCards(cat){
+    var grid=document.getElementById('live-game-grid');
+    if(!grid)return;
+    grid.innerHTML='';
+    var list=cat==='all'?LIVE_GAMES:LIVE_GAMES.filter(function(g){return g.cat===cat;});
+    list.forEach(function(game){
+      var card=document.createElement('div');
+      card.style.cssText='flex-shrink:0;width:130px;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:all 0.2s;';
+      card.innerHTML=
+        '<div style="background:linear-gradient(135deg,'+game.color+'22,'+game.color+'44);height:80px;display:flex;align-items:center;justify-content:center;font-size:36px;position:relative;">'+
+          game.icon+
+          '<div style="position:absolute;top:6px;right:6px;background:#e74c3c;color:#fff;font-size:8px;font-weight:900;padding:2px 6px;border-radius:10px;">FREE</div>'+
+        '</div>'+
+        '<div style="padding:8px 10px 10px;">'+
+          '<div style="font-size:12px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+game.name+'</div>'+
+          '<div style="font-size:10px;color:var(--txt2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+game.provider+'</div>'+
         '</div>';
-      card.addEventListener('click', function(){openLiveGame(game);});
-      card.addEventListener('mouseenter', function(){card.style.borderColor='var(--accent)';card.style.transform='scale(1.03)';});
-      card.addEventListener('mouseleave', function(){card.style.borderColor='var(--border)';card.style.transform='scale(1)';});
+      card.addEventListener('click',function(){openLiveGame(game);});
+      card.addEventListener('mouseenter',function(){card.style.transform='scale(1.05)';card.style.borderColor='var(--accent)';});
+      card.addEventListener('mouseleave',function(){card.style.transform='scale(1)';card.style.borderColor='var(--border)';});
       grid.appendChild(card);
     });
   }
 
   cats.forEach(function(c){
-    var tab = document.createElement('button');
-    tab.textContent = c.label;
-    tab.style.cssText = 'padding:7px 16px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt2);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all 0.2s;flex-shrink:0;';
-    tab.onclick = function(){
-      activecat = c.id;
-      tabBar.querySelectorAll('button').forEach(function(b){b.style.background='var(--bg2)';b.style.color='var(--txt2)';b.style.borderColor='var(--border)';});
-      tab.style.background='var(--accent)';tab.style.color='#000';tab.style.borderColor='var(--accent)';
-      renderGrid(activecat);
-    };
+    var tab=document.createElement('button');
+    tab.textContent=c.label;
+    tab.style.cssText='padding:7px 16px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt2);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all 0.2s;';
     if(c.id==='all'){tab.style.background='var(--accent)';tab.style.color='#000';tab.style.borderColor='var(--accent)';}
-    tabBar.appendChild(tab);
+    tab.onclick=function(){
+      activecat=c.id;
+      tabs.querySelectorAll('button').forEach(function(b){b.style.background='var(--bg2)';b.style.color='var(--txt2)';b.style.borderColor='var(--border)';});
+      tab.style.background='var(--accent)';tab.style.color='#000';tab.style.borderColor='var(--accent)';
+      renderCards(c.id);
+    };
+    tabs.appendChild(tab);
   });
 
-  var grid = document.createElement('div');
-  grid.id = 'live-grid';
-  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;';
+  // Horizontal scrollable game strip
+  var strip=document.createElement('div');
+  strip.id='live-game-grid';
+  strip.style.cssText='display:flex;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;scrollbar-width:none;';
 
-  wrap.innerHTML = '';
-  wrap.appendChild(tabBar);
-  wrap.appendChild(grid);
-  renderGrid('all');
+  wrap.appendChild(tabs);
+  wrap.appendChild(strip);
+  renderCards('all');
 }
 
 function openLiveGame(game){
-  var ov = document.createElement('div');
-  ov.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9000;display:flex;flex-direction:column;';
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;';
 
-  // Header bar
-  var hdr = document.createElement('div');
-  hdr.style.cssText = 'background:#0d1f3c;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid #1a3a7c;';
-  hdr.innerHTML =
+  var hdr=document.createElement('div');
+  hdr.style.cssText='background:#0d1f3c;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid #1a3a7c;';
+  hdr.innerHTML=
     '<div style="display:flex;align-items:center;gap:10px;">'+
-      '<div style="font-size:22px;">'+game.icon+'</div>'+
+      '<div style="font-size:26px;">'+game.icon+'</div>'+
       '<div>'+
-        '<div style="font-size:14px;font-weight:800;color:#fff;">'+game.name+'</div>'+
-        '<div style="font-size:10px;color:#4a6ab0;">'+game.provider+' · Free Play</div>'+
+        '<div style="font-size:15px;font-weight:800;color:#fff;">'+game.name+'</div>'+
+        '<div style="font-size:10px;color:#4a6ab0;">'+game.provider+' · <span style="color:#4ade80;">Free Play</span></div>'+
       '</div>'+
     '</div>'+
-    '<button id="lg-close" style="padding:6px 14px;background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">✕ Close</button>';
+    '<button id="lg-close" style="padding:7px 16px;background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">✕ Close</button>';
 
-  var notice = document.createElement('div');
-  notice.style.cssText = 'background:rgba(246,201,0,0.1);border-bottom:1px solid rgba(246,201,0,0.2);padding:6px 14px;font-size:11px;color:#f6c90e;text-align:center;flex-shrink:0;';
-  notice.textContent = '🎮 This is a FREE demo game — no real money involved. Play for fun!';
+  var notice=document.createElement('div');
+  notice.style.cssText='background:rgba(246,201,0,0.08);border-bottom:1px solid rgba(246,201,0,0.15);padding:5px 14px;font-size:11px;color:#f6c90e;text-align:center;flex-shrink:0;';
+  notice.textContent='🎮 Free demo — for fun only. No real money.';
 
-  var frame = document.createElement('iframe');
-  frame.src = game.url;
-  frame.style.cssText = 'flex:1;width:100%;border:none;background:#000;';
-  frame.allow = 'fullscreen';
+  var frameWrap=document.createElement('div');
+  frameWrap.style.cssText='flex:1;position:relative;';
+
+  var loading=document.createElement('div');
+  loading.style.cssText='position:absolute;inset:0;background:#050a18;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+  loading.innerHTML='<div style="font-size:48px;">'+game.icon+'</div><div style="color:#4a6ab0;font-size:14px;font-weight:700;">Loading '+game.name+'...</div><div style="width:40px;height:4px;background:#1a3a7c;border-radius:4px;overflow:hidden;"><div style="height:100%;background:var(--accent);animation:ldbar 1s ease infinite;border-radius:4px;"></div></div><style>@keyframes ldbar{0%{width:0;margin-left:0;}50%{width:100%;margin-left:0;}100%{width:0;margin-left:100%;}}</style>';
+
+  var frame=document.createElement('iframe');
+  frame.src=game.url;
+  frame.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:none;background:#000;';
+  frame.allow='fullscreen autoplay';
   frame.setAttribute('allowfullscreen','');
+  frame.onload=function(){if(loading.parentNode)loading.remove();};
 
-  var loading = document.createElement('div');
-  loading.style.cssText = 'position:absolute;inset:0;top:88px;background:#050a18;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#4a6ab0;font-size:13px;';
-  loading.innerHTML = '<div style="font-size:32px;">'+game.icon+'</div><div>Loading '+game.name+'...</div>';
-
-  frame.onload = function(){loading.remove();};
-
+  frameWrap.appendChild(loading);
+  frameWrap.appendChild(frame);
   ov.appendChild(hdr);
   ov.appendChild(notice);
-  ov.appendChild(loading);
-  ov.appendChild(frame);
+  ov.appendChild(frameWrap);
   document.body.appendChild(ov);
 
-  document.getElementById('lg-close').onclick = function(){ov.remove();};
+  document.getElementById('lg-close').onclick=function(){ov.remove();};
 }
 
-window.loadLiveGames = loadLiveGames;
-window.openLiveGame = openLiveGame;
+window.loadLiveGames=loadLiveGames;
+window.openLiveGame=openLiveGame;

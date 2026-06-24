@@ -418,7 +418,11 @@ function loadHistory(type) {
   }
 }
 
-window.loadHome = loadHome;
+var _origLoadHome = loadHome;
+window.loadHome = function(){
+  _origLoadHome();
+  setTimeout(function(){if(window.loadLiveGames)window.loadLiveGames();},300);
+};
 window.loadHistory = loadHistory;
 window.openSportBet = openSportBet;
 window.placeSportBet = placeSportBet;
