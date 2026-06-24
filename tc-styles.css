@@ -459,3 +459,45 @@ body.dark .auth-tab.active{background:#1a3a7c;color:#fff;}
 
 .hotscroll{display:flex;gap:10px;overflow-x:auto;padding:0 1rem 1rem;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .hotscroll::-webkit-scrollbar{display:none;}
+
+/* ── SLOT REELS ── */
+.slreel{font-size:36px;text-align:center;transition:transform 0.2s,color 0.3s,text-shadow 0.3s;}
+.slreel.spin{animation:reel-spin 0.12s ease infinite;}
+@keyframes reel-spin{0%{transform:translateY(-4px);}50%{transform:translateY(4px);}100%{transform:translateY(-4px);}}
+
+/* ── GAME CARD OUTER ANIMATIONS ── */
+@keyframes card-float{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+@keyframes badge-pulse{0%,100%{opacity:1;}50%{opacity:0.7;}}
+.gc-badge{animation:badge-pulse 2s ease infinite;}
+
+/* ── GAME RESULT ── */
+.gres{border-radius:14px;padding:16px;text-align:center;margin-top:10px;animation:bounce-in 0.35s ease both;}
+.gres.win{background:linear-gradient(135deg,rgba(74,222,128,0.12),rgba(74,222,128,0.05));border:1.5px solid rgba(74,222,128,0.35);box-shadow:0 0 20px rgba(74,222,128,0.1);}
+.gres.lose{background:linear-gradient(135deg,rgba(231,76,60,0.1),rgba(231,76,60,0.04));border:1.5px solid rgba(231,76,60,0.25);}
+.grt{font-size:18px;font-weight:900;margin-bottom:4px;}
+.gres.win .grt{color:#4ade80;}
+.gres.lose .grt{color:#e74c3c;}
+.grs{font-size:12px;color:var(--txt2);}
+
+/* ── CRASH RESULT ── */
+.cres{border-radius:14px;padding:12px;text-align:center;margin-top:8px;}
+.cres.win{background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);}
+.cres.lose{background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2);}
+.crt{font-size:16px;font-weight:800;}
+.crs{font-size:11px;color:var(--txt2);}
+
+/* ── MINES ── */
+.mine-cell{transition:all 0.15s !important;}
+.mine-cell:hover{background:rgba(74,222,128,0.1) !important;border-color:#4ade80 !important;transform:scale(1.05);}
+.mine-cell:active{transform:scale(0.95) !important;}
+
+/* ── HILO CARD ── */
+.hilo-card{background:var(--card);border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:16px;font-weight:800;min-width:40px;text-align:center;}
+
+/* ── CHIPS ── */
+.cbtn{padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg2);color:var(--txt);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;}
+.cbtn:hover{border-color:var(--accent);color:var(--accent);background:rgba(74,222,128,0.08);}
+.cbtn.sel{background:var(--accent);color:#000;border-color:var(--accent);}
+
+/* ── GAME MODAL BET AREA ── */
+#gchips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
