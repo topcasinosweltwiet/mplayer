@@ -456,3 +456,6 @@ body.dark .auth-tab.active{background:#1a3a7c;color:#fff;}
 
 /* ── LIVE GAMES ── */
 #live-games-wrap::-webkit-scrollbar{display:none;}
+
+.hotscroll{display:flex;gap:10px;overflow-x:auto;padding:0 1rem 1rem;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.hotscroll::-webkit-scrollbar{display:none;}
