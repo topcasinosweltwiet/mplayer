@@ -453,3 +453,6 @@ body.dark .auth-tab.active{background:#1a3a7c;color:#fff;}
 .nbadge.pulse,.supp-badge-pulse{animation:pulse-badge 0.8s ease infinite;}
 
 .mcontent{padding-bottom:74px;}
+
+/* ── LIVE GAMES ── */
+#live-games-wrap::-webkit-scrollbar{display:none;}
