@@ -17,8 +17,8 @@ function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function pickArr(a){return a[Math.floor(Math.random()*a.length)];}
 function wc(){
   if(_streak>0){_streak--;return false;}
-  var w=Math.random()<0.40;
-  if(w)_streak=rnd(1,2);
+  var w=Math.random()<0.42;
+  if(w)_streak=rnd(0,1); // shorter streak = slightly higher actual win rate
   return w;
 }
 function deductBet(bet){
@@ -409,6 +409,17 @@ function openGame(g){
   }
   var gcl=$('gclose');
   if(gcl)gcl.onclick=function(){$('gov').classList.remove('open');};
+  // Make modal taller for tower/plinko/mines
+  var gmodal=document.querySelector('.gmodal');
+  if(gmodal){
+    if(g.type==='tower'||g.type==='plinko'||g.type==='mines'){
+      gmodal.style.maxHeight='98vh';
+      gmodal.style.height='96vh';
+    } else {
+      gmodal.style.maxHeight='92vh';
+      gmodal.style.height='';
+    }
+  }
   buildGameUI(g);
   $('gov').classList.add('open');
 }
@@ -545,12 +556,17 @@ function buildGameUI(g){
   }
 
   if(t==='dice'){
+    var nd2=g.nd||2;
     area.innerHTML='<div style="text-align:center;padding:12px 0;">'+
-      '<div style="display:flex;gap:12px;justify-content:center;margin-bottom:14px;">'+
-        [0,1].map(function(i){return '<div id="die'+i+'" style="width:60px;height:60px;background:var(--card);border:2px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:32px;">🎲</div>';}).join('')+
+      '<div style="display:flex;gap:10px;justify-content:center;margin-bottom:14px;">'+
+        Array.from({length:nd2},function(_,i){return '<div id="die'+i+'" style="width:60px;height:60px;background:var(--card);border:2px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:30px;transition:all 0.2s;">🎲</div>';}).join('')+
       '</div>'+
-      '<div id="dice-res" style="font-size:20px;font-weight:900;color:var(--accent);min-height:28px;"></div>'+
-      '<div style="font-size:11px;color:var(--txt2);margin-top:4px;">Roll higher numbers to win!</div>'+
+      '<div id="dice-res" style="font-size:20px;font-weight:900;color:var(--accent);min-height:28px;margin-bottom:6px;"></div>'+
+      '<div style="font-size:11px;color:var(--txt2);">'+(nd2===3?'Sic Bo: guess total range':'Roll and win!')+'</div>'+
+      (nd2===3?'<div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">'+
+        '<button class="gcbtn sel" id="sb-pick" data-v="big" onclick="selectSB(this)">BIG (11-18)</button>'+
+        '<button class="gcbtn" data-v="small" onclick="selectSB(this)">SMALL (3-10)</button>'+
+      '</div>':'')+
     '</div>';
   }
 
@@ -642,6 +658,7 @@ window.selectDT=function(btn){document.querySelectorAll('[onclick*="selectDT"]')
 window.selectBac=function(btn){document.querySelectorAll('[onclick*="selectBac"]').forEach(function(b){b.classList.remove('sel');});btn.classList.add('sel');$('bac-pick').dataset.v=btn.dataset.v;};
 window.selectBS=function(btn){document.querySelectorAll('[onclick*="selectBS"]').forEach(function(b){b.classList.remove('sel');});btn.classList.add('sel');$('bs-pick').dataset.v=btn.dataset.v;};
 window.selectOE=function(btn){document.querySelectorAll('[onclick*="selectOE"]').forEach(function(b){b.classList.remove('sel');});btn.classList.add('sel');$('oe-pick').dataset.v=btn.dataset.v;};
+window.selectSB=function(btn){document.querySelectorAll('[onclick*="selectSB"]').forEach(function(b){b.classList.remove('sel');});btn.classList.add('sel');$('sb-pick').dataset.v=btn.dataset.v;};
 window.selectColor=function(btn){document.querySelectorAll('[onclick*="selectColor"]').forEach(function(b){b.classList.remove('sel');});btn.classList.add('sel');$('cp-pick').dataset.v=btn.dataset.v;};
 
 // ── WHEEL CANVAS ──
@@ -842,23 +859,32 @@ function runInstantGame(g,bet,won,btn){
   }
 
   if(t==='dice'){
-    var nd=g.nd||2,rolls=[],total=0;
-    for(var di2=0;di2<nd;di2++){var d=rnd(1,6);rolls.push(d);total+=d;}
-    var maxT=6*nd,minT=nd;
-    won=wc()?total>Math.floor((maxT+minT)/2):total<=Math.floor((maxT+minT)/2);
-    payout=won?Math.floor(bet*1.9):0;
+    var nd=g.nd||2,rolls2=[],total2=0;
+    for(var di2=0;di2<nd;di2++){var dv=rnd(1,6);rolls2.push(dv);total2+=dv;}
     var dfaces=['⚀','⚁','⚂','⚃','⚄','⚅'];
-    [0,1].forEach(function(i){
-      var el=document.getElementById('die'+i);
-      if(!el)return;
-      var spinD=setInterval(function(){el.textContent=dfaces[rnd(0,5)];},80);
-      setTimeout(function(){clearInterval(spinD);if(rolls[i])el.textContent=dfaces[(rolls[i]||1)-1];},500);
-    });
+    // For Sic Bo (nd=3): player picks big/small
+    if(nd===3){
+      var sbEl=document.getElementById('sb-pick');
+      var sbPick=sbEl?sbEl.dataset.v:'big';
+      var isBig2=total2>=11;
+      won=wc()?(sbPick==='big')===isBig2:(sbPick==='big')===isBig2;
+    } else {
+      won=wc()?total2>=(3*nd/2+1):total2<(3*nd/2+1);
+    }
+    payout=won?Math.floor(bet*1.9):0;
+    for(var di3=0;di3<nd;di3++){
+      (function(idx2,val){
+        var el=document.getElementById('die'+idx2);
+        if(!el)return;
+        var spinD=setInterval(function(){el.textContent=dfaces[rnd(0,5)];el.style.transform='scale(1.05)';},80);
+        setTimeout(function(){clearInterval(spinD);el.textContent=dfaces[val-1];el.style.transform='scale(1)';el.style.borderColor=won?'#4ade80':'#e74c3c';},500);
+      })(di3,rolls2[di3]);
+    }
     var dr=document.getElementById('dice-res');
     setTimeout(function(){
-      if(dr)dr.textContent='Total: '+total+(won?' ✓':' ✗');
+      if(dr)dr.textContent='Total: '+total2+(nd===3?' ('+(total2>=11?'BIG':'SMALL')+')':'');
       finishGame(won,payout,bet,g.id);
-      showResult(won,won?'Rolled '+total+'! +'+fmt(payout):'Rolled '+total+' — Lost',rolls.join(' + ')+' = '+total);
+      showResult(won,won?'Rolled '+total2+'! +'+fmt(payout):'Rolled '+total2+' — Lost',rolls2.join('+')+'='+total2);
       enablePlayBtn();
     },650);
     return;
@@ -1155,7 +1181,7 @@ window.minesCashout=function(){
 function startTower(g,bet){
   deductBet(bet);
   var FLOORS=6,COLS=3;
-  var mults=[1,1.90,3.60,6.80,12.90,24.50,46.50];
+  var mults=[1,1.50,2.50,4.00,7.00,12.00,20.00];
   var safeCol=[],traps=[];
   for(var f=0;f<FLOORS;f++){
     var s=rnd(0,COLS-1);safeCol.push(s);
@@ -1240,14 +1266,15 @@ window.towerCashout=function(){
 function startPlinko(g,bet){
   deductBet(bet);
   var ROWS=8;
-  var MULTS=[10,3,1.5,1,0.5,1,1.5,3,10];
+  // Changed 10x→5x. Center weighted heavily (0.5x middle, rare 5x edges)
+  var MULTS=[5,2,1,0.5,0.2,0.5,1,2,5];
   var COLORS=['#f6c90e','#e67e22','#3b82f6','#4ade80','#6366f1','#4ade80','#3b82f6','#e67e22','#f6c90e'];
   var area=$('gma');if(!area)return;
-  area.innerHTML='<canvas id="plc" style="width:100%;height:260px;display:block;border-radius:14px;background:#050a18;border:1px solid #1a3a7c33;"></canvas>'+
+  area.innerHTML='<canvas id="plc" style="width:100%;height:300px;display:block;border-radius:14px;background:#050a18;border:1px solid #1a3a7c33;"></canvas>'+
     '<div id="gres" class="gres" style="display:none;margin-top:10px;"><div id="grt" class="grt"></div><div id="grs" class="grs"></div></div>';
 
   var canvas=document.getElementById('plc');
-  canvas.width=canvas.offsetWidth||300;canvas.height=260;
+  canvas.width=canvas.offsetWidth||300;canvas.height=300;
   var W=canvas.width,H=canvas.height,ctx=canvas.getContext('2d');
   var NCOLS=ROWS+1,padX=W/(NCOLS+1),padY=30;
 
@@ -1258,40 +1285,38 @@ function startPlinko(g,bet){
     for(var c=0;c<nc;c++) pegs.push({x:sx+c*padX,y:padY+r*((H-90)/(ROWS))});
   }
 
-  // Ball path - starts at center, bounces off pegs
-  // Bucket positions: NCOLS=ROWS+1=9 buckets evenly spaced
-  var bw=W/MULTS.length; // bucket width
-  // Ball starts at top center
+  var bw=W/MULTS.length;
   var path=[{x:W/2,y:8}];
-  // Track which direction ball goes at each row of pegs
-  var dirs=[]; // +1=right, -1=left
-  for(var row=0;row<ROWS;row++){
-    dirs.push(Math.random()<0.5?1:-1);
+  // Weighted bucket selection - strongly center biased
+  // Only 1/30 chance of hitting 5x (index 0 or 8)
+  // Weights: [1,2,4,8,12,8,4,2,1] = 42 total, 5x gets 1/42 each side ≈ 1/21
+  // For house edge: further weight toward 0.2x (middle) 
+  var bucketWeights=[1,3,6,10,16,10,6,3,1]; // sum=56
+  var totalW=bucketWeights.reduce(function(a,b){return a+b;},0);
+  var rand=Math.random()*totalW;
+  var bucketIdx=0,cumW=0;
+  for(var wi=0;wi<bucketWeights.length;wi++){
+    cumW+=bucketWeights[wi];
+    if(rand<cumW){bucketIdx=wi;break;}
   }
-  // Calculate final bucket: start at center bucket, move based on dirs
-  // Center bucket index
-  var centerBucket=Math.floor(MULTS.length/2); // = 4
-  var bucketIdx=centerBucket;
-  for(var di=0;di<dirs.length;di++){
-    if(dirs[di]===1) bucketIdx++;
-    // No movement left keeps center bias
-  }
-  bucketIdx=Math.max(0,Math.min(MULTS.length-1,bucketIdx));
+  // Build natural-looking path toward bucket
+  var finalBX=bucketIdx*bw+bw/2;
   
-  // Build path that smoothly leads to correct bucket X position
-  var finalBucketX=bucketIdx*bw+bw/2;
+  // Build path toward bucket with natural peg-bouncing look
   var startX=W/2;
+  var rowH=(H-90)/ROWS;
   for(var row2=0;row2<ROWS;row2++){
-    var progress=(row2+1)/ROWS;
-    // Interpolate from start to final position with some wobble
-    var targetX=startX+(finalBucketX-startX)*Math.pow(progress,0.8);
-    var wobble=(Math.random()-0.5)*padX*0.3;
-    path.push({x:targetX+wobble,y:padY+(row2+1)*((H-90)/ROWS)});
+    var t=(row2+1)/ROWS;
+    // Ease toward final bucket more as we go down
+    var eased=Math.pow(t,1.3);
+    var targetX=startX+(finalBX-startX)*eased;
+    // Add small random wobble like real peg bounce
+    var wobble=(Math.random()-0.5)*padX*0.5;
+    path.push({x:targetX+wobble,y:padY+(row2+1)*rowH});
   }
-  // Last point: land exactly at bucket center
-  path.push({x:finalBucketX,y:H-48});
+  path.push({x:finalBX,y:H-48});
   
-  var mult=MULTS[bucketIdx],payout=Math.floor(bet*mult),won=payout>=bet;
+  var mult=MULTS[bucketIdx],payout=Math.floor(bet*mult),won=payout>bet;
   var frame=0,total=path.length*14;
 
   function draw(){
