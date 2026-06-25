@@ -501,3 +501,5 @@ body.dark .auth-tab.active{background:#1a3a7c;color:#fff;}
 
 /* ── GAME MODAL BET AREA ── */
 #gchips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+
+.tower-btn:hover:not(.future){background:linear-gradient(135deg,#0d4d22,#0d5c29) !important;border-color:#4ade80 !important;transform:scale(1.06) !important;box-shadow:0 0 18px #4ade8066 !important;}

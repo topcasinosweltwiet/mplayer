@@ -195,6 +195,19 @@ var ALL_CASINO = [
     '.cres.lose{background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.2)}',
     '.crt{font-size:15px;font-weight:800}.cres.win .crt{color:#4ade80}.cres.lose .crt{color:#e74c3c}',
     '.crs{font-size:11px;color:var(--txt2)}',
+    // Animated logo keyframes
+    '@keyframes rocket-float{0%,100%{transform:translateY(0) rotate(-10deg)}50%{transform:translateY(-6px) rotate(-10deg)}}',
+    '@keyframes plane-fly{0%{transform:translateX(0)}50%{transform:translateX(4px)}100%{transform:translateX(0)}}',
+    '@keyframes coin-spin{0%{transform:rotateY(0)}100%{transform:rotateY(360deg)}}',
+    '@keyframes wheel-spin-idle{from{transform:rotate(0)}to{transform:rotate(360deg)}}',
+    '@keyframes bomb-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}',
+    '@keyframes gem-shine{0%,100%{filter:brightness(1)}50%{filter:brightness(1.6)}}',
+    '@keyframes card-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}',
+    '@keyframes plinko-bounce{0%,100%{transform:translateY(0)}25%{transform:translateY(-5px)}75%{transform:translateY(-2px)}}',
+    '@keyframes lightning-zap{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.7;transform:scale(1.05)}}',
+    '@keyframes slot-reel{0%{transform:translateY(0)}100%{transform:translateY(-100%)}}',
+    '.gc-icon-inner svg{animation:none}',
+    '.game-card:hover .gc-icon-inner svg{animation-play-state:running !important}',
   ].join('');
   document.head.appendChild(st);
 })();
@@ -203,19 +216,105 @@ var ALL_CASINO = [
 function buildGameLogo(g,d){
   var c1=d.c1||'#4ade80', c2=d.c2||'#86efac', id=g.id||'x';
   if(g.type==='crash'){
-    if(g.vehicle==='plane') return '<svg width="52" height="52" viewBox="0 0 52 52"><defs><linearGradient id="p'+id+'" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="'+c1+'"/><stop offset="100%" stop-color="'+c2+'"/></linearGradient></defs><ellipse cx="26" cy="26" rx="18" ry="7" fill="url(#p'+id+')" opacity="0.9"/><polygon points="44,26 32,20 32,32" fill="'+c2+'"/><polygon points="20,18 26,26 20,34 12,34 16,26 12,18" fill="'+c1+'" opacity="0.85"/><polygon points="36,20 42,26 36,32 34,26" fill="'+c2+'" opacity="0.6"/><circle cx="28" cy="26" r="3" fill="'+c2+'"/></svg>';
+    if(g.vehicle==='plane') return '<svg width="52" height="52" viewBox="0 0 52 52" style="animation:plane-fly 1.5s ease-in-out infinite;display:block;"><defs><linearGradient id="p'+id+'" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="'+c1+'"/><stop offset="100%" stop-color="'+c2+'"/></linearGradient></defs>'+
+      '<ellipse cx="26" cy="26" rx="18" ry="7" fill="url(#p'+id+')" opacity="0.9"/>'+
+      '<polygon points="44,26 32,20 32,32" fill="'+c2+'"/>'+
+      '<polygon points="20,18 26,26 20,34 12,34 16,26 12,18" fill="'+c1+'" opacity="0.85"/>'+
+      '<polygon points="36,20 42,26 36,32 34,26" fill="'+c2+'" opacity="0.6"/>'+
+      '<circle cx="28" cy="26" r="3" fill="'+c2+'"/>'+
+      '<ellipse cx="28" cy="26" rx="1.5" ry="1" fill="white" opacity="0.7"/>'+
+      '</svg>';
     if(g.vehicle==='lightning') return '<svg width="52" height="52" viewBox="0 0 52 52"><polygon points="32,4 17,28 25,28 18,50 38,22 30,22" fill="'+c1+'"/><polygon points="32,4 17,28 25,28 18,50 38,22 30,22" fill="'+c2+'" opacity="0.4"/></svg>';
-    return '<svg width="52" height="52" viewBox="0 0 52 52"><defs><linearGradient id="r'+id+'" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="'+c1+'"/><stop offset="100%" stop-color="'+c2+'"/></linearGradient></defs><ellipse cx="26" cy="32" rx="10" ry="13" fill="url(#r'+id+')"/><polygon points="26,8 20,24 32,24" fill="'+c2+'"/><polygon points="14,35 20,28 20,39" fill="'+c1+'" opacity="0.8"/><polygon points="38,35 32,28 32,39" fill="'+c1+'" opacity="0.8"/><circle cx="26" cy="24" r="5" fill="'+c2+'" opacity="0.9"/><ellipse cx="26" cy="44" rx="7" ry="3" fill="'+c1+'" opacity="0.35"/></svg>';
+    return '<svg width="52" height="52" viewBox="0 0 52 52" style="animation:rocket-float 2s ease-in-out infinite;display:block;"><defs><linearGradient id="r'+id+'" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="'+c1+'"/><stop offset="100%" stop-color="'+c2+'"/></linearGradient><radialGradient id="rg'+id+'" cx="40%" cy="30%" r="60%"><stop offset="0%" stop-color="#fff" stop-opacity="0.5"/><stop offset="100%" stop-color="'+c2+'" stop-opacity="0"/></radialGradient></defs>'+
+      '<ellipse cx="26" cy="32" rx="10" ry="13" fill="url(#r'+id+')"/>'+
+      '<ellipse cx="26" cy="32" rx="10" ry="13" fill="url(#rg'+id+')" opacity="0.6"/>'+
+      '<polygon points="26,8 20,24 32,24" fill="'+c2+'"/>'+
+      '<polygon points="14,35 20,28 20,39" fill="'+c1+'" opacity="0.8"/>'+
+      '<polygon points="38,35 32,28 32,39" fill="'+c1+'" opacity="0.8"/>'+
+      '<circle cx="26" cy="24" r="5" fill="'+c2+'" opacity="0.9"/>'+
+      '<ellipse cx="26" cy="24" rx="3" ry="2" fill="white" opacity="0.5"/>'+
+      '<ellipse cx="26" cy="45" rx="6" ry="2.5" fill="'+c1+'" opacity="0.3">'+
+        '<animate attributeName="ry" values="2.5;4;2.5" dur="0.4s" repeatCount="indefinite"/>'+
+        '<animate attributeName="opacity" values="0.3;0.6;0.3" dur="0.4s" repeatCount="indefinite"/>'+
+      '</ellipse>'+
+      '</svg>';
   }
-  if(g.type==='slots') return '<svg width="52" height="52" viewBox="0 0 52 52"><rect x="4" y="10" width="14" height="30" rx="3" fill="'+c1+'" opacity="0.85"/><rect x="19" y="10" width="14" height="30" rx="3" fill="'+c2+'" opacity="0.9"/><rect x="34" y="10" width="14" height="30" rx="3" fill="'+c1+'" opacity="0.85"/><text x="11" y="31" font-size="10" fill="#fff" text-anchor="middle" font-weight="900">7</text><text x="26" y="31" font-size="10" fill="#fff" text-anchor="middle" font-weight="900">★</text><text x="41" y="31" font-size="10" fill="#fff" text-anchor="middle" font-weight="900">7</text><line x1="4" y1="25" x2="48" y2="25" stroke="'+c2+'" stroke-width="1.5" opacity="0.5"/></svg>';
-  if(g.type==='bj') return '<svg width="52" height="52" viewBox="0 0 52 52"><rect x="6" y="8" width="22" height="30" rx="4" fill="'+c1+'" opacity="0.9"/><rect x="22" y="14" width="22" height="30" rx="4" fill="'+c2+'" opacity="0.85"/><text x="16" y="28" font-size="14" fill="#fff" text-anchor="middle" font-weight="900">A</text><text x="33" y="34" font-size="14" fill="#fff" text-anchor="middle" font-weight="900">K</text><text x="8" y="16" font-size="8" fill="#fff">♠</text><text x="34" y="44" font-size="8" fill="#fff">♥</text></svg>';
+  if(g.type==='slots') return '<svg width="52" height="52" viewBox="0 0 52 52" style="display:block;">'+
+    '<rect x="4" y="8" width="14" height="36" rx="3" fill="'+c1+'" opacity="0.85"/>'+
+    '<rect x="19" y="8" width="14" height="36" rx="3" fill="'+c2+'" opacity="0.9"/>'+
+    '<rect x="34" y="8" width="14" height="36" rx="3" fill="'+c1+'" opacity="0.85"/>'+
+    '<text x="11" y="21" font-size="9" fill="#fff" text-anchor="middle" font-weight="900" opacity="0.4">7</text>'+
+    '<text x="11" y="31" font-size="11" fill="#fff" text-anchor="middle" font-weight="900">7</text>'+
+    '<text x="11" y="41" font-size="9" fill="#fff" text-anchor="middle" font-weight="900" opacity="0.4">★</text>'+
+    '<text x="26" y="31" font-size="11" fill="#fff" text-anchor="middle" font-weight="900">★</text>'+
+    '<text x="41" y="31" font-size="11" fill="#fff" text-anchor="middle" font-weight="900">7</text>'+
+    '<line x1="4" y1="26" x2="48" y2="26" stroke="'+c2+'" stroke-width="2" opacity="0.6"/>'+
+    '<rect x="4" y="8" width="44" height="6" rx="2" fill="url(#slot-shade)" opacity="0.5"/>'+
+    '<rect x="4" y="38" width="44" height="6" rx="2" fill="'+c1+'" opacity="0.3"/>'+
+    '</svg>';
+  if(g.type==='bj') return '<svg width="52" height="52" viewBox="0 0 52 52" style="display:block;">'+
+    '<rect x="6" y="8" width="22" height="30" rx="4" fill="'+c1+'" opacity="0.9" style="animation:card-bounce 2s ease-in-out infinite;transform-origin:17px 23px;"/>'+
+    '<rect x="22" y="14" width="22" height="30" rx="4" fill="'+c2+'" opacity="0.85" style="animation:card-bounce 2s ease-in-out 0.3s infinite;transform-origin:33px 29px;"/>'+
+    '<text x="16" y="28" font-size="14" fill="#fff" text-anchor="middle" font-weight="900">A</text>'+
+    '<text x="33" y="34" font-size="14" fill="#fff" text-anchor="middle" font-weight="900">K</text>'+
+    '<text x="8" y="16" font-size="8" fill="#fff">♠</text>'+
+    '<text x="34" y="44" font-size="8" fill="#fff">♥</text>'+
+    '</svg>';
   if(g.type==='roulette') return '<svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="21" fill="none" stroke="'+c1+'" stroke-width="3"/><circle cx="26" cy="26" r="13" fill="none" stroke="'+c2+'" stroke-width="1.5" opacity="0.6"/><path d="M26,5 A21,21 0 0,1 47,26" fill="'+c1+'" opacity="0.7"/><path d="M47,26 A21,21 0 0,1 26,47" fill="#1a3a6a" opacity="0.8"/><path d="M26,47 A21,21 0 0,1 5,26" fill="'+c1+'" opacity="0.5"/><path d="M5,26 A21,21 0 0,1 26,5" fill="#1a3a6a" opacity="0.8"/><circle cx="26" cy="26" r="5" fill="'+c2+'"/></svg>';
   if(g.type==='dice') return '<svg width="52" height="52" viewBox="0 0 52 52"><rect x="4" y="14" width="24" height="24" rx="5" fill="'+c1+'" opacity="0.9"/><circle cx="12" cy="22" r="2.5" fill="#fff"/><circle cx="20" cy="22" r="2.5" fill="#fff"/><circle cx="12" cy="30" r="2.5" fill="#fff"/><circle cx="20" cy="30" r="2.5" fill="#fff"/><rect x="24" y="6" width="24" height="24" rx="5" fill="'+c2+'" opacity="0.85"/><circle cx="36" cy="18" r="2.5" fill="#fff"/></svg>';
-  if(g.type==='wheel') return '<svg width="52" height="52" viewBox="0 0 52 52"><path d="M26,5 A21,21 0 0,1 47,26" fill="'+c1+'" opacity="0.9"/><path d="M47,26 A21,21 0 0,1 26,47" fill="'+c2+'" opacity="0.9"/><path d="M26,47 A21,21 0 0,1 5,26" fill="'+c1+'" opacity="0.7"/><path d="M5,26 A21,21 0 0,1 26,5" fill="'+c2+'" opacity="0.7"/><circle cx="26" cy="26" r="6" fill="#fff"/><circle cx="26" cy="5" r="3" fill="'+c1+'"/></svg>';
-  if(g.type==='coin') return '<svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="21" fill="'+c1+'" opacity="0.85" stroke="'+c2+'" stroke-width="2"/><circle cx="26" cy="26" r="15" fill="none" stroke="'+c2+'" stroke-width="1.5" opacity="0.5"/><text x="26" y="32" font-size="15" fill="#fff" text-anchor="middle" font-weight="900">₿</text></svg>';
-  if(g.type==='mines') return '<svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="15" fill="'+c1+'" opacity="0.85"/><circle cx="26" cy="26" r="9" fill="#0a0000"/><line x1="26" y1="4" x2="26" y2="48" stroke="'+c1+'" stroke-width="2.5" stroke-linecap="round"/><line x1="4" y1="26" x2="48" y2="26" stroke="'+c1+'" stroke-width="2.5" stroke-linecap="round"/><line x1="10" y1="10" x2="42" y2="42" stroke="'+c1+'" stroke-width="2" stroke-linecap="round"/><line x1="42" y1="10" x2="10" y2="42" stroke="'+c1+'" stroke-width="2" stroke-linecap="round"/><circle cx="26" cy="26" r="4" fill="'+c2+'"/></svg>';
-  if(g.type==='tower') return '<svg width="52" height="52" viewBox="0 0 52 52"><rect x="19" y="38" width="14" height="10" rx="2" fill="'+c1+'" opacity="0.9"/><rect x="15" y="27" width="22" height="12" rx="2" fill="'+c2+'" opacity="0.85"/><rect x="11" y="16" width="30" height="12" rx="2" fill="'+c1+'" opacity="0.8"/><rect x="19" y="5" width="14" height="12" rx="2" fill="'+c2+'" opacity="0.9"/><circle cx="26" cy="3" r="3" fill="'+c2+'"/></svg>';
-  if(g.type==='plinko') return '<svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="8" r="5" fill="'+c2+'" opacity="0.95"/><circle cx="17" cy="20" r="3" fill="'+c1+'" opacity="0.7"/><circle cx="35" cy="20" r="3" fill="'+c1+'" opacity="0.7"/><circle cx="8" cy="32" r="3" fill="'+c1+'" opacity="0.6"/><circle cx="26" cy="32" r="3" fill="'+c1+'" opacity="0.6"/><circle cx="44" cy="32" r="3" fill="'+c1+'" opacity="0.6"/><rect x="3" y="44" width="13" height="6" rx="2" fill="'+c2+'" opacity="0.7"/><rect x="20" y="44" width="12" height="6" rx="2" fill="'+c1+'" opacity="0.95"/><rect x="36" y="44" width="13" height="6" rx="2" fill="'+c2+'" opacity="0.7"/></svg>';
+  if(g.type==='wheel') return '<svg width="52" height="52" viewBox="0 0 52 52" style="display:block;">'+
+    '<g style="transform-origin:26px 26px;animation:wheel-spin-idle 3s linear infinite;">'+
+      '<path d="M26,5 A21,21 0 0,1 47,26 L26,26 Z" fill="'+c1+'" opacity="0.9"/>'+
+      '<path d="M47,26 A21,21 0 0,1 26,47 L26,26 Z" fill="'+c2+'" opacity="0.9"/>'+
+      '<path d="M26,47 A21,21 0 0,1 5,26 L26,26 Z" fill="'+c1+'" opacity="0.7"/>'+
+      '<path d="M5,26 A21,21 0 0,1 26,5 L26,26 Z" fill="'+c2+'" opacity="0.7"/>'+
+      '<circle cx="26" cy="26" r="4" fill="#fff"/>'+
+    '</g>'+
+    '<circle cx="26" cy="5" r="4" fill="#f6c90e"/>'+
+    '</svg>';
+  if(g.type==='coin') return '<svg width="52" height="52" viewBox="0 0 52 52" style="display:block;">'+
+    '<ellipse cx="26" cy="26" rx="21" ry="21" fill="'+c1+'" opacity="0.85" stroke="'+c2+'" stroke-width="2">'+
+      '<animate attributeName="rx" values="21;8;21" dur="2s" repeatCount="indefinite"/>'+
+    '</ellipse>'+
+    '<text x="26" y="32" font-size="15" fill="#fff" text-anchor="middle" font-weight="900">₿</text>'+
+    '</svg>';
+  if(g.type==='mines') return '<svg width="52" height="52" viewBox="0 0 52 52" style="animation:bomb-pulse 1.2s ease-in-out infinite;display:block;">'+
+    '<circle cx="26" cy="26" r="15" fill="'+c1+'" opacity="0.85"/>'+
+    '<circle cx="26" cy="26" r="9" fill="#0a0000"/>'+
+    '<line x1="26" y1="4" x2="26" y2="48" stroke="'+c1+'" stroke-width="2.5" stroke-linecap="round"/>'+
+    '<line x1="4" y1="26" x2="48" y2="26" stroke="'+c1+'" stroke-width="2.5" stroke-linecap="round"/>'+
+    '<line x1="10" y1="10" x2="42" y2="42" stroke="'+c1+'" stroke-width="2" stroke-linecap="round"/>'+
+    '<line x1="42" y1="10" x2="10" y2="42" stroke="'+c1+'" stroke-width="2" stroke-linecap="round"/>'+
+    '<circle cx="26" cy="26" r="4" fill="'+c2+'"/>'+
+    '<circle cx="20" cy="16" r="2" fill="'+c2+'" opacity="0.7">'+
+      '<animate attributeName="opacity" values="0.7;1;0.7" dur="0.8s" repeatCount="indefinite"/>'+
+    '</circle>'+
+    '</svg>';
+  if(g.type==='tower') return '<svg width="52" height="52" viewBox="0 0 52 52" style="display:block;">'+
+    '<rect x="19" y="38" width="14" height="10" rx="2" fill="'+c1+'" opacity="0.9"/>'+
+    '<rect x="15" y="27" width="22" height="12" rx="2" fill="'+c2+'" opacity="0.85"/>'+
+    '<rect x="11" y="16" width="30" height="12" rx="2" fill="'+c1+'" opacity="0.8"/>'+
+    '<rect x="19" y="5" width="14" height="12" rx="2" fill="'+c2+'" opacity="0.9">'+
+      '<animate attributeName="fill" values="'+c2+';#fff;'+c2+'" dur="1.5s" repeatCount="indefinite"/>'+
+    '</rect>'+
+    '<circle cx="26" cy="3" r="3" fill="'+c2+'">'+
+      '<animate attributeName="r" values="3;5;3" dur="1.5s" repeatCount="indefinite"/>'+
+      '<animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite"/>'+
+    '</circle>'+
+    '</svg>';
+  if(g.type==='plinko') return '<svg width="52" height="52" viewBox="0 0 52 52" style="display:block;">'+
+    '<circle cx="26" cy="8" r="5" fill="'+c2+'" opacity="0.95">'+
+      '<animate attributeName="cy" values="8;14;8" dur="0.6s" repeatCount="indefinite"/>'+
+    '</circle>'+
+    '<circle cx="17" cy="20" r="3" fill="'+c1+'" opacity="0.7"/>'+
+    '<circle cx="35" cy="20" r="3" fill="'+c1+'" opacity="0.7"/>'+
+    '<circle cx="8" cy="32" r="3" fill="'+c1+'" opacity="0.6"/>'+
+    '<circle cx="26" cy="32" r="3" fill="'+c1+'" opacity="0.6"/>'+
+    '<circle cx="44" cy="32" r="3" fill="'+c1+'" opacity="0.6"/>'+
+    '<rect x="3" y="44" width="13" height="6" rx="2" fill="'+c2+'" opacity="0.7"/>'+
+    '<rect x="20" y="44" width="12" height="6" rx="2" fill="'+c1+'" opacity="0.95"/>'+
+    '<rect x="36" y="44" width="13" height="6" rx="2" fill="'+c2+'" opacity="0.7"/>'+
+    '</svg>';
   if(g.type==='hilo') return '<svg width="52" height="52" viewBox="0 0 52 52"><rect x="4" y="16" width="20" height="28" rx="4" fill="'+c1+'" opacity="0.9"/><rect x="28" y="8" width="20" height="28" rx="4" fill="'+c2+'" opacity="0.9"/><text x="14" y="35" font-size="14" fill="#fff" text-anchor="middle" font-weight="900">2</text><text x="38" y="27" font-size="14" fill="#fff" text-anchor="middle" font-weight="900">A</text><polygon points="26,24 22,32 30,32" fill="#fff" opacity="0.9"/></svg>';
   if(g.type==='war') return '<svg width="52" height="52" viewBox="0 0 52 52"><rect x="4" y="10" width="20" height="28" rx="4" fill="'+c1+'" opacity="0.9"/><rect x="28" y="14" width="20" height="28" rx="4" fill="'+c2+'" opacity="0.7"/><text x="14" y="30" font-size="14" fill="#fff" text-anchor="middle" font-weight="900">A</text><text x="38" y="34" font-size="14" fill="#fff" text-anchor="middle" font-weight="900">K</text><line x1="26" y1="8" x2="26" y2="44" stroke="#fff" stroke-width="2" opacity="0.5"/></svg>';
   if(g.type==='dt') return '<svg width="52" height="52" viewBox="0 0 52 52"><text x="6" y="34" font-size="22">🐉</text><text x="28" y="34" font-size="22">🐯</text><line x1="26" y1="8" x2="26" y2="44" stroke="'+c1+'" stroke-width="2" opacity="0.5"/></svg>';
@@ -578,7 +677,15 @@ function runInstantGame(g,bet,won,btn){
     var syms=SLOT_SYMS[g.syms]||SLOT_SYMS.slots1;
     var finalSyms;
     if(won){var ws=pickArr(syms);finalSyms=[ws,ws,ws];}
-    else{finalSyms=[pickArr(syms),pickArr(syms),pickArr(syms)];if(finalSyms[0]===finalSyms[1]&&finalSyms[1]===finalSyms[2])finalSyms[2]=syms[(syms.indexOf(finalSyms[2])+1)%syms.length];}
+    else{
+      finalSyms=[pickArr(syms),pickArr(syms),pickArr(syms)];
+      // Make sure no accidental match on loss
+      var tries=0;
+      while(finalSyms[0]===finalSyms[1]&&finalSyms[1]===finalSyms[2]&&tries<10){
+        finalSyms[2]=syms[(syms.indexOf(finalSyms[2])+1)%syms.length];
+        tries++;
+      }
+    }
     // Animate reels
     var stops=[600,950,1300];
     for(var ri=0;ri<3;ri++){
@@ -600,10 +707,13 @@ function runInstantGame(g,bet,won,btn){
         },stops[idx]);
       })(ri,finalSyms[ri]);
     }
-    payout=won?Math.floor(bet*(g.mult||3)):0;
+    // Check if all 3 match (real match check after animation)
+    var isMatch=finalSyms[0]===finalSyms[1]&&finalSyms[1]===finalSyms[2];
+    payout=isMatch?Math.floor(bet*(g.mult||3)):0;
+    var realWon=isMatch;
     setTimeout(function(){
-      finishGame(won,payout,bet,g.id);
-      showResult(won,won?'🎰 WIN! +'+fmt(payout):'No match — Try again','');
+      finishGame(realWon,payout,bet,g.id);
+      showResult(realWon,realWon?'🎰 MATCH! +'+fmt(payout):'No match — Try again','');
       enablePlayBtn();
     },1550);
     return;
@@ -760,26 +870,54 @@ function runInstantGame(g,bet,won,btn){
     var seg=segs[winIdx]||{l:'0x',v:0};
     payout=seg.v>0?Math.floor(bet*seg.v):0;
     won=payout>0;
-    // Animate wheel spin
+    // Proper wheel spin - rotate the wheel itself
     var canvas2=document.getElementById('wheel-canvas');
     if(canvas2&&segs.length){
-      var angle=0,speed=20,targetAngle=(360-winIdx*(360/segs.length))+360*4;
-      var spinInt=setInterval(function(){
-        angle+=speed;speed*=0.97;
-        drawWheelCanvas(segs,-1);
+      var totalSegs=segs.length;
+      var segAngle=Math.PI*2/totalSegs;
+      // Target: winIdx segment lands at top (pointer)
+      var targetRot=(Math.PI*2*4)+(Math.PI*2-(winIdx*segAngle+segAngle/2)); // 4 full spins + land on winner
+      var startTime=null,duration=3000;
+      function spinFrame(ts){
+        if(!startTime)startTime=ts;
+        var elapsed=ts-startTime;
+        var progress=Math.min(elapsed/duration,1);
+        // Ease out cubic
+        var ease=1-Math.pow(1-progress,3);
+        var curRot=ease*targetRot;
+        // Draw rotated wheel
         var ctx2=canvas2.getContext('2d');
-        ctx2.save();ctx2.translate(canvas2.width/2,canvas2.height/2);ctx2.rotate(angle*Math.PI/180);ctx2.translate(-canvas2.width/2,-canvas2.height/2);
-        if(speed<0.5){clearInterval(spinInt);drawWheelCanvas(segs,winIdx);var wr=document.getElementById('wheel-res');if(wr)wr.textContent=seg.l;}
+        var W2=canvas2.width,H2=canvas2.height,cx2=W2/2,cy2=H2/2,R2=W2/2-6;
+        ctx2.clearRect(0,0,W2,H2);
+        ctx2.save();ctx2.translate(cx2,cy2);ctx2.rotate(curRot);ctx2.translate(-cx2,-cy2);
+        segs.forEach(function(s,i){
+          var a=segAngle*i-Math.PI/2;
+          ctx2.beginPath();ctx2.moveTo(cx2,cy2);ctx2.arc(cx2,cy2,R2,a,a+segAngle);ctx2.closePath();
+          ctx2.fillStyle=s.c+(progress>=1&&i===winIdx?'ff':'99');ctx2.fill();
+          ctx2.strokeStyle='#050a18';ctx2.lineWidth=2;ctx2.stroke();
+          ctx2.save();ctx2.translate(cx2,cy2);ctx2.rotate(a+segAngle/2);
+          ctx2.fillStyle='#fff';ctx2.font='bold 12px sans-serif';ctx2.textAlign='right';
+          ctx2.fillText(s.l,R2-8,5);ctx2.restore();
+        });
         ctx2.restore();
-      },30);
+        // Center dot
+        ctx2.beginPath();ctx2.arc(cx2,cy2,12,0,Math.PI*2);ctx2.fillStyle='#0a1525';ctx2.fill();
+        ctx2.strokeStyle='#4ade80';ctx2.lineWidth=2;ctx2.stroke();
+        // Pointer (fixed at top)
+        ctx2.fillStyle='#f6c90e';ctx2.beginPath();ctx2.moveTo(cx2,cy2-R2-2);ctx2.lineTo(cx2-8,cy2-R2+12);ctx2.lineTo(cx2+8,cy2-R2+12);ctx2.closePath();ctx2.fill();
+        if(progress<1) requestAnimationFrame(spinFrame);
+        else{
+          var wr=document.getElementById('wheel-res');
+          if(wr){wr.textContent=seg.l;wr.style.color=seg.v>0?'#4ade80':'#e74c3c';}
+        }
+      }
+      requestAnimationFrame(spinFrame);
     }
-    var wr2=document.getElementById('wheel-res');
     setTimeout(function(){
-      if(wr2)wr2.textContent=seg.l;
       finishGame(won,payout,bet,g.id);
       showResult(won,won?seg.l+'! +'+fmt(payout):seg.l+' — Lost','');
       enablePlayBtn();
-    },2500);
+    },3200);
     return;
   }
 
@@ -1120,16 +1258,39 @@ function startPlinko(g,bet){
     for(var c=0;c<nc;c++) pegs.push({x:sx+c*padX,y:padY+r*((H-90)/(ROWS))});
   }
 
-  // Ball path
+  // Ball path - starts at center, bounces off pegs
+  // Bucket positions: NCOLS=ROWS+1=9 buckets evenly spaced
+  var bw=W/MULTS.length; // bucket width
+  // Ball starts at top center
   var path=[{x:W/2,y:8}];
-  var bx=W/2,bucketIdx=Math.floor(NCOLS/2)-1;
+  // Track which direction ball goes at each row of pegs
+  var dirs=[]; // +1=right, -1=left
   for(var row=0;row<ROWS;row++){
-    var right=Math.random()<0.5;
-    bx+=right?padX/2:-padX/2;
-    bucketIdx+=right?1:0;
-    path.push({x:bx,y:padY+row*((H-90)/ROWS)+((H-90)/ROWS)});
+    dirs.push(Math.random()<0.5?1:-1);
   }
-  bucketIdx=Math.max(0,Math.min(MULTS.length-1,bucketIdx-1));
+  // Calculate final bucket: start at center bucket, move based on dirs
+  // Center bucket index
+  var centerBucket=Math.floor(MULTS.length/2); // = 4
+  var bucketIdx=centerBucket;
+  for(var di=0;di<dirs.length;di++){
+    if(dirs[di]===1) bucketIdx++;
+    // No movement left keeps center bias
+  }
+  bucketIdx=Math.max(0,Math.min(MULTS.length-1,bucketIdx));
+  
+  // Build path that smoothly leads to correct bucket X position
+  var finalBucketX=bucketIdx*bw+bw/2;
+  var startX=W/2;
+  for(var row2=0;row2<ROWS;row2++){
+    var progress=(row2+1)/ROWS;
+    // Interpolate from start to final position with some wobble
+    var targetX=startX+(finalBucketX-startX)*Math.pow(progress,0.8);
+    var wobble=(Math.random()-0.5)*padX*0.3;
+    path.push({x:targetX+wobble,y:padY+(row2+1)*((H-90)/ROWS)});
+  }
+  // Last point: land exactly at bucket center
+  path.push({x:finalBucketX,y:H-48});
+  
   var mult=MULTS[bucketIdx],payout=Math.floor(bet*mult),won=payout>=bet;
   var frame=0,total=path.length*14;
 
