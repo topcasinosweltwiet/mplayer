@@ -410,7 +410,7 @@ function openGame(g){
   var gcl=$('gclose');
   if(gcl)gcl.onclick=function(){$('gov').classList.remove('open');};
   // Make modal taller for tower/plinko/mines
-  var gmodal=document.querySelector('.gmodal');
+  var gmodal=document.getElementById('main-gmodal');
   if(gmodal){
     if(g.type==='tower'||g.type==='plinko'||g.type==='mines'){
       gmodal.style.maxHeight='98vh';
@@ -613,7 +613,7 @@ function buildGameUI(g){
 
   if(t==='keno'){
     area.innerHTML='<div style="padding:10px 0;">'+
-      '<div style="font-size:12px;color:var(--txt2);margin-bottom:10px;text-align:center;">Pick up to 5 numbers then press Play</div>'+
+      '<div style="font-size:12px;color:var(--txt2);margin-bottom:8px;text-align:center;">Pick 1-5 numbers • 3 hits = 2x • 4 hits = 5x • 5 hits = 10x</div>'+
       '<div id="keno-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px;"></div>'+
       '<div id="keno-res" style="text-align:center;font-size:14px;font-weight:700;color:var(--accent);min-height:20px;"></div>'+
     '</div>';
@@ -629,9 +629,26 @@ function buildGameUI(g){
           if(gState.kenoPicks.indexOf(num)>=0){
             gState.kenoPicks=gState.kenoPicks.filter(function(n){return n!==num;});
             b.classList.remove('sel');
+            b.style.background='';
+            b.style.borderColor='';
           } else if(gState.kenoPicks.length<5){
             gState.kenoPicks.push(num);
             b.classList.add('sel');
+            b.style.background='rgba(74,222,128,0.2)';
+            b.style.borderColor='#4ade80';
+          } else {
+            // Show max picks warning
+            var kr2=document.getElementById('keno-res');
+            if(kr2){kr2.textContent='Max 5 picks!';kr2.style.color='#e74c3c';}
+            setTimeout(function(){if(kr2)kr2.textContent='';},1200);
+          }
+          // Update pick count display
+          var kr3=document.getElementById('keno-res');
+          if(kr3&&gState.kenoPicks.length>0&&!kr3.textContent.includes('Max')){
+            kr3.textContent='Picked: '+gState.kenoPicks.length+'/5 → '+gState.kenoPicks.join(', ');
+            kr3.style.color='var(--accent)';
+          } else if(kr3&&gState.kenoPicks.length===0){
+            kr3.textContent='';
           }
         };
         kg.appendChild(b);
@@ -739,20 +756,42 @@ function runInstantGame(g,bet,won,btn){
   if(t==='coin'){
     var pick=document.querySelector('#coin-h.sel,#coin-t.sel');
     var choice=pick?pick.dataset.v:'HEADS';
-    var result=Math.random()<0.5?'HEADS':'TAILS';
+    // Decide outcome FIRST using house edge
+    var houseWin=!wc(); // wc()=true means player wins
+    // Pick result that matches or doesn't match choice
+    var result;
+    if(houseWin){
+      // House wins: result is opposite of player's choice
+      result=choice==='HEADS'?'TAILS':'HEADS';
+    } else {
+      // Player wins: result matches choice
+      result=choice;
+    }
+    won=!houseWin; // player wins when house doesn't
+    payout=won?Math.floor(bet*1.95):0;
     var cf=document.getElementById('coinface');
     // Flip animation
     if(cf){
-      cf.style.transform='rotateY(720deg)';
-      setTimeout(function(){cf.textContent=result==='HEADS'?'🌕':'🌑';cf.style.transform='rotateY(0deg)';},400);
+      cf.style.animation='none';
+      cf.style.transition='none';
+      setTimeout(function(){
+        cf.style.transition='all 0.35s';
+        cf.style.transform='rotateY(720deg) scale(1.2)';
+        setTimeout(function(){
+          cf.textContent=result==='HEADS'?'🌕':'🌑';
+          cf.style.transform='rotateY(0deg) scale(1)';
+          cf.style.color=won?'#f6c90e':'#e74c3c';
+        },350);
+      },10);
     }
-    won=wc()?result===choice:result!==choice;
-    payout=won?Math.floor(bet*1.95):0;
     setTimeout(function(){
       finishGame(won,payout,bet,g.id);
-      showResult(won,won?result+'! ✓ +'+fmt(payout):result+' — Lost',choice+' vs '+result);
+      showResult(won,
+        won?'🌕 '+result+'! You win! +'+fmt(payout):'🌑 '+result+' — You lose!',
+        'You picked: '+choice+' | Result: '+result
+      );
       enablePlayBtn();
-    },600);
+    },750);
     return;
   }
 
@@ -762,7 +801,23 @@ function runInstantGame(g,bet,won,btn){
     var color=num===0?'green':redNums.indexOf(num)>=0?'red':'black';
     var sel=document.querySelector('#rp-r.sel,#rp-b.sel,#rp-g.sel');
     var choice=sel?sel.dataset.v:'red';
-    won=color===choice;
+    var playerWinsR=wc();
+    // Force number that matches/defeats player choice
+    var redNums2=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+    if(playerWinsR){
+      // Give matching color
+      if(choice==='red'){num=redNums2[rnd(0,redNums2.length-1)];}
+      else if(choice==='black'){var blacks=[2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35];num=blacks[rnd(0,blacks.length-1)];}
+      else{num=0;} // green
+    } else {
+      // Give non-matching
+      if(choice==='green'){var nonZero=rnd(1,36);num=nonZero;}
+      else if(choice==='red'){var blacks2=[2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35];num=blacks2[rnd(0,blacks2.length-1)];}
+      else{num=redNums2[rnd(0,redNums2.length-1)];}
+    }
+    var color2=num===0?'green':redNums2.indexOf(num)>=0?'red':'black';
+    color=color2;
+    won=playerWinsR;
     var mult=choice==='green'?14:1.95;
     payout=won?Math.floor(bet*mult):0;
     var rr=document.getElementById('roulres');
@@ -790,7 +845,19 @@ function runInstantGame(g,bet,won,btn){
     var nidx=cards.indexOf(next);
     var sel2=document.querySelector('#hi-btn.sel,#lo-btn.sel');
     var choice2=sel2?sel2.dataset.v:'high';
-    won=wc()?(choice2==='high'?nidx>cidx:nidx<cidx):(choice2==='high'?nidx<=cidx:nidx>=cidx);
+    // HiLo fix: decide winner first, then pick card that proves it
+    var playerWinsH=wc();
+    var validCards;
+    if(playerWinsH){
+      validCards=cards.filter(function(c,i){return choice2==='high'?i>cidx:i<cidx;});
+      if(validCards.length>0){next=validCards[rnd(0,validCards.length-1)];nidx=cards.indexOf(next);}
+      else{playerWinsH=false;} // impossible (A=high or 2=low edge case)
+    } else {
+      validCards=cards.filter(function(c,i){return choice2==='high'?i<=cidx:i>=cidx;});
+      if(validCards.length>0){next=validCards[rnd(0,validCards.length-1)];nidx=cards.indexOf(next);}
+      else{playerWinsH=true;}
+    }
+    won=playerWinsH;
     payout=won?Math.floor(bet*1.95):0;
     var nc=document.getElementById('hilo-cur');
     if(nc){nc.style.animation='card-flip 0.4s ease';nc.textContent=next;}
@@ -952,13 +1019,23 @@ function runInstantGame(g,bet,won,btn){
     var isBig=tot>=7;
     var sel5=document.getElementById('bs-pick');
     var choice5=sel5?sel5.dataset.v:'big';
-    won=wc()?(choice5==='big')===isBig:Math.random()<0.45;
+    var playerWins5=wc();
+    var isBig,d1f,d2f,totf;
+    if(playerWins5){
+      if(choice5==='big'){d1f=rnd(4,6);d2f=rnd(3,6);totf=d1f+d2f;isBig=totf>=7;}
+      else{d1f=rnd(1,3);d2f=rnd(1,3);totf=d1f+d2f;isBig=totf>=7;}
+    } else {
+      if(choice5==='big'){d1f=rnd(1,3);d2f=rnd(1,3);totf=d1f+d2f;isBig=totf>=7;}
+      else{d1f=rnd(4,6);d2f=rnd(3,6);totf=d1f+d2f;isBig=totf>=7;}
+    }
+    won=playerWins5;
     payout=won?Math.floor(bet*1.95):0;
     var bd=document.getElementById('bs-dice');
     var faces2=['⚀','⚁','⚂','⚃','⚄','⚅'];
     if(bd){bd.textContent=faces2[d1-1]+' '+faces2[d2-1]+' = '+tot+' ('+(isBig?'BIG':'SMALL')+')';}
+    payout=won?Math.floor(bet*1.95):0;
     finishGame(won,payout,bet,g.id);
-    showResult(won,won?(isBig?'BIG':'SMALL')+' '+tot+'! +'+fmt(payout):(isBig?'BIG':'SMALL')+' '+tot+' — Lost','');
+    showResult(won,won?(isBig?'BIG':'SMALL')+' '+tot+'! +'+fmt(payout):(isBig?'BIG':'SMALL')+' '+tot+' — Lost','You: '+choice5);
     enablePlayBtn();
     return;
   }
@@ -968,7 +1045,10 @@ function runInstantGame(g,bet,won,btn){
     var isOdd=num2%2===1;
     var sel6=document.getElementById('oe-pick');
     var choice6=sel6?sel6.dataset.v:'odd';
-    won=wc()?(choice6==='odd')===isOdd:(choice6==='odd')===isOdd;
+    var playerWins6=wc();
+    if(!playerWins6){num2=(choice6==='odd')?(num2%2===1?num2+1:num2):(num2%2===0?num2+1:num2);if(num2>20)num2--;}
+    isOdd=num2%2===1;
+    won=playerWins6;
     payout=won?Math.floor(bet*1.95):0;
     var oen=document.getElementById('oe-num');
     if(oen){oen.textContent=num2;oen.style.color=isOdd?'#ef4444':'#3b82f6';}
@@ -992,36 +1072,80 @@ function runInstantGame(g,bet,won,btn){
   }
 
   if(t==='keno'){
-    var drawn=[];while(drawn.length<10){var k=rnd(1,20);if(drawn.indexOf(k)<0)drawn.push(k);}
-    var hits=(gState.kenoPicks||[]).filter(function(n){return drawn.indexOf(n)>=0;}).length;
-    var kenoMults=[0,0,1,2,5,10];
+    // Validate player picked numbers
+    if(!gState.kenoPicks||gState.kenoPicks.length===0){
+      // Refund and alert
+      creditWin(bet);
+      alert('Please pick at least 1 number first!');
+      enablePlayBtn();
+      return;
+    }
+    // Draw 10 random numbers from 1-20
+    var drawn=[];
+    while(drawn.length<10){var k=rnd(1,20);if(drawn.indexOf(k)<0)drawn.push(k);}
+    var myPicks=gState.kenoPicks||[];
+    // Count how many of player's picks are in drawn numbers
+    var hits=myPicks.filter(function(n){return drawn.indexOf(n)>=0;}).length;
+    // Payout table: 0 hits=0x, 1=0x, 2=0.5x, 3=2x, 4=5x, 5=10x
+    var kenoMults=[0,0,0.5,2,5,10];
     var km=kenoMults[Math.min(hits,kenoMults.length-1)]||0;
-    won=km>0;payout=Math.floor(bet*km);
+    won=km>0;
+    payout=won?Math.floor(bet*km):0;
+    // Highlight drawn numbers (orange) and player's hits (green)
     document.querySelectorAll('#keno-grid button').forEach(function(b){
       var num3=parseInt(b.textContent);
-      if(drawn.indexOf(num3)>=0){b.classList.add('sel');b.style.background='rgba(74,222,128,0.2)';}
+      var isDrawn=drawn.indexOf(num3)>=0;
+      var isPick=myPicks.indexOf(num3)>=0;
+      if(isDrawn&&isPick){
+        // HIT - player picked this drawn number
+        b.style.background='rgba(74,222,128,0.3)';
+        b.style.borderColor='#4ade80';
+        b.style.color='#4ade80';
+        b.style.transform='scale(1.1)';
+      } else if(isDrawn){
+        // Drawn but not picked
+        b.style.background='rgba(246,201,0,0.15)';
+        b.style.borderColor='#f6c90e55';
+        b.style.color='#f6c90e';
+      } else if(isPick){
+        // Player picked but not drawn - miss
+        b.style.background='rgba(231,76,60,0.15)';
+        b.style.borderColor='#e74c3c55';
+        b.style.color='#e74c3c';
+      }
     });
     var kr=document.getElementById('keno-res');
-    if(kr)kr.textContent=hits+' hits! Mult: '+km+'x';
+    if(kr){
+      kr.textContent=hits+'/'+myPicks.length+' hits! × '+km+'x';
+      kr.style.color=won?'#4ade80':'#e74c3c';
+    }
     finishGame(won,payout,bet,g.id);
-    showResult(won,won?hits+' hits! +'+fmt(payout):hits+' hits — Lost','Need 3+ to win');
+    showResult(won,
+      won?hits+' hits! × '+km+'x = +'+fmt(payout):hits+' hits — Lost',
+      'Your picks: '+myPicks.join(', ')+' | Drawn: '+drawn.slice(0,8).join(', ')+'...'
+    );
+    // Clear picks for next round
+    gState.kenoPicks=[];
     enablePlayBtn();
     return;
   }
 
   if(t==='colorpick'||t==='colorball'){
     var cols=['Red','Blue','Green'];
-    var drawn2=pickArr(cols);
+    var playerWins7=wc();
+    var drawn2;
+    if(playerWins7){drawn2=choice7;}
+    else{var otherCols=cols.filter(function(c){return c!==choice7;});drawn2=pickArr(otherCols);}
+    won=playerWins7;
     var sel7=document.getElementById('cp-pick');
     var choice7=sel7?sel7.dataset.v:'Red';
     won=wc()?drawn2===choice7:false;
     payout=won?Math.floor(bet*2.7):0;
     var cb=document.getElementById('cball');
     var emoji={Red:'🔴',Blue:'🔵',Green:'🟢'};
-    if(cb){cb.textContent=emoji[drawn2]||'🔵';}
-    finishGame(won,payout,bet,g.id);
-    showResult(won,won?drawn2+'! +'+fmt(payout):drawn2+' — Lost','');
-    enablePlayBtn();
+    var payout7=won?Math.floor(bet*2.7):0;
+    if(cb){setTimeout(function(){cb.textContent=emoji[drawn2]||'🔵';},300);}
+    setTimeout(function(){finishGame(won,payout7,bet,g.id);showResult(won,won?drawn2+'! ✓ +'+fmt(payout7):drawn2+' — Lost!','You: '+choice7+' | Result: '+drawn2);enablePlayBtn();},500);
     return;
   }
 
@@ -1193,6 +1317,7 @@ function startTower(g,bet){
     var area=$('gma');if(!area)return;
     var fl=tState.floor,mult=mults[fl]||1,pot=Math.floor(bet*mult);
 
+    area.style.minHeight='';
     area.innerHTML=
       '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:linear-gradient(135deg,#0a2a18,#0d3d22);border-radius:12px;border:1px solid #4ade8033;margin-bottom:10px;">'+
         '<div><div style="font-size:10px;color:#4a6ab0;font-weight:700;text-transform:uppercase;">Floor</div><div style="font-size:22px;font-weight:900;color:#4ade80;">'+fl+' / '+FLOORS+'</div></div>'+
@@ -1205,21 +1330,21 @@ function startTower(g,bet){
         var isActive=fi===fl&&tState.active;
         var isDone=fi<fl;
         var isFuture=fi>fl;
-        return '<div style="display:flex;gap:5px;align-items:center;">'+
+        return '<div style="display:flex;gap:5px;align-items:center;margin-bottom:2px;">'+
           '<div style="font-size:10px;color:#4a6ab0;font-weight:800;width:32px;text-align:center;flex-shrink:0;">'+(mults[fi+1]||mults[fi])+'x</div>'+
           Array.from({length:COLS},function(_,ci){
             if(isDone){
               var safe=safeCol[fi]===ci;
-              return '<div style="flex:1;height:50px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;'+
+              return '<div style="flex:1;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;'+
                 'background:'+(safe?'rgba(74,222,128,0.14)':'rgba(231,76,60,0.1)')+';'+
                 'border:2px solid '+(safe?'#4ade80':'#e74c3c')+';'+
                 'box-shadow:'+(safe?'0 0 12px #4ade8033':'none')+';">'+
                 (safe?'💎':'💣')+'</div>';
             }
             if(isActive){
-              return '<div class="tower-btn" data-fi="'+fi+'" data-ci="'+ci+'">❓</div>';
+              return '<div class="tower-btn" data-fi="'+fi+'" data-ci="'+ci+'" style="height:44px;font-size:22px;">❓</div>';
             }
-            return '<div class="tower-btn future">▪</div>';
+            return '<div class="tower-btn future" style="height:44px;">▪</div>';
           }).join('')+
         '</div>';
       }).join('')+
@@ -1291,15 +1416,18 @@ function startPlinko(g,bet){
   // Only 1/30 chance of hitting 5x (index 0 or 8)
   // Weights: [1,2,4,8,12,8,4,2,1] = 42 total, 5x gets 1/42 each side ≈ 1/21
   // For house edge: further weight toward 0.2x (middle) 
-  var bucketWeights=[1,3,6,10,16,10,6,3,1]; // sum=56
+  // Weighted bucket selection - house edge builds in center bias
+  // 5x only ~1 in 30, most land in 0.2x-0.5x range
+  var bucketWeights=[1,2,5,9,15,9,5,2,1]; // sum=49
   var totalW=bucketWeights.reduce(function(a,b){return a+b;},0);
   var rand=Math.random()*totalW;
-  var bucketIdx=0,cumW=0;
+  var bucketIdx=4; // default center
+  var cumW=0;
   for(var wi=0;wi<bucketWeights.length;wi++){
     cumW+=bucketWeights[wi];
-    if(rand<cumW){bucketIdx=wi;break;}
+    if(rand<=cumW){bucketIdx=wi;break;}
   }
-  // Build natural-looking path toward bucket
+  bucketIdx=Math.max(0,Math.min(MULTS.length-1,bucketIdx));
   var finalBX=bucketIdx*bw+bw/2;
   
   // Build path toward bucket with natural peg-bouncing look
@@ -1378,9 +1506,38 @@ function startPlinko(g,bet){
 
 // ── CRASH GAME ──
 function openCrash(g){
-  CS={vehicle:g.vehicle||'rocket',theme:{color:(GAME_DESIGNS[g.id]||{c1:'#4ade80'}).c1,lc:(GAME_DESIGNS[g.id]||{c2:'#86efac'}).c2},bet:0,betPlaced:false,phase:'waiting',cashedOut:false,mult:1.00,running:false,animId:null,crashAt:2,idleAnim:null};
+  var gd=GAME_DESIGNS[g.id]||{c1:'#4ade80',c2:'#86efac'};
+  CS={
+    vehicle:g.vehicle||'rocket',
+    theme:{color:gd.c1,lc:gd.c2},
+    gameName:g.name||'Crash',
+    bet:0,betPlaced:false,phase:'waiting',
+    cashedOut:false,mult:1.00,running:false,
+    animId:null,crashAt:2,idleAnim:null
+  };
+  // Style canvas background based on vehicle
+  var ccanv=$('ccanvas');
+  if(ccanv){
+    if(g.vehicle==='plane') ccanv.style.background='linear-gradient(to bottom,#000510,#001030,#000820)';
+    else if(g.vehicle==='lightning') ccanv.style.background='linear-gradient(to bottom,#1a0030,#0d0020,#000015)';
+    else ccanv.style.background='#050a18';
+  }
   var ti=$('ctitle');if(ti)ti.textContent=g.name;
   var cc=$('cclose');if(cc)cc.onclick=function(){closeCrashGame();$('cov').classList.remove('open');};
+  // Build chip suggestions for crash
+  var cchips=$('cchips');
+  if(cchips){
+    cchips.innerHTML='';
+    [50,100,500,1000,5000].forEach(function(v){
+      var b=document.createElement('button');
+      b.className='chip';
+      b.textContent=v>=1000?(v/1000)+'K':v;
+      b.onclick=function(){var i=$('cbinp');if(i)i.value=v;};
+      cchips.appendChild(b);
+    });
+  }
+  // Update crash balance display
+  var cbal=$('cbal');if(cbal)cbal.textContent=fmt(bal());
   $('cov').classList.add('open');
   var canvas=$('ccanvas');
   if(canvas){canvas.width=canvas.offsetWidth||360;canvas.height=220;}
@@ -1432,13 +1589,24 @@ function startCrashRound(){
   function idleFrame(){
     if(!CS.running||CS.phase!=='waiting')return;
     idleT++;
-    ctx.fillStyle='#050a18';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle=CS.vehicle==='plane'?'#000820':'#050a18';
+    ctx.fillRect(0,0,W,H);
     drawGrid(ctx,W,H);
     drawStars(ctx,W,H);
-    // Rocket hovers with sine wave
-    var hy=H*0.78+Math.sin(idleT*0.06)*6;
-    var hx=W*0.10+Math.sin(idleT*0.03)*12;
-    drawVehicle(ctx,hx,hy,-Math.PI*0.18,true);
+    var hy,hx,hangle;
+    if(CS.vehicle==='plane'){
+      // Plane flies across screen in a loop
+      var loopT=(idleT%160)/160;
+      hx=loopT*W*1.2-W*0.1;
+      hy=H*0.5+Math.sin(loopT*Math.PI*2)*H*0.2;
+      hangle=Math.atan2(Math.cos(loopT*Math.PI*2)*H*0.2*Math.PI*2/W,1)*0.5;
+    } else {
+      // Rocket hovers with sine wave
+      hy=H*0.78+Math.sin(idleT*0.06)*6;
+      hx=W*0.10+Math.sin(idleT*0.03)*12;
+      hangle=-Math.PI*0.18;
+    }
+    drawVehicle(ctx,hx,hy,hangle||(-Math.PI*0.18),true);
     // Countdown
     var cx2=W*0.5,cy2=H*0.35,r=40;
     ctx.strokeStyle='rgba(246,201,0,0.15)';ctx.lineWidth=4;
@@ -1514,7 +1682,11 @@ function beginFlight(){
     if(pts.length>12){
       var a=pts[pts.length-12],b=pts[pts.length-1];
       var ca=Math.atan2(b.y-a.y,b.x-a.x);
-      angle=Math.max(-Math.PI*0.38,Math.min(0,ca));
+      if(CS.vehicle==='plane'){
+        angle=Math.max(-Math.PI*0.25,Math.min(0,ca)); // plane stays flatter
+      } else {
+        angle=Math.max(-Math.PI*0.38,Math.min(0,ca));
+      }
     }
     drawVehicle(ctx,tip.x,tip.y,angle,true);
 
