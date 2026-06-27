@@ -414,22 +414,17 @@ function openGame(g){
   var gcl=$('gclose');
   if(gcl)gcl.onclick=function(){$('gov').classList.remove('open');};
   var gmodal=document.getElementById('main-gmodal');
+  var govEl2=$('gov');
   if(gmodal){
     if(g.type==='tower'){
-      gmodal.style.maxHeight='100vh';
-      gmodal.style.height='100vh';
-      gmodal.style.borderRadius='0';
-      gmodal.style.padding='0.8rem';
+      gmodal.style.cssText='width:100%;max-width:100%;height:100vh;max-height:100vh;border-radius:0;padding:10px;box-sizing:border-box;overflow-y:auto;background:var(--card);position:relative;';
+      if(govEl2){govEl2.style.padding='0';govEl2.style.alignItems='flex-start';}
     } else if(g.type==='plinko'||g.type==='mines'){
-      gmodal.style.maxHeight='98vh';
-      gmodal.style.height='96vh';
-      gmodal.style.borderRadius='16px';
-      gmodal.style.padding='1.2rem';
+      gmodal.style.cssText='width:100%;max-width:560px;max-height:96vh;border-radius:16px;padding:1.2rem;box-sizing:border-box;overflow-y:auto;background:var(--card);position:relative;';
+      if(govEl2){govEl2.style.padding='8px';govEl2.style.alignItems='center';}
     } else {
-      gmodal.style.maxHeight='92vh';
-      gmodal.style.height='';
-      gmodal.style.borderRadius='18px';
-      gmodal.style.padding='1.2rem';
+      gmodal.style.cssText='width:100%;max-width:560px;max-height:92vh;border-radius:18px;padding:1.2rem;box-sizing:border-box;overflow-y:auto;background:var(--card);position:relative;';
+      if(govEl2){govEl2.style.padding='8px';govEl2.style.alignItems='center';}
     }
   }
   buildGameUI(g);
@@ -973,10 +968,11 @@ function runInstantGame(g,bet,won,btn){
     var segs=gState.wheelSegs;
     if(!segs||!segs.length){enablePlayBtn();return;}
     var playerW=wc();
-    // Segs: index 0=2x,1=0x,2=3x,3=0x,4=5x,5=0x,6=1.5x,7=0x
+    // Win segs: 0=2x, 3=1.5x, 5=3x | Loss segs: 1,2,4,6,7=0x
     var winIdxW=playerW?[0,3,5][rnd(0,2)]:[1,2,4,6,7][rnd(0,4)];
     var segW=segs[winIdxW]||{l:'0x',v:0};
     var payoutW=segW.v>0?Math.floor(bet*segW.v):0;
+    var actualWon=payoutW>0; // determine win based on actual payout, not playerW
     var canvas2=document.getElementById('wheel-canvas');
     if(canvas2){
       var W2=canvas2.width,H2=canvas2.height,cx2=W2/2,cy2=H2/2,R2=W2/2-6;
@@ -1009,8 +1005,8 @@ function runInstantGame(g,bet,won,btn){
       requestAnimationFrame(spinW);
     }
     setTimeout(function(){
-      finishGame(playerW,payoutW,bet,g.id);
-      showResult(playerW,playerW?segW.l+'! +'+fmt(payoutW):'0x — Lost','');
+      finishGame(actualWon,payoutW,bet,g.id);
+      showResult(actualWon,actualWon?segW.l+'! +'+fmt(payoutW):'0x — Lost','');
       enablePlayBtn();
     },3800);
     return;
@@ -1341,10 +1337,10 @@ function startTower(g,bet){
 
     area.style.minHeight='';
     area.innerHTML=
-      '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:linear-gradient(135deg,#0a2a18,#0d3d22);border-radius:12px;border:1px solid #4ade8033;margin-bottom:10px;">'+
-        '<div><div style="font-size:10px;color:#4a6ab0;font-weight:700;text-transform:uppercase;">Floor</div><div style="font-size:22px;font-weight:900;color:#4ade80;">'+fl+' / '+FLOORS+'</div></div>'+
-        '<div style="text-align:center;"><div style="font-size:10px;color:#4a6ab0;font-weight:700;text-transform:uppercase;">Next mult</div><div style="font-size:22px;font-weight:900;color:#f6c90e;">'+(mults[fl+1]||mults[fl])+'x</div></div>'+
-        '<div style="text-align:right;"><div style="font-size:10px;color:#4a6ab0;font-weight:700;text-transform:uppercase;">Cash out</div><div style="font-size:18px;font-weight:900;color:#4ade80;">'+fmt(pot)+'</div></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:linear-gradient(135deg,#0a2a18,#0d3d22);border-radius:10px;border:1px solid #4ade8033;margin-bottom:8px;">'+
+        '<div><div style="font-size:9px;color:#4a6ab0;font-weight:700;text-transform:uppercase;">Floor</div><div style="font-size:18px;font-weight:900;color:#4ade80;">'+fl+'/'+FLOORS+'</div></div>'+
+        '<div style="text-align:center;"><div style="font-size:9px;color:#4a6ab0;font-weight:700;text-transform:uppercase;">Next</div><div style="font-size:18px;font-weight:900;color:#f6c90e;">'+(mults[fl+1]||mults[fl])+'x</div></div>'+
+        '<div style="text-align:right;"><div style="font-size:9px;color:#4a6ab0;font-weight:700;text-transform:uppercase;">Cash Out</div><div style="font-size:16px;font-weight:900;color:#4ade80;">'+fmt(pot)+'</div></div>'+
       '</div>'+
       // Tower rows (bottom to top)
       '<div style="display:flex;flex-direction:column-reverse;gap:5px;margin-bottom:10px;">'+
@@ -1352,8 +1348,8 @@ function startTower(g,bet){
         var isActive=fi===fl&&tState.active;
         var isDone=fi<fl;
         var isFuture=fi>fl;
-        return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">'+
-          '<div style="font-size:10px;color:#4a6ab0;font-weight:800;width:32px;text-align:center;flex-shrink:0;">'+(mults[fi+1]||mults[fi])+'x</div>'+
+        return '<div style="display:flex;gap:5px;align-items:center;margin-bottom:3px;">'+
+          '<div style="font-size:9px;color:#4a6ab0;font-weight:800;width:28px;text-align:center;flex-shrink:0;">'+(mults[fi+1]||mults[fi])+'x</div>'+
           Array.from({length:COLS},function(_,ci){
             if(isDone){
               var safe=safeCol[fi]===ci;
@@ -1364,14 +1360,14 @@ function startTower(g,bet){
                 (safe?'💎':'💣')+'</div>';
             }
             if(isActive){
-              return '<div class="tower-btn" data-fi="'+fi+'" data-ci="'+ci+'" style="height:52px;font-size:26px;">❓</div>';
+              return '<div class="tower-btn" data-fi="'+fi+'" data-ci="'+ci+'" style="height:38px;font-size:22px;border-radius:8px;">❓</div>';
             }
             return '<div class="tower-btn future" style="height:44px;">▪</div>';
           }).join('')+
         '</div>';
       }).join('')+
       '</div>'+
-      (fl>0&&tState.active?'<button onclick="towerCashout()" style="width:100%;padding:13px;background:linear-gradient(135deg,rgba(74,222,128,0.14),rgba(74,222,128,0.07));color:#4ade80;border:2px solid rgba(74,222,128,0.35);border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:8px;">💎 Cash Out '+fmt(pot)+'</button>':'')+
+      (fl>0&&tState.active?'<button onclick="towerCashout()" style="width:100%;padding:9px;background:linear-gradient(135deg,rgba(74,222,128,0.14),rgba(74,222,128,0.07));color:#4ade80;border:2px solid rgba(74,222,128,0.35);border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:6px;">💎 Cash Out '+fmt(pot)+'</button>':'')+
       '<div id="gres" class="gres" style="display:none;"><div id="grt" class="grt"></div><div id="grs" class="grs"></div></div>';
 
     area.querySelectorAll('.tower-btn[data-fi]').forEach(function(btn){
