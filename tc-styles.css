@@ -504,3 +504,60 @@ body.dark .auth-tab.active{background:#1a3a7c;color:#fff;}
 
 .tower-btn:hover:not(.future){background:linear-gradient(135deg,#0d4d22,#0d5c29) !important;border-color:#4ade80 !important;transform:scale(1.06) !important;box-shadow:0 0 18px #4ade8066 !important;}
 #main-gmodal{transition:max-height 0.3s ease,height 0.3s ease;}
+
+
+/* ── LIGHT THEME ── */
+:root[data-theme="light"] {
+  --bg: #f5f7fa;
+  --bg2: #eef1f6;
+  --card: #ffffff;
+  --card2: #f0f4f8;
+  --border: #e2e8f0;
+  --txt: #1a202c;
+  --txt2: #64748b;
+  --accent: #16a34a;
+  --accent2: #ca8a04;
+}
+body.light, [data-theme="light"] body, :root[data-theme="light"] {
+  background: #f5f7fa !important;
+  color: #1a202c !important;
+}
+[data-theme="light"] .topbar, [data-theme="light"] .gmodal,
+[data-theme="light"] .card, [data-theme="light"] .modal {
+  background: #fff !important;
+  color: #1a202c !important;
+  border-color: #e2e8f0 !important;
+}
+[data-theme="light"] .chip {
+  background: #f0f4f8 !important;
+  color: #1a202c !important;
+  border-color: #e2e8f0 !important;
+}
+[data-theme="light"] .gcbtn {
+  background: #f0f4f8 !important;
+  color: #1a202c !important;
+  border-color: #e2e8f0 !important;
+}
+[data-theme="light"] .gbinp, [data-theme="light"] input {
+  background: #f8fafc !important;
+  color: #1a202c !important;
+  border-color: #e2e8f0 !important;
+}
+[data-theme="light"] .hilo-card, [data-theme="light"] .play-card {
+  background: #fff !important;
+  color: #1a202c !important;
+  border-color: #e2e8f0 !important;
+}
+[data-theme="light"] #cov .gmodal,
+[data-theme="light"] #gov .gmodal {
+  background: #fff !important;
+}
+
+
+.tc-cell:hover {
+  background: linear-gradient(135deg,#0d4d22,#0a3a18) !important;
+  border-color: #4ade80 !important;
+  box-shadow: 0 0 18px rgba(74,222,128,0.4) !important;
+  transform: scale(1.04);
+}
+.tc-cell:active { transform: scale(0.96) !important; }

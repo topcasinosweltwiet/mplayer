@@ -147,7 +147,18 @@
     <div class="setlist" id="setlist">
       <div class="setitem" id="si-prof"><div class="siico" style="background:rgba(126,179,255,0.1);">👤</div><div class="sitxt"><div class="siname">Profile</div><div class="sidesc">Change password</div></div><div class="siarw">›</div></div>
       <div class="setitem" id="si-kyc"><div class="siico" style="background:rgba(246,201,0,0.1);">🪪</div><div class="sitxt"><div class="siname">KYC Verification</div><div class="sidesc">Verify your identity</div></div><div class="siarw">›</div></div>
-      <div class="setitem" id="si-theme"><div class="siico" style="background:rgba(155,89,182,0.1);">🎨</div><div class="sitxt"><div class="siname">Theme</div><div class="sidesc">Light or dark mode</div></div><div class="siarw">›</div></div>
+      <div class="setitem" id="si-theme" onclick="toggleTheme()" style="cursor:pointer;">
+  <div class="siico" style="background:rgba(155,89,182,0.1);">🎨</div>
+  <div class="sitxt">
+    <div class="siname">Theme</div>
+    <div class="sidesc" id="theme-desc">Dark mode</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div id="theme-toggle" style="width:44px;height:24px;border-radius:12px;background:#4ade80;position:relative;transition:background 0.3s;cursor:pointer;">
+      <div id="theme-knob" style="position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:right 0.3s;box-shadow:0 2px 4px rgba(0,0,0,0.2);"></div>
+    </div>
+  </div>
+</div>
       <div class="setitem" id="si-sup">
         <div class="siico" style="background:rgba(231,76,60,0.1);position:relative;">💬<span id="supp-badge" style="position:absolute;top:-6px;right:-6px;background:#e74c3c;color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:9px;font-weight:900;display:none;align-items:center;justify-content:center;padding:0 3px;box-shadow:0 0 6px rgba(231,76,60,0.8);animation:pulse-badge 0.8s ease infinite;">!</span></div>
         <div class="sitxt"><div class="siname">Customer Support</div><div class="sidesc">Chat with our team</div></div>

@@ -1335,74 +1335,134 @@ function startTower(g,bet){
   var mults=[1,1.50,2.50,4.00,7.00,12.00,20.00];
   var safeCol=[],traps=[];
   for(var f=0;f<FLOORS;f++){
-    var s=rnd(0,COLS-1);safeCol.push(s);
-    var t=[];for(var c=0;c<COLS;c++){if(c!==s)t.push(c);}traps.push(t);
+    var sc=rnd(0,COLS-1);safeCol.push(sc);
+    var t=[];for(var c=0;c<COLS;c++){if(c!==sc)t.push(c);}traps.push(t);
   }
   tState={bet:bet,floor:0,active:true,safeCol:safeCol,traps:traps,mults:mults,g:g};
 
-  function render(){
+  function renderTower(){
     var area=$('gma');if(!area)return;
-    var fl=tState.floor,mult=mults[fl]||1,pot=Math.floor(bet*mult);
+    var fl=tState.floor;
+    var pot=fl>0?Math.floor(bet*mults[fl]):bet;
 
-    area.style.minHeight='';
-    area.innerHTML=
-      '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:linear-gradient(135deg,#0a2a18,#0d3d22);border-radius:10px;border:1px solid #4ade8033;margin-bottom:8px;">'+
-        '<div><div style="font-size:9px;color:#4a6ab0;font-weight:700;text-transform:uppercase;">Floor</div><div style="font-size:18px;font-weight:900;color:#4ade80;">'+fl+'/'+FLOORS+'</div></div>'+
-        '<div style="text-align:center;"><div style="font-size:9px;color:#4a6ab0;font-weight:700;text-transform:uppercase;">Next</div><div style="font-size:18px;font-weight:900;color:#f6c90e;">'+(mults[fl+1]||mults[fl])+'x</div></div>'+
-        '<div style="text-align:right;"><div style="font-size:9px;color:#4a6ab0;font-weight:700;text-transform:uppercase;">Cash Out</div><div style="font-size:16px;font-weight:900;color:#4ade80;">'+fmt(pot)+'</div></div>'+
+    // Header bar
+    var header='<div style="display:flex;justify-content:space-between;align-items:center;background:#1a2e1a;border-radius:12px;padding:10px 14px;margin-bottom:10px;">'+
+      '<div style="text-align:center;flex:1;">'+
+        '<div style="font-size:9px;color:#6b8f6b;font-weight:700;text-transform:uppercase;letter-spacing:1px;">FLOOR</div>'+
+        '<div style="font-size:20px;font-weight:900;color:#4ade80;">'+fl+' <span style="font-size:12px;color:#4a6;font-weight:600;">/ '+FLOORS+'</span></div>'+
       '</div>'+
-      // Tower rows (bottom to top)
-      '<div style="display:flex;flex-direction:column-reverse;gap:5px;margin-bottom:10px;">'+
-      Array.from({length:FLOORS},function(_,fi){
-        var isActive=fi===fl&&tState.active;
-        var isDone=fi<fl;
-        var isFuture=fi>fl;
-        return '<div style="display:flex;gap:5px;align-items:center;margin-bottom:3px;">'+
-          '<div style="font-size:9px;color:#4a6ab0;font-weight:800;width:28px;text-align:center;flex-shrink:0;">'+(mults[fi+1]||mults[fi])+'x</div>'+
-          Array.from({length:COLS},function(_,ci){
-            if(isDone){
-              var safe=safeCol[fi]===ci;
-              return '<div style="flex:1;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;'+
-                'background:'+(safe?'rgba(74,222,128,0.14)':'rgba(231,76,60,0.1)')+';'+
-                'border:2px solid '+(safe?'#4ade80':'#e74c3c')+';'+
-                'box-shadow:'+(safe?'0 0 12px #4ade8033':'none')+';">'+
-                (safe?'💎':'💣')+'</div>';
-            }
-            if(isActive){
-              return '<div class="tower-btn" data-fi="'+fi+'" data-ci="'+ci+'" style="height:38px;font-size:22px;border-radius:8px;">❓</div>';
-            }
-            return '<div class="tower-btn future" style="height:44px;">▪</div>';
-          }).join('')+
-        '</div>';
-      }).join('')+
+      '<div style="width:1px;height:36px;background:#2a4a2a;"></div>'+
+      '<div style="text-align:center;flex:1;">'+
+        '<div style="font-size:9px;color:#6b8f6b;font-weight:700;text-transform:uppercase;letter-spacing:1px;">NEXT</div>'+
+        '<div style="font-size:20px;font-weight:900;color:#f6c90e;">'+(mults[fl+1]||mults[fl])+'x</div>'+
       '</div>'+
-      (fl>0&&tState.active?'<button onclick="towerCashout()" style="width:100%;padding:9px;background:linear-gradient(135deg,rgba(74,222,128,0.14),rgba(74,222,128,0.07));color:#4ade80;border:2px solid rgba(74,222,128,0.35);border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:6px;">💎 Cash Out '+fmt(pot)+'</button>':'')+
+      '<div style="width:1px;height:36px;background:#2a4a2a;"></div>'+
+      '<div style="text-align:center;flex:1;">'+
+        '<div style="font-size:9px;color:#6b8f6b;font-weight:700;text-transform:uppercase;letter-spacing:1px;">CASH OUT</div>'+
+        '<div style="font-size:16px;font-weight:900;color:#4ade80;">'+fmt(pot)+'</div>'+
+      '</div>'+
+    '</div>';
+
+    // Tower grid - bottom to top
+    var grid='<div style="display:flex;flex-direction:column-reverse;gap:6px;margin-bottom:10px;">';
+    for(var fi=0;fi<FLOORS;fi++){
+      var isActive=fi===fl&&tState.active;
+      var isDone=fi<fl;
+      var isFuture=fi>fl;
+      var mult=mults[fi+1]||mults[fi];
+      grid+='<div style="display:flex;gap:6px;align-items:center;">';
+      // Mult label
+      grid+='<div style="font-size:10px;color:#4ade8088;font-weight:800;width:30px;text-align:center;flex-shrink:0;">'+mult+'x</div>';
+      // Cells
+      for(var ci=0;ci<COLS;ci++){
+        if(isDone){
+          var isSafe=safeCol[fi]===ci;
+          if(isSafe){
+            grid+='<div style="flex:1;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;'+
+              'background:linear-gradient(135deg,rgba(74,222,128,0.2),rgba(74,222,128,0.08));'+
+              'border:2px solid rgba(74,222,128,0.6);'+
+              'box-shadow:0 0 10px rgba(74,222,128,0.2);">💎</div>';
+          } else {
+            grid+='<div style="flex:1;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;'+
+              'background:rgba(239,68,68,0.08);border:2px solid rgba(239,68,68,0.3);">💣</div>';
+          }
+        } else if(isActive){
+          grid+='<div class="tc-cell" data-fi="'+fi+'" data-ci="'+ci+'" '+
+            'style="flex:1;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;'+
+            'background:linear-gradient(135deg,#1a3a6a,#0d2040);'+
+            'border:2px solid rgba(74,222,128,0.5);'+
+            'cursor:pointer;color:#4ade80;letter-spacing:1px;'+
+            'box-shadow:0 0 12px rgba(74,222,128,0.15);'+
+            'transition:all 0.15s;">'+
+            'PICK'+
+          '</div>';
+        } else if(isFuture){
+          grid+='<div style="flex:1;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;'+
+            'background:rgba(255,255,255,0.03);border:2px solid rgba(255,255,255,0.06);"></div>';
+        }
+      }
+      grid+='</div>';
+    }
+    grid+='</div>';
+
+    // Cash out button
+    var cashoutBtn=fl>0&&tState.active?
+      '<button onclick="towerCashout()" style="width:100%;padding:12px;margin-bottom:8px;'+
+      'background:linear-gradient(135deg,rgba(246,201,0,0.15),rgba(246,201,0,0.08));'+
+      'color:#f6c90e;border:2px solid rgba(246,201,0,0.4);border-radius:12px;'+
+      'font-size:14px;font-weight:800;cursor:pointer;">'+
+      '💰 Cash Out '+fmt(pot)+'</button>':'';
+
+    area.innerHTML=header+grid+cashoutBtn+
       '<div id="gres" class="gres" style="display:none;"><div id="grt" class="grt"></div><div id="grs" class="grs"></div></div>';
 
-    area.querySelectorAll('.tower-btn[data-fi]').forEach(function(btn){
-      btn.onclick=function(){
-        var fi=parseInt(btn.dataset.fi),ci=parseInt(btn.dataset.ci);
-        if(fi!==tState.floor||!tState.active)return;
-        if(tState.traps[fi].indexOf(ci)>=0){
-          btn.className='tower-btn bomb';btn.textContent='💣';
+    // Attach click handlers
+    area.querySelectorAll('.tc-cell').forEach(function(cell){
+      cell.onclick=function(){
+        var fi2=parseInt(cell.dataset.fi),ci2=parseInt(cell.dataset.ci);
+        if(fi2!==tState.floor||!tState.active)return;
+        var isBomb=tState.traps[fi2].indexOf(ci2)>=0;
+        if(isBomb){
+          // Show bomb
+          cell.style.background='rgba(239,68,68,0.2)';
+          cell.style.borderColor='#ef4444';
+          cell.style.boxShadow='0 0 16px rgba(239,68,68,0.4)';
+          cell.textContent='💣';
           tState.active=false;
-          setTimeout(function(){render();finishGame(false,0,bet,g.id);showResult(false,'💣 Bomb! Lost '+fmt(bet),'Reached floor '+fl);enablePlayBtn();},400);
+          // Reveal all on current floor
+          setTimeout(function(){
+            renderTower();
+            finishGame(false,0,bet,g.id);
+            showResult(false,'💣 Boom! Lost '+fmt(bet),'Reached floor '+fi2);
+            enablePlayBtn();
+          },500);
         } else {
-          btn.className='tower-btn safe';btn.textContent='💎';
+          // Show gem
+          cell.style.background='linear-gradient(135deg,rgba(74,222,128,0.2),rgba(74,222,128,0.08))';
+          cell.style.borderColor='#4ade80';
+          cell.style.boxShadow='0 0 18px rgba(74,222,128,0.4)';
+          cell.textContent='💎';
           tState.floor++;
           if(tState.floor>=FLOORS){
             tState.active=false;
-            var p=Math.floor(bet*mults[FLOORS]);
-            setTimeout(function(){render();finishGame(true,p,bet,g.id);showResult(true,'🏆 TOP FLOOR! +'+fmt(p),'All '+FLOORS+' floors cleared!');enablePlayBtn();},400);
+            var topPay=Math.floor(bet*mults[FLOORS]);
+            setTimeout(function(){
+              renderTower();
+              finishGame(true,topPay,bet,g.id);
+              showResult(true,'🏆 Top Floor! +'+fmt(topPay),'All '+FLOORS+' floors cleared!');
+              enablePlayBtn();
+            },400);
           } else {
-            setTimeout(function(){render();},350);
+            setTimeout(function(){renderTower();},350);
           }
         }
       };
     });
   }
-  render();
-  var gpbtn=$('gpbtn');if(gpbtn){gpbtn.disabled=true;gpbtn.textContent='Cash Out';}
+
+  renderTower();
+  var gpbtn=$('gpbtn');
+  if(gpbtn){gpbtn.disabled=true;gpbtn.textContent='Playing...';}
 }
 
 window.towerCashout=function(){
@@ -1413,6 +1473,7 @@ window.towerCashout=function(){
   showResult(true,'💎 Cashed out! +'+fmt(p),'Floor '+tState.floor+' cleared!');
   enablePlayBtn();
 };
+
 
 // ── PLINKO ──
 function startPlinko(g,bet){
