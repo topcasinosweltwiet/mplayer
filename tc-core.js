@@ -123,6 +123,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function aerr(m) { sh('aerr', m); }
 
+// ── CAPTCHA ──
+var _captchaAnswer = 0;
+function refreshCaptcha() {
+  var a = Math.floor(Math.random()*10)+1;
+  var b = Math.floor(Math.random()*10)+1;
+  _captchaAnswer = a + b;
+  var q = document.getElementById('captcha-q');
+  var inp = document.getElementById('captcha-a');
+  if(q) q.textContent = a + ' + ' + b + ' = ?';
+  if(inp) inp.value = '';
+}
+
+
 // ── LOGIN RATE LIMIT + SHA256 ──
 var _loginAttempts = 0;
 var _loginLocked = false;
