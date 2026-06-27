@@ -1,3 +1,28 @@
+// ── SECURITY UTILS ──
+function sanitize(str){
+  if(!str)return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#x27;')
+    .replace(/\//g,'&#x2F;')
+    .replace(/[<>"'`]/g,''); // strip dangerous chars
+}
+function safeUsername(str){
+  if(!str)return '';
+  return String(str).replace(/[^a-zA-Z0-9_\-\.]/g,'').slice(0,32);
+}
+
+// ── SHA-256 PASSWORD HASHING ──
+async function hashPass(password) {
+  var msgBuffer = new TextEncoder().encode(password + 'TC_SALT_2024_#@!');
+  var hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  var hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+}
+
 // tc-core.js — Core helpers, session, auth, nav, win rates
 
 // ── HELPERS ──
@@ -98,75 +123,67 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function aerr(m) { sh('aerr', m); }
 
-// ── LOGIN RATE LIMIT ──
+// ── LOGIN RATE LIMIT + SHA256 ──
 var _loginAttempts = 0;
 var _loginLocked = false;
-var _loginLockTimer = null;
 
 function doLogin() {
-  // Check lockout
-  if(_loginLocked){
-    aerr('Too many attempts. Try again in 30 seconds.');
-    return;
-  }
-  var u = ($('lu').value || '').trim().toLowerCase(), p = $('lp').value || '';
-  if (!u || !p) { aerr('Fill all fields.'); return; }
-
-  // Increment attempt counter
+  if(_loginLocked){ aerr('Too many attempts. Wait for unlock.'); return; }
+  var u=safeUsername(($('lu').value||'').trim().toLowerCase()), p=$('lp').value||'';
+  if(!u||!p){aerr('Fill all fields.');return;}
   _loginAttempts++;
-  if(_loginAttempts >= 3){
-    _loginLocked = true;
-    var lockSec = 30;
-    var lbtn=$('lbtn');
-    // Show countdown
-    var countdown = setInterval(function(){
-      if(lbtn) lbtn.textContent = 'Locked '+lockSec+'s';
+  if(_loginAttempts>=3){
+    _loginLocked=true;
+    var lbtn=$('lbtn'),lockSec=30;
+    if(lbtn){lbtn.disabled=true;lbtn.textContent='Locked 30s';}
+    var cd=setInterval(function(){
       lockSec--;
-      if(lockSec < 0){
-        clearInterval(countdown);
-        _loginLocked = false;
-        _loginAttempts = 0;
-        if(lbtn){lbtn.textContent='Login';lbtn.disabled=false;}
-        aerr('');
+      if(lbtn)lbtn.textContent='Locked '+lockSec+'s';
+      if(lockSec<=0){
+        clearInterval(cd);
+        _loginLocked=false;_loginAttempts=0;
+        if(lbtn){lbtn.disabled=false;lbtn.textContent='Login';}
       }
-    }, 1000);
-    if(lbtn) lbtn.disabled = true;
-    aerr('Too many failed attempts. Locked for 30 seconds.');
+    },1000);
+    aerr('Too many failed attempts. Locked 30s.');
     return;
   }
-
-  $('lbtn').textContent = 'Loading...'; $('lbtn').disabled = true;
-  fbGet('/players').then(function(pl) {
-    $('lbtn').textContent = 'Login'; $('lbtn').disabled = false;
-    if (!pl) { aerr('Invalid credentials.'); return; }
-    var k = Object.keys(pl).find(function(k) {
-      return (pl[k].username || '').toLowerCase() === u && pl[k].password === p;
+  var lbtn2=$('lbtn');
+  if(lbtn2){lbtn2.textContent='Loading...';lbtn2.disabled=true;}
+  // Hash password with SHA-256
+  hashPass(p).then(function(hashed){
+    return fbGet('/players').then(function(pl){
+      if(lbtn2){lbtn2.textContent='Login';lbtn2.disabled=false;}
+      if(!pl){aerr('Invalid credentials.');return;}
+      var found=null,fk=null;
+      Object.entries(pl).forEach(function(e){
+        var x=e[1];
+        if(x.username&&x.username.toLowerCase()===u){
+          // Accept hashed OR legacy plain password
+          if(x.password===hashed||x.password===p){found=x;fk=e[0];}
+        }
+      });
+      if(!found){aerr('Invalid username or password.');return;}
+      _loginAttempts=0;_loginLocked=false;
+      // Upgrade plain password to hashed silently
+      if(found.password===p&&found.password!==hashed){
+        fbUp('/players/'+fk,{password:hashed});
+      }
+      CK=fk;CD=found;startSession(fk,found);
     });
-    if (!k) { aerr('Invalid username or password.'); return; }
-    CK = k; CD = pl[k]; startSession();
-  }).catch(function(e) { $('lbtn').textContent = 'Login'; $('lbtn').disabled = false; aerr('Error: ' + e.message); });
+  }).catch(function(e){
+    if(lbtn2){lbtn2.textContent='Login';lbtn2.disabled=false;}
+    aerr('Error: '+e.message);
+  });
 }
 
-// ── CAPTCHA ──
-var _captchaAnswer = 0;
-function refreshCaptcha() {
-  var a = Math.floor(Math.random() * 20) + 1;
-  var b = Math.floor(Math.random() * 20) + 1;
-  var ops = [
-    { q: a + ' + ' + b, ans: a + b },
-    { q: a + ' x ' + b, ans: a * b },
-    { q: (a + b) + ' - ' + a, ans: b },
-  ];
-  var op = ops[Math.floor(Math.random() * ops.length)];
-  _captchaAnswer = op.ans;
-  var qEl = $('captcha-q'); if (qEl) qEl.textContent = 'What is ' + op.q + '?';
-  var aEl = $('captcha-a'); if (aEl) aEl.value = '';
-  var eEl = $('captcha-err'); if (eEl) eEl.style.display = 'none';
-}
-window.refreshCaptcha = refreshCaptcha; // expose for onclick
 
+var _regAttempts=0,_regLocked=false;
 function doReg() {
-  var u = ($('ru').value || '').trim(), p = $('rp').value || '', p2 = $('rp2').value || '';
+  if(_regLocked){aerr('Too many attempts. Wait 60 seconds.');return;}
+  _regAttempts++;if(_regAttempts>=5){_regLocked=true;aerr('Too many attempts. Locked 60s.');setTimeout(function(){_regLocked=false;_regAttempts=0;},60000);return;}
+  var u = safeUsername(($('ru').value || '').trim()), p = $('rp').value || '', p2 = $('rp2').value || '';
+  var _regPass = p; // store original for hashing
   if (!u || !p || !p2) { aerr('Fill all fields.'); return; }
   if (p.length < 4) { aerr('Password min 4 characters.'); return; }
   if (p !== p2) { aerr('Passwords do not match.'); return; }
@@ -217,11 +234,19 @@ function doReg() {
   }).then(function(d) {
     if (!d) return;
     CD = d; $('rbtn').textContent = 'Create Account'; $('rbtn').disabled = false;
-    startSession();
+    startSession(CK,CD);
   }).catch(function(e) { $('rbtn').textContent = 'Create Account'; $('rbtn').disabled = false; aerr('Error: ' + e.message); });
 }
 
-function startSession() {
+function startSession(k, playerData) {
+  if(k) CK=k;
+  if(playerData) CD=playerData;
+  // Save session
+  var token=Math.random().toString(36).slice(2)+Date.now().toString(36);
+  sessionStorage.setItem('tc_token',token);
+  sessionStorage.setItem('tc_ck',CK);
+  sessionStorage.setItem('tc_cd',JSON.stringify(CD));
+  sessionStorage.setItem('tc_ts',Date.now().toString());
   $('p-auth').classList.remove('active');
   $('app').style.display = 'block';
   applyTheme(localStorage.getItem('tc_theme') || 'light');
@@ -235,6 +260,9 @@ function startSession() {
 }
 
 function doLogout() {
+  // Clear all session data
+  sessionStorage.clear();
+  localStorage.removeItem('tc_session');
   CK = null; CD = null;
   if (ptimer) clearInterval(ptimer);
   if (ntimer) clearInterval(ntimer);
@@ -257,6 +285,30 @@ function showPage(id) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  // ── SESSION RESTORE ──
+  (function(){
+    var ck=sessionStorage.getItem('tc_ck');
+    var cd=sessionStorage.getItem('tc_cd');
+    var ts=sessionStorage.getItem('tc_ts');
+    if(ck&&cd&&ts){
+      var age=Date.now()-parseInt(ts);
+      if(age<30*60*1000){ // within 30 min
+        try{
+          CK=ck;CD=JSON.parse(cd);
+          // Verify player still exists and data is fresh
+          fbGet('/players/'+CK).then(function(fresh){
+            if(!fresh){sessionStorage.clear();return;}
+            CD=fresh; // always use server data
+            sessionStorage.setItem('tc_cd',JSON.stringify(CD));
+            startSession(CK,CD);
+          }).catch(function(){sessionStorage.clear();});
+        }catch(e){sessionStorage.clear();}
+      } else {
+        sessionStorage.clear(); // expired
+      }
+    }
+  })();
+
   // ── GOOEY NAV SETUP ──
   (function(){
     var colors=[1,2,3,1,2,3,1,4];

@@ -22,16 +22,45 @@ function wc(){
   return w;
 }
 function deductBet(bet){
-  var nb=bal()-bet;
-  CD.balance=nb;
-  fbUp('/players/'+CK,{balance:nb});
-  ub();
+  if(!CK||!CD)return;
+  if(bet<=0)return;
+  // Read server balance first
+  fbGet('/players/'+CK+'/balance').then(function(serverBal){
+    var trueBal=Number(serverBal)||0;
+    if(bet>trueBal){
+      // Server balance lower than local - sync first
+      CD.balance=trueBal;ub();
+      alert('Insufficient balance. Please try again.');
+      return;
+    }
+    var nb=trueBal-bet;
+    CD.balance=nb;
+    fbUp('/players/'+CK,{balance:nb});
+    ub();
+  }).catch(function(){
+    var nb=bal()-bet;
+    CD.balance=nb;
+    fbUp('/players/'+CK,{balance:nb});
+    ub();
+  });
 }
 function creditWin(payout){
-  var nb=bal()+payout;
-  CD.balance=nb;
-  fbUp('/players/'+CK,{balance:nb});
-  ub();
+  if(!CK||!CD)return;
+  if(payout<=0)return;
+  // Always read server balance first to prevent manipulation
+  fbGet('/players/'+CK+'/balance').then(function(serverBal){
+    var trueBal=Number(serverBal)||0;
+    var nb=trueBal+payout;
+    CD.balance=nb;
+    fbUp('/players/'+CK,{balance:nb});
+    ub();
+  }).catch(function(){
+    // Fallback to local if fetch fails
+    var nb=bal()+payout;
+    CD.balance=nb;
+    fbUp('/players/'+CK,{balance:nb});
+    ub();
+  });
 }
 function recordTxn(type,amount,gameId){
   fbPush('/gameTxns',{playerKey:CK,type:type,amount:amount,game:gameId||'',time:new Date().toISOString()});

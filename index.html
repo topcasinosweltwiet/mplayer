@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.firebasedatabase.app https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
 <title>TopCasinos</title>
 <link rel="stylesheet" href="tc-styles.css"/>
@@ -178,7 +180,7 @@
 
 <!-- GAME OVERLAY -->
 <div class="gov" id="gov">
-  <div class="gmodal">
+  <div class="gmodal" id="main-gmodal">
     <button class="gclose" id="gclose">✕</button>
     <div class="gtitle" id="gtitle"></div>
     <div class="gbal" id="gsub" style="font-size:12px;color:var(--txt2);margin-bottom:4px;"></div>
