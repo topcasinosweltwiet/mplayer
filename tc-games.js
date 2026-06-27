@@ -409,19 +409,31 @@ function openGame(g){
   }
   var gcl=$('gclose');
   if(gcl)gcl.onclick=function(){$('gov').classList.remove('open');};
-  // Make modal taller for tower/plinko/mines
   var gmodal=document.getElementById('main-gmodal');
   if(gmodal){
-    if(g.type==='tower'||g.type==='plinko'||g.type==='mines'){
+    if(g.type==='tower'){
+      gmodal.style.maxHeight='100vh';
+      gmodal.style.height='100vh';
+      gmodal.style.borderRadius='0';
+      gmodal.style.padding='0.8rem';
+    } else if(g.type==='plinko'||g.type==='mines'){
       gmodal.style.maxHeight='98vh';
       gmodal.style.height='96vh';
+      gmodal.style.borderRadius='16px';
+      gmodal.style.padding='1.2rem';
     } else {
       gmodal.style.maxHeight='92vh';
       gmodal.style.height='';
+      gmodal.style.borderRadius='18px';
+      gmodal.style.padding='1.2rem';
     }
   }
   buildGameUI(g);
-  $('gov').classList.add('open');
+  var govEl=$('gov');
+  if(govEl){
+    govEl.style.padding=g.type==='tower'?'0':'8px';
+    govEl.classList.add('open');
+  }
 }
 
 function doPlayGame(g){
@@ -1336,19 +1348,19 @@ function startTower(g,bet){
         var isActive=fi===fl&&tState.active;
         var isDone=fi<fl;
         var isFuture=fi>fl;
-        return '<div style="display:flex;gap:5px;align-items:center;margin-bottom:2px;">'+
+        return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">'+
           '<div style="font-size:10px;color:#4a6ab0;font-weight:800;width:32px;text-align:center;flex-shrink:0;">'+(mults[fi+1]||mults[fi])+'x</div>'+
           Array.from({length:COLS},function(_,ci){
             if(isDone){
               var safe=safeCol[fi]===ci;
-              return '<div style="flex:1;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;'+
+              return '<div style="flex:1;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;'+
                 'background:'+(safe?'rgba(74,222,128,0.14)':'rgba(231,76,60,0.1)')+';'+
                 'border:2px solid '+(safe?'#4ade80':'#e74c3c')+';'+
                 'box-shadow:'+(safe?'0 0 12px #4ade8033':'none')+';">'+
                 (safe?'💎':'💣')+'</div>';
             }
             if(isActive){
-              return '<div class="tower-btn" data-fi="'+fi+'" data-ci="'+ci+'" style="height:44px;font-size:22px;">❓</div>';
+              return '<div class="tower-btn" data-fi="'+fi+'" data-ci="'+ci+'" style="height:52px;font-size:26px;">❓</div>';
             }
             return '<div class="tower-btn future" style="height:44px;">▪</div>';
           }).join('')+
@@ -1538,7 +1550,7 @@ function openCrash(g){
       var b=document.createElement('button');
       b.className='chip';
       b.textContent=v>=1000?(v/1000)+'K':v;
-      b.onclick=function(){var i=$('cbinp');if(i)i.value=v;};
+      b.onclick=function(){var i=$('cinp');if(i)i.value=v;};
       cchips.appendChild(b);
     });
   }
@@ -1574,7 +1586,7 @@ function startCrashRound(){
   if(cmult){cmult.style.fontSize='28px';cmult.style.color='#f6c90e';}
 
   if(cplay) cplay.onclick=function(){
-    var bet=parseFloat(($('cbinp')||{}).value)||0;
+    var bet=parseFloat(($('cinp')||{}).value)||0;
     if(!bet||bet<1){alert('Enter bet amount.');return;}
     if(bet>bal()){alert('Insufficient balance: '+fmt(bal()));return;}
     if(CS.phase!=='waiting'){alert('Wait for next round.');return;}

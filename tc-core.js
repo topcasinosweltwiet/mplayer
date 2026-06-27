@@ -98,9 +98,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function aerr(m) { sh('aerr', m); }
 
+// ── LOGIN RATE LIMIT ──
+var _loginAttempts = 0;
+var _loginLocked = false;
+var _loginLockTimer = null;
+
 function doLogin() {
+  // Check lockout
+  if(_loginLocked){
+    aerr('Too many attempts. Try again in 30 seconds.');
+    return;
+  }
   var u = ($('lu').value || '').trim().toLowerCase(), p = $('lp').value || '';
   if (!u || !p) { aerr('Fill all fields.'); return; }
+
+  // Increment attempt counter
+  _loginAttempts++;
+  if(_loginAttempts >= 3){
+    _loginLocked = true;
+    var lockSec = 30;
+    var lbtn=$('lbtn');
+    // Show countdown
+    var countdown = setInterval(function(){
+      if(lbtn) lbtn.textContent = 'Locked '+lockSec+'s';
+      lockSec--;
+      if(lockSec < 0){
+        clearInterval(countdown);
+        _loginLocked = false;
+        _loginAttempts = 0;
+        if(lbtn){lbtn.textContent='Login';lbtn.disabled=false;}
+        aerr('');
+      }
+    }, 1000);
+    if(lbtn) lbtn.disabled = true;
+    aerr('Too many failed attempts. Locked for 30 seconds.');
+    return;
+  }
+
   $('lbtn').textContent = 'Loading...'; $('lbtn').disabled = true;
   fbGet('/players').then(function(pl) {
     $('lbtn').textContent = 'Login'; $('lbtn').disabled = false;
