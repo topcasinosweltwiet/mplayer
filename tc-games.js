@@ -102,7 +102,7 @@ var GAME_DESIGNS = {
 
 var HOT_GAMES = [
   {id:'crash1',name:'Rocket Crash',icon:'🚀',badge:'hbl',type:'crash',vehicle:'rocket'},
-  {id:'slots1',name:'Fruit Slots',icon:'🍒',badge:'hbl',type:'slots',syms:'slots1',mult:3},
+  {id:'slots1',name:'Fruit Slots',icon:'🍒',badge:'hbl',type:'slots',syms:'slots1',mult:2},
   {id:'bj1',name:'Blackjack',icon:'🃏',badge:'hbh',type:'bj'},
   {id:'mines1',name:'Mines',icon:'💣',badge:'hbh',type:'mines',mines:5},
   {id:'plinko1',name:'Plinko',icon:'⚪',badge:'hbl',type:'plinko'},
@@ -116,10 +116,10 @@ var ALL_CASINO = [
   {id:'crash1',name:'Rocket Crash',icon:'🚀',type:'crash',vehicle:'rocket'},
   {id:'crash2',name:'Aviator',icon:'✈️',type:'crash',vehicle:'plane'},
   {id:'crash3',name:'Dragon Blast',icon:'🐉',type:'crash',vehicle:'lightning'},
-  {id:'slots1',name:'Fruit Slots',icon:'🍒',type:'slots',syms:'slots1',mult:3},
-  {id:'slots2',name:'Diamond Slots',icon:'💎',type:'slots',syms:'slots2',mult:4},
-  {id:'slots3',name:'Vegas Slots',icon:'🎰',type:'slots',syms:'slots3',mult:3},
-  {id:'slots4',name:'Lucky 7s',icon:'7️⃣',type:'slots',syms:'slots4',mult:7},
+  {id:'slots1',name:'Fruit Slots',icon:'🍒',type:'slots',syms:'slots1',mult:2},
+  {id:'slots2',name:'Diamond Slots',icon:'💎',type:'slots',syms:'slots2',mult:3},
+  {id:'slots3',name:'Vegas Slots',icon:'🎰',type:'slots',syms:'slots3',mult:2},
+  {id:'slots4',name:'Lucky 7s',icon:'7️⃣',type:'slots',syms:'slots4',mult:5},
   {id:'bj1',name:'Blackjack',icon:'🃏',type:'bj'},
   {id:'bj2',name:'VIP Blackjack',icon:'♠️',type:'bj',mult:3},
   {id:'hilo1',name:'Hi-Lo',icon:'🎴',type:'hilo'},
@@ -131,7 +131,7 @@ var ALL_CASINO = [
   {id:'roul1',name:'Roulette',icon:'🎡',type:'roulette'},
   {id:'wheel1',name:'Money Wheel',icon:'🎡',type:'wheel'},
   {id:'coin1',name:'Coin Flip',icon:'🪙',type:'coin'},
-  {id:'lucky1',name:'Lucky Number',icon:'🍀',type:'lucky',max:10,mult:8},
+  {id:'lucky1',name:'Lucky Number',icon:'🍀',type:'lucky',max:5,mult:4},
   {id:'keno1',name:'Keno',icon:'🔢',type:'keno'},
   {id:'color1',name:'Color Predict',icon:'🎨',type:'colorpick'},
   {id:'colorball1',name:'Color Ball',icon:'🔵',type:'colorball'},
@@ -437,8 +437,7 @@ function doPlayGame(g){
   if(g.type==='plinko'){startPlinko(g,bet);return;}
   // Deduct for instant games
   deductBet(bet);
-  var won=wc();
-  setTimeout(function(){runInstantGame(g,bet,won,btn);},350);
+  setTimeout(function(){runInstantGame(g,bet,null,btn);},350);
 }
 
 function enablePlayBtn(){
@@ -571,13 +570,14 @@ function buildGameUI(g){
   }
 
   if(t==='wheel'){
-    var segs=[{l:'2x',v:2,c:'#4ade80'},{l:'0x',v:0,c:'#e74c3c'},{l:'3x',v:3,c:'#3b82f6'},{l:'0x',v:0,c:'#e74c3c'},{l:'5x',v:5,c:'#f6c90e'},{l:'0x',v:0,c:'#e74c3c'},{l:'1.5x',v:1.5,c:'#a855f7'},{l:'0x',v:0,c:'#e74c3c'}];
+    var segs=[{l:'2x',v:2,c:'#4ade80'},{l:'0x',v:0,c:'#e74c3c'},{l:'0x',v:0,c:'#e74c3c'},{l:'1.5x',v:1.5,c:'#3b82f6'},{l:'0x',v:0,c:'#e74c3c'},{l:'3x',v:3,c:'#f6c90e'},{l:'0x',v:0,c:'#e74c3c'},{l:'0x',v:0,c:'#e74c3c'}];
     area.innerHTML='<div style="text-align:center;padding:12px 0;">'+
       '<canvas id="wheel-canvas" width="220" height="220" style="max-width:100%;border-radius:50%;"></canvas>'+
       '<div id="wheel-res" style="font-size:22px;font-weight:900;color:var(--accent);margin-top:10px;min-height:30px;"></div>'+
     '</div>';
     drawWheelCanvas(segs, -1);
     gState.wheelSegs=segs;
+    gState.wheelWinSegs=[0,3,5]; // indices of winning segments
   }
 
   if(t==='bigsmall'){
@@ -705,454 +705,460 @@ function drawWheelCanvas(segs, winner){
 
 // ── INSTANT GAMES ──
 function runInstantGame(g,bet,won,btn){
-  var t=g.type,payout=0;
+  var t=g.type;
 
+  // ── SLOTS ──
   if(t==='slots'){
     var syms=SLOT_SYMS[g.syms]||SLOT_SYMS.slots1;
+    var playerW=wc();
     var finalSyms;
-    if(won){var ws=pickArr(syms);finalSyms=[ws,ws,ws];}
+    if(playerW){var ws=pickArr(syms);finalSyms=[ws,ws,ws];}
     else{
       finalSyms=[pickArr(syms),pickArr(syms),pickArr(syms)];
-      // Make sure no accidental match on loss
       var tries=0;
-      while(finalSyms[0]===finalSyms[1]&&finalSyms[1]===finalSyms[2]&&tries<10){
-        finalSyms[2]=syms[(syms.indexOf(finalSyms[2])+1)%syms.length];
-        tries++;
+      while(finalSyms[0]===finalSyms[1]&&finalSyms[1]===finalSyms[2]&&tries<20){
+        finalSyms[2]=syms[(syms.indexOf(finalSyms[2])+1)%syms.length];tries++;
       }
     }
-    // Animate reels
     var stops=[600,950,1300];
     for(var ri=0;ri<3;ri++){
       (function(idx,sym){
         var reel=document.getElementById('sr'+idx);if(!reel)return;
-        var spins=setInterval(function(){reel.textContent=pickArr(syms);reel.style.transform='scale(1.05) translateY('+(Math.random()*6-3)+'px)';},90);
+        var sp=setInterval(function(){reel.textContent=pickArr(syms);reel.style.transform='scale(1.05) translateY('+(Math.random()*4-2)+'px)';},90);
         setTimeout(function(){
-          clearInterval(spins);
-          reel.textContent=sym;
-          reel.style.transform='scale(1)';
-          if(won&&idx===2){
-            reel.style.color='#f6c90e';
-            reel.style.textShadow='0 0 20px #f6c90e, 0 0 40px #f6c90e88';
-            [0,1].forEach(function(j){
-              var r=document.getElementById('sr'+j);
-              if(r){r.style.color='#f6c90e';r.style.textShadow='0 0 20px #f6c90e88';}
-            });
-          }
+          clearInterval(sp);reel.textContent=sym;reel.style.transform='scale(1)';
+          if(playerW){reel.style.color='#f6c90e';reel.style.textShadow='0 0 16px #f6c90e88';}
+          else{reel.style.color='var(--txt)';reel.style.textShadow='none';}
         },stops[idx]);
       })(ri,finalSyms[ri]);
     }
-    // Check if all 3 match (real match check after animation)
-    var isMatch=finalSyms[0]===finalSyms[1]&&finalSyms[1]===finalSyms[2];
-    payout=isMatch?Math.floor(bet*(g.mult||3)):0;
-    var realWon=isMatch;
+    var payout=playerW?Math.floor(bet*(g.mult||3)):0;
     setTimeout(function(){
-      finishGame(realWon,payout,bet,g.id);
-      showResult(realWon,realWon?'🎰 MATCH! +'+fmt(payout):'No match — Try again','');
+      finishGame(playerW,payout,bet,g.id);
+      showResult(playerW,playerW?'🎰 MATCH! +'+fmt(payout):'No match — Try again','');
       enablePlayBtn();
     },1550);
     return;
   }
 
+  // ── COIN FLIP ──
   if(t==='coin'){
-    var pick=document.querySelector('#coin-h.sel,#coin-t.sel');
-    var choice=pick?pick.dataset.v:'HEADS';
-    // Decide outcome FIRST using house edge
-    var houseWin=!wc(); // wc()=true means player wins
-    // Pick result that matches or doesn't match choice
-    var result;
-    if(houseWin){
-      // House wins: result is opposite of player's choice
-      result=choice==='HEADS'?'TAILS':'HEADS';
-    } else {
-      // Player wins: result matches choice
-      result=choice;
-    }
-    won=!houseWin; // player wins when house doesn't
-    payout=won?Math.floor(bet*1.95):0;
+    var choiceEl=document.querySelector('#coin-h.sel,#coin-t.sel');
+    var choice=choiceEl?choiceEl.dataset.v:'HEADS';
+    var playerW=wc();
+    var result=playerW?choice:(choice==='HEADS'?'TAILS':'HEADS');
     var cf=document.getElementById('coinface');
-    // Flip animation
     if(cf){
-      cf.style.animation='none';
-      cf.style.transition='none';
+      cf.style.transform='scale(0.8) rotateY(90deg)';
       setTimeout(function(){
-        cf.style.transition='all 0.35s';
-        cf.style.transform='rotateY(720deg) scale(1.2)';
-        setTimeout(function(){
-          cf.textContent=result==='HEADS'?'🌕':'🌑';
-          cf.style.transform='rotateY(0deg) scale(1)';
-          cf.style.color=won?'#f6c90e':'#e74c3c';
-        },350);
-      },10);
+        cf.textContent=result==='HEADS'?'🌕':'🌑';
+        cf.style.color=playerW?'#f6c90e':'#e74c3c';
+        cf.style.transform='scale(1.1) rotateY(0deg)';
+        setTimeout(function(){cf.style.transform='scale(1)';},150);
+      },300);
     }
+    var payout=playerW?Math.floor(bet*1.95):0;
     setTimeout(function(){
-      finishGame(won,payout,bet,g.id);
-      showResult(won,
-        won?'🌕 '+result+'! You win! +'+fmt(payout):'🌑 '+result+' — You lose!',
-        'You picked: '+choice+' | Result: '+result
+      finishGame(playerW,payout,bet,g.id);
+      showResult(playerW,
+        playerW?result+' ✓ You Win! +'+fmt(payout):result+' — You Lose!',
+        'You picked '+choice+' • Result: '+result
       );
       enablePlayBtn();
-    },750);
+    },700);
     return;
   }
 
+  // ── ROULETTE ──
   if(t==='roulette'){
-    var num=rnd(0,36);
+    var selR=document.querySelector('#rp-r.sel,#rp-b.sel,#rp-g.sel');
+    var choiceR=selR?selR.dataset.v:'red';
+    var playerW=wc();
     var redNums=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
-    var color=num===0?'green':redNums.indexOf(num)>=0?'red':'black';
-    var sel=document.querySelector('#rp-r.sel,#rp-b.sel,#rp-g.sel');
-    var choice=sel?sel.dataset.v:'red';
-    var playerWinsR=wc();
-    // Force number that matches/defeats player choice
-    var redNums2=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
-    if(playerWinsR){
-      // Give matching color
-      if(choice==='red'){num=redNums2[rnd(0,redNums2.length-1)];}
-      else if(choice==='black'){var blacks=[2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35];num=blacks[rnd(0,blacks.length-1)];}
-      else{num=0;} // green
+    var blackNums=[2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35];
+    var numR;
+    if(playerW){
+      if(choiceR==='red') numR=redNums[rnd(0,redNums.length-1)];
+      else if(choiceR==='black') numR=blackNums[rnd(0,blackNums.length-1)];
+      else numR=0;
     } else {
-      // Give non-matching
-      if(choice==='green'){var nonZero=rnd(1,36);num=nonZero;}
-      else if(choice==='red'){var blacks2=[2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35];num=blacks2[rnd(0,blacks2.length-1)];}
-      else{num=redNums2[rnd(0,redNums2.length-1)];}
+      if(choiceR==='red') numR=blackNums[rnd(0,blackNums.length-1)];
+      else if(choiceR==='black') numR=redNums[rnd(0,redNums.length-1)];
+      else numR=redNums[rnd(0,redNums.length-1)];
     }
-    var color2=num===0?'green':redNums2.indexOf(num)>=0?'red':'black';
-    color=color2;
-    won=playerWinsR;
-    var mult=choice==='green'?14:1.95;
-    payout=won?Math.floor(bet*mult):0;
+    var colorR=numR===0?'green':redNums.indexOf(numR)>=0?'red':'black';
+    var multR=choiceR==='green'?14:1.95;
+    var payoutR=playerW?Math.floor(bet*multR):0;
     var rr=document.getElementById('roulres');
     if(rr){
       rr.style.opacity='0';
       setTimeout(function(){
         rr.style.opacity='1';
-        rr.textContent=num+' '+{red:'🔴',black:'⚫',green:'🟢'}[color]+' '+color.toUpperCase();
-        rr.style.color={red:'#e74c3c',black:'#ccc',green:'#4ade80'}[color];
-      },300);
+        rr.textContent=numR+' '+{red:'🔴',black:'⚫',green:'🟢'}[colorR]+' '+colorR.toUpperCase();
+        rr.style.color={red:'#ef4444',black:'#aaa',green:'#4ade80'}[colorR];
+      },400);
     }
     setTimeout(function(){
-      finishGame(won,payout,bet,g.id);
-      showResult(won,won?num+' '+color.toUpperCase()+'! +'+fmt(payout):num+' '+color.toUpperCase()+' — Lost','');
+      finishGame(playerW,payoutR,bet,g.id);
+      showResult(playerW,playerW?numR+' '+colorR.toUpperCase()+'! +'+fmt(payoutR):numR+' '+colorR.toUpperCase()+' — Lost','You: '+choiceR);
       enablePlayBtn();
-    },500);
+    },700);
     return;
   }
 
+  // ── HI-LO ──
   if(t==='hilo'){
     var cards=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
-    var cv=gState.hiloCard||cards[6];
-    var cidx=cards.indexOf(cv);
-    var next=cards[rnd(0,cards.length-1)];
-    var nidx=cards.indexOf(next);
-    var sel2=document.querySelector('#hi-btn.sel,#lo-btn.sel');
-    var choice2=sel2?sel2.dataset.v:'high';
-    // HiLo fix: decide winner first, then pick card that proves it
-    var playerWinsH=wc();
-    var validCards;
-    if(playerWinsH){
-      validCards=cards.filter(function(c,i){return choice2==='high'?i>cidx:i<cidx;});
-      if(validCards.length>0){next=validCards[rnd(0,validCards.length-1)];nidx=cards.indexOf(next);}
-      else{playerWinsH=false;} // impossible (A=high or 2=low edge case)
-    } else {
-      validCards=cards.filter(function(c,i){return choice2==='high'?i<=cidx:i>=cidx;});
-      if(validCards.length>0){next=validCards[rnd(0,validCards.length-1)];nidx=cards.indexOf(next);}
-      else{playerWinsH=true;}
-    }
-    won=playerWinsH;
-    payout=won?Math.floor(bet*1.95):0;
+    var cv=gState.hiloCard||'7';
+    var cidx=cards.indexOf(cv);if(cidx<0)cidx=6;
+    var selH=document.querySelector('#hi-btn.sel,#lo-btn.sel');
+    var choiceH=selH?selH.dataset.v:'high';
+    var playerW=wc();
+    var pool;
+    if(playerW) pool=cards.filter(function(c,i){return choiceH==='high'?i>cidx:i<cidx;});
+    else pool=cards.filter(function(c,i){return choiceH==='high'?i<=cidx:i>=cidx;});
+    if(!pool.length){playerW=!playerW;pool=cards;}
+    var nextCard=pool[rnd(0,pool.length-1)];
+    var payoutH=playerW?Math.floor(bet*1.95):0;
     var nc=document.getElementById('hilo-cur');
-    if(nc){nc.style.animation='card-flip 0.4s ease';nc.textContent=next;}
+    if(nc){
+      nc.style.color='rgba(255,255,255,0.3)';
+      setTimeout(function(){nc.textContent=nextCard;nc.style.color=playerW?'#4ade80':'#e74c3c';},300);
+    }
+    // Update card for next round
+    gState.hiloCard=nextCard;
     setTimeout(function(){
-      finishGame(won,payout,bet,g.id);
-      showResult(won,won?next+'! +'+fmt(payout):next+' — Lost',cv+' → '+next);
+      finishGame(playerW,payoutH,bet,g.id);
+      showResult(playerW,playerW?nextCard+'! +'+fmt(payoutH):nextCard+' — Lost',cv+' → '+nextCard+' (you picked '+choiceH+')');
       enablePlayBtn();
-    },500);
+    },600);
     return;
   }
 
+  // ── CARD WAR ──
   if(t==='war'){
-    var wc2=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
-    var pi=rnd(0,wc2.length-1),di=rnd(0,wc2.length-1);
-    won=wc()?pi>=di:pi<di;
-    payout=won?Math.floor(bet*1.95):0;
-    var wp=document.getElementById('war-p'),wd=document.getElementById('war-d');
-    [wp,wd].forEach(function(el){if(el){el.style.animation='card-flip 0.35s ease';}});
+    var cardW=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+    var playerW=wc();
+    var pi,di;
+    if(playerW){
+      pi=rnd(5,12);di=rnd(0,pi-2); // player clearly wins
+    } else {
+      di=rnd(5,12);pi=rnd(0,di-1); // dealer clearly wins
+      if(pi<0)pi=0;
+    }
+    var wp=document.getElementById('war-p'),wd2=document.getElementById('war-d');
+    if(wp){wp.style.opacity='0';setTimeout(function(){wp.textContent=cardW[pi];wp.style.opacity='1';wp.style.color=playerW?'#4ade80':'#e74c3c';},350);}
+    if(wd2){wd2.style.opacity='0';setTimeout(function(){wd2.textContent=cardW[di];wd2.style.opacity='1';wd2.style.color=playerW?'#e74c3c':'#4ade80';},400);}
+    var payoutW=playerW?Math.floor(bet*1.95):0;
     setTimeout(function(){
-      if(wp)wp.textContent=wc2[pi];
-      if(wd){wd.textContent=wc2[di];wd.style.color=di>pi?'#e74c3c':'#4ade80';}
-      finishGame(won,payout,bet,g.id);
-      showResult(won,won?'You Win! +'+fmt(payout):'Dealer Wins!','Your: '+wc2[pi]+' vs Dealer: '+wc2[di]);
+      finishGame(playerW,payoutW,bet,g.id);
+      showResult(playerW,playerW?'You Win! +'+fmt(payoutW):'Dealer Wins!','Your: '+cardW[pi]+' vs Dealer: '+cardW[di]);
       enablePlayBtn();
-    },400);
+    },700);
     return;
   }
 
+  // ── DRAGON TIGER ──
   if(t==='dt'){
     var dtCards=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
-    var dc=dtCards[rnd(0,dtCards.length-1)],tc=dtCards[rnd(0,dtCards.length-1)];
-    var dti=dtCards.indexOf(dc),tti=dtCards.indexOf(tc);
-    var sel3=document.getElementById('dt-pick');
-    var choice3=sel3?sel3.dataset.v:'dragon';
-    won=wc()?(choice3==='dragon'?dti>tti:tti>dti):(choice3==='dragon'?dti<=tti:tti<=dti);
-    payout=won?Math.floor(bet*1.95):0;
+    var selDT=document.getElementById('dt-pick');
+    var choiceDT=selDT?selDT.dataset.v:'dragon';
+    var playerW=wc();
+    var dc,tc2;
+    if(playerW){
+      if(choiceDT==='dragon'){dc=dtCards[rnd(7,12)];tc2=dtCards[rnd(0,dtCards.indexOf(dc)-1)];}
+      else{tc2=dtCards[rnd(7,12)];dc=dtCards[rnd(0,dtCards.indexOf(tc2)-1)];}
+    } else {
+      if(choiceDT==='dragon'){tc2=dtCards[rnd(7,12)];dc=dtCards[rnd(0,dtCards.indexOf(tc2)-1)];}
+      else{dc=dtCards[rnd(7,12)];tc2=dtCards[rnd(0,dtCards.indexOf(dc)-1)];}
+    }
     var dtd=document.getElementById('dt-d'),dtt=document.getElementById('dt-t');
-    [dtd,dtt].forEach(function(el){if(el)el.style.animation='card-flip 0.35s ease';});
+    if(dtd){dtd.style.opacity='0';setTimeout(function(){dtd.textContent=dc;dtd.style.opacity='1';},300);}
+    if(dtt){dtt.style.opacity='0';setTimeout(function(){dtt.textContent=tc2;dtt.style.opacity='1';},350);}
+    var payoutDT=playerW?Math.floor(bet*1.95):0;
     setTimeout(function(){
-      if(dtd)dtd.textContent=dc;if(dtt)dtt.textContent=tc;
-      finishGame(won,payout,bet,g.id);
-      showResult(won,won?choice3.toUpperCase()+' wins! +'+fmt(payout):choice3.toUpperCase()+' lost','🐉 '+dc+' vs 🐯 '+tc);
+      finishGame(playerW,payoutDT,bet,g.id);
+      showResult(playerW,playerW?choiceDT.toUpperCase()+' wins! +'+fmt(payoutDT):choiceDT.toUpperCase()+' lost!','🐉 '+dc+' vs 🐯 '+tc2);
       enablePlayBtn();
-    },400);
+    },700);
     return;
   }
 
+  // ── BACCARAT ──
   if(t==='bac'){
-    var bacCards=[1,2,3,4,5,6,7,8,9,0,0,0,0];
-    var bs=(pickArr(bacCards)+pickArr(bacCards))%10;
-    var ps=(pickArr(bacCards)+pickArr(bacCards))%10;
-    var sel4=document.getElementById('bac-pick');
-    var choice4=sel4?sel4.dataset.v:'banker';
-    var actualWin=bs>ps?'banker':ps>bs?'player':'tie';
-    won=wc()?actualWin===choice4:(actualWin===choice4&&Math.random()<0.3);
-    var mult4=choice4==='tie'?8:1.95;
-    payout=won?Math.floor(bet*mult4):0;
+    var selB=document.getElementById('bac-pick');
+    var choiceB=selB?selB.dataset.v:'banker';
+    var playerW=wc();
+    var bs2,ps2;
+    if(playerW){
+      if(choiceB==='banker'){bs2=rnd(6,9);ps2=rnd(0,bs2-1);}
+      else if(choiceB==='player'){ps2=rnd(6,9);bs2=rnd(0,ps2-1);}
+      else{bs2=rnd(0,9);ps2=bs2;} // tie
+    } else {
+      if(choiceB==='banker'){ps2=rnd(6,9);bs2=rnd(0,ps2-1);}
+      else if(choiceB==='player'){bs2=rnd(6,9);ps2=rnd(0,bs2-1);}
+      else{bs2=rnd(1,9);ps2=(bs2+rnd(1,3))%10;} // no tie
+    }
+    if(bs2===undefined)bs2=rnd(3,8);
+    if(ps2===undefined)ps2=rnd(1,5);
     var bb=document.getElementById('bac-b'),bp=document.getElementById('bac-p');
+    if(bb){bb.style.opacity='0';setTimeout(function(){bb.textContent=bs2;bb.style.opacity='1';bb.style.color=bs2>ps2?'#4ade80':'#e74c3c';},300);}
+    if(bp){bp.style.opacity='0';setTimeout(function(){bp.textContent=ps2;bp.style.opacity='1';bp.style.color=ps2>bs2?'#4ade80':'#e74c3c';},350);}
+    var multB=choiceB==='tie'?8:1.95;
+    var payoutB=playerW?Math.floor(bet*multB):0;
     setTimeout(function(){
-      if(bb)bb.textContent=bs;if(bp)bp.textContent=ps;
-      finishGame(won,payout,bet,g.id);
-      showResult(won,won?choice4.toUpperCase()+' wins! +'+fmt(payout):choice4.toUpperCase()+' lost','Banker: '+bs+' | Player: '+ps);
+      finishGame(playerW,payoutB,bet,g.id);
+      showResult(playerW,playerW?choiceB.toUpperCase()+' wins! +'+fmt(payoutB):choiceB.toUpperCase()+' lost','Banker:'+bs2+' Player:'+ps2);
       enablePlayBtn();
-    },400);
+    },700);
     return;
   }
 
+  // ── DICE ──
   if(t==='dice'){
-    var nd=g.nd||2,rolls2=[],total2=0;
-    for(var di2=0;di2<nd;di2++){var dv=rnd(1,6);rolls2.push(dv);total2+=dv;}
+    var nd=g.nd||2;
+    var playerW=wc();
+    var rolls=[],total=0;
+    for(var i=0;i<nd;i++){var dv=rnd(1,6);rolls.push(dv);total+=dv;}
     var dfaces=['⚀','⚁','⚂','⚃','⚄','⚅'];
-    // For Sic Bo (nd=3): player picks big/small
     if(nd===3){
+      // Sic Bo
       var sbEl=document.getElementById('sb-pick');
       var sbPick=sbEl?sbEl.dataset.v:'big';
-      var isBig2=total2>=11;
-      won=wc()?(sbPick==='big')===isBig2:(sbPick==='big')===isBig2;
+      var isBigD=total>=11;
+      // Force correct outcome
+      if(playerW!==(sbPick==='big'?isBigD:!isBigD)){
+        rolls=[];total=0;
+        for(var j=0;j<nd;j++){var dv2=playerW!==(sbPick==='big')?(rnd(1,3)):(rnd(3,6));rolls.push(dv2);total+=dv2;}
+        isBigD=total>=11;
+      }
+      won=playerW;
     } else {
-      won=wc()?total2>=(3*nd/2+1):total2<(3*nd/2+1);
+      won=playerW;
     }
-    payout=won?Math.floor(bet*1.9):0;
-    for(var di3=0;di3<nd;di3++){
-      (function(idx2,val){
-        var el=document.getElementById('die'+idx2);
-        if(!el)return;
-        var spinD=setInterval(function(){el.textContent=dfaces[rnd(0,5)];el.style.transform='scale(1.05)';},80);
-        setTimeout(function(){clearInterval(spinD);el.textContent=dfaces[val-1];el.style.transform='scale(1)';el.style.borderColor=won?'#4ade80':'#e74c3c';},500);
-      })(di3,rolls2[di3]);
+    for(var k=0;k<nd;k++){
+      (function(idx,val){
+        var el=document.getElementById('die'+idx);if(!el)return;
+        var sp=setInterval(function(){el.textContent=dfaces[rnd(0,5)];},80);
+        setTimeout(function(){clearInterval(sp);el.textContent=dfaces[val-1];el.style.borderColor=won?'#4ade80':'#e74c3c';},500);
+      })(k,rolls[k]);
     }
-    var dr=document.getElementById('dice-res');
+    var payoutD=won?Math.floor(bet*1.9):0;
     setTimeout(function(){
-      if(dr)dr.textContent='Total: '+total2+(nd===3?' ('+(total2>=11?'BIG':'SMALL')+')':'');
-      finishGame(won,payout,bet,g.id);
-      showResult(won,won?'Rolled '+total2+'! +'+fmt(payout):'Rolled '+total2+' — Lost',rolls2.join('+')+'='+total2);
+      finishGame(won,payoutD,bet,g.id);
+      showResult(won,won?'Rolled '+total+'! +'+fmt(payoutD):'Rolled '+total+' — Lost',rolls.join('+')+'='+total+(nd===3?' ('+(total>=11?'BIG':'SMALL')+')':''));
       enablePlayBtn();
-    },650);
+    },700);
     return;
   }
 
+  // ── MONEY WHEEL ──
   if(t==='wheel'){
-    var segs=gState.wheelSegs||[];
-    var winIdx=won?[0,2,4,6][rnd(0,3)]:rnd(0,3)*2+1; // odd=lose (0x), even=win
-    var seg=segs[winIdx]||{l:'0x',v:0};
-    payout=seg.v>0?Math.floor(bet*seg.v):0;
-    won=payout>0;
-    // Proper wheel spin - rotate the wheel itself
+    var segs=gState.wheelSegs;
+    if(!segs||!segs.length){enablePlayBtn();return;}
+    var playerW=wc();
+    // Segs: index 0=2x,1=0x,2=3x,3=0x,4=5x,5=0x,6=1.5x,7=0x
+    var winIdxW=playerW?[0,3,5][rnd(0,2)]:[1,2,4,6,7][rnd(0,4)];
+    var segW=segs[winIdxW]||{l:'0x',v:0};
+    var payoutW=segW.v>0?Math.floor(bet*segW.v):0;
     var canvas2=document.getElementById('wheel-canvas');
-    if(canvas2&&segs.length){
-      var totalSegs=segs.length;
-      var segAngle=Math.PI*2/totalSegs;
-      // Target: winIdx segment lands at top (pointer)
-      var targetRot=(Math.PI*2*4)+(Math.PI*2-(winIdx*segAngle+segAngle/2)); // 4 full spins + land on winner
-      var startTime=null,duration=3000;
-      function spinFrame(ts){
-        if(!startTime)startTime=ts;
-        var elapsed=ts-startTime;
-        var progress=Math.min(elapsed/duration,1);
-        // Ease out cubic
-        var ease=1-Math.pow(1-progress,3);
-        var curRot=ease*targetRot;
-        // Draw rotated wheel
+    if(canvas2){
+      var W2=canvas2.width,H2=canvas2.height,cx2=W2/2,cy2=H2/2,R2=W2/2-6;
+      var segAng=Math.PI*2/segs.length;
+      var targetRot=(Math.PI*2*5)+(Math.PI*2-(winIdxW*segAng+segAng/2)-Math.PI/2);
+      var startT=null,dur=3500;
+      function spinW(ts){
+        if(!startT)startT=ts;
+        var el=(ts-startT)/dur;
+        var ease=el<1?1-Math.pow(1-el,3):1;
         var ctx2=canvas2.getContext('2d');
-        var W2=canvas2.width,H2=canvas2.height,cx2=W2/2,cy2=H2/2,R2=W2/2-6;
         ctx2.clearRect(0,0,W2,H2);
-        ctx2.save();ctx2.translate(cx2,cy2);ctx2.rotate(curRot);ctx2.translate(-cx2,-cy2);
+        ctx2.save();ctx2.translate(cx2,cy2);ctx2.rotate(ease*targetRot);ctx2.translate(-cx2,-cy2);
         segs.forEach(function(s,i){
-          var a=segAngle*i-Math.PI/2;
-          ctx2.beginPath();ctx2.moveTo(cx2,cy2);ctx2.arc(cx2,cy2,R2,a,a+segAngle);ctx2.closePath();
-          ctx2.fillStyle=s.c+(progress>=1&&i===winIdx?'ff':'99');ctx2.fill();
+          var a=segAng*i-Math.PI/2;
+          ctx2.beginPath();ctx2.moveTo(cx2,cy2);ctx2.arc(cx2,cy2,R2,a,a+segAng);ctx2.closePath();
+          ctx2.fillStyle=(el>=1&&i===winIdxW)?s.c+'ff':s.c+'99';ctx2.fill();
           ctx2.strokeStyle='#050a18';ctx2.lineWidth=2;ctx2.stroke();
-          ctx2.save();ctx2.translate(cx2,cy2);ctx2.rotate(a+segAngle/2);
+          ctx2.save();ctx2.translate(cx2,cy2);ctx2.rotate(a+segAng/2);
           ctx2.fillStyle='#fff';ctx2.font='bold 12px sans-serif';ctx2.textAlign='right';
           ctx2.fillText(s.l,R2-8,5);ctx2.restore();
         });
         ctx2.restore();
-        // Center dot
         ctx2.beginPath();ctx2.arc(cx2,cy2,12,0,Math.PI*2);ctx2.fillStyle='#0a1525';ctx2.fill();
         ctx2.strokeStyle='#4ade80';ctx2.lineWidth=2;ctx2.stroke();
-        // Pointer (fixed at top)
         ctx2.fillStyle='#f6c90e';ctx2.beginPath();ctx2.moveTo(cx2,cy2-R2-2);ctx2.lineTo(cx2-8,cy2-R2+12);ctx2.lineTo(cx2+8,cy2-R2+12);ctx2.closePath();ctx2.fill();
-        if(progress<1) requestAnimationFrame(spinFrame);
-        else{
-          var wr=document.getElementById('wheel-res');
-          if(wr){wr.textContent=seg.l;wr.style.color=seg.v>0?'#4ade80':'#e74c3c';}
-        }
+        if(el<1)requestAnimationFrame(spinW);
+        else{var wr=document.getElementById('wheel-res');if(wr){wr.textContent=segW.l;wr.style.color=payoutW>0?'#4ade80':'#e74c3c';}}
       }
-      requestAnimationFrame(spinFrame);
+      requestAnimationFrame(spinW);
     }
     setTimeout(function(){
-      finishGame(won,payout,bet,g.id);
-      showResult(won,won?seg.l+'! +'+fmt(payout):seg.l+' — Lost','');
+      finishGame(playerW,payoutW,bet,g.id);
+      showResult(playerW,playerW?segW.l+'! +'+fmt(payoutW):'0x — Lost','');
       enablePlayBtn();
-    },3200);
+    },3800);
     return;
   }
 
+  // ── BIG SMALL ──
   if(t==='bigsmall'){
-    var d1=rnd(1,6),d2=rnd(1,6),tot=d1+d2;
-    var isBig=tot>=7;
-    var sel5=document.getElementById('bs-pick');
-    var choice5=sel5?sel5.dataset.v:'big';
-    var playerWins5=wc();
-    var isBig,d1f,d2f,totf;
-    if(playerWins5){
-      if(choice5==='big'){d1f=rnd(4,6);d2f=rnd(3,6);totf=d1f+d2f;isBig=totf>=7;}
-      else{d1f=rnd(1,3);d2f=rnd(1,3);totf=d1f+d2f;isBig=totf>=7;}
+    var selBS=document.getElementById('bs-pick');
+    var choiceBS=selBS?selBS.dataset.v:'big';
+    var playerW=wc();
+    var d1,d2,totBS,isBigBS;
+    if(playerW){
+      if(choiceBS==='big'){d1=rnd(4,6);d2=rnd(3,6);totBS=Math.min(12,d1+d2);isBigBS=totBS>=7;}
+      else{d1=rnd(1,3);d2=rnd(1,3);totBS=Math.max(2,d1+d2);isBigBS=false;}
     } else {
-      if(choice5==='big'){d1f=rnd(1,3);d2f=rnd(1,3);totf=d1f+d2f;isBig=totf>=7;}
-      else{d1f=rnd(4,6);d2f=rnd(3,6);totf=d1f+d2f;isBig=totf>=7;}
+      if(choiceBS==='big'){d1=rnd(1,3);d2=rnd(1,3);totBS=Math.max(2,d1+d2);isBigBS=false;}
+      else{d1=rnd(4,6);d2=rnd(3,6);totBS=Math.min(12,d1+d2);isBigBS=true;}
     }
-    won=playerWins5;
-    payout=won?Math.floor(bet*1.95):0;
-    var bd=document.getElementById('bs-dice');
-    var faces2=['⚀','⚁','⚂','⚃','⚄','⚅'];
-    if(bd){bd.textContent=faces2[d1-1]+' '+faces2[d2-1]+' = '+tot+' ('+(isBig?'BIG':'SMALL')+')';}
-    payout=won?Math.floor(bet*1.95):0;
-    finishGame(won,payout,bet,g.id);
-    showResult(won,won?(isBig?'BIG':'SMALL')+' '+tot+'! +'+fmt(payout):(isBig?'BIG':'SMALL')+' '+tot+' — Lost','You: '+choice5);
-    enablePlayBtn();
-    return;
-  }
-
-  if(t==='oddeven'){
-    var num2=rnd(1,20);
-    var isOdd=num2%2===1;
-    var sel6=document.getElementById('oe-pick');
-    var choice6=sel6?sel6.dataset.v:'odd';
-    var playerWins6=wc();
-    if(!playerWins6){num2=(choice6==='odd')?(num2%2===1?num2+1:num2):(num2%2===0?num2+1:num2);if(num2>20)num2--;}
-    isOdd=num2%2===1;
-    won=playerWins6;
-    payout=won?Math.floor(bet*1.95):0;
-    var oen=document.getElementById('oe-num');
-    if(oen){oen.textContent=num2;oen.style.color=isOdd?'#ef4444':'#3b82f6';}
-    finishGame(won,payout,bet,g.id);
-    showResult(won,won?(isOdd?'ODD':'EVEN')+' '+num2+'! +'+fmt(payout):(isOdd?'ODD':'EVEN')+' '+num2+' — Lost','');
-    enablePlayBtn();
-    return;
-  }
-
-  if(t==='lucky'){
-    var guess=parseInt(($('lucky-inp')||{}).value)||5;
-    var draw=rnd(1,g.max||10);
-    won=wc()?draw===guess:false;
-    payout=won?Math.floor(bet*(g.mult||8)):0;
-    var lr=document.getElementById('lucky-res');
-    if(lr){lr.textContent=draw;lr.style.color=won?'#f6c90e':'#e74c3c';}
-    finishGame(won,payout,bet,g.id);
-    showResult(won,won?'🍀 Lucky '+draw+'! +'+fmt(payout):'Drew '+draw+' — Lost','You picked: '+guess);
-    enablePlayBtn();
-    return;
-  }
-
-  if(t==='keno'){
-    // Validate player picked numbers
-    if(!gState.kenoPicks||gState.kenoPicks.length===0){
-      // Refund and alert
-      creditWin(bet);
-      alert('Please pick at least 1 number first!');
+    var faces3=['⚀','⚁','⚂','⚃','⚄','⚅'];
+    var bdEl=document.getElementById('bs-dice');
+    if(bdEl){
+      bdEl.style.opacity='0';
+      setTimeout(function(){
+        bdEl.textContent=faces3[(d1||1)-1]+' '+faces3[(d2||1)-1]+' = '+totBS+' ('+(isBigBS?'BIG':'SMALL')+')';
+        bdEl.style.opacity='1';
+        bdEl.style.color=playerW?'#4ade80':'#e74c3c';
+      },300);
+    }
+    var payoutBS=playerW?Math.floor(bet*1.95):0;
+    setTimeout(function(){
+      finishGame(playerW,payoutBS,bet,g.id);
+      showResult(playerW,playerW?(isBigBS?'BIG':'SMALL')+' '+totBS+'! +'+fmt(payoutBS):(isBigBS?'BIG':'SMALL')+' '+totBS+' — Lost','You: '+(choiceBS==='big'?'BIG':'SMALL'));
       enablePlayBtn();
-      return;
+    },600);
+    return;
+  }
+
+  // ── ODD EVEN ──
+  if(t==='oddeven'){
+    var selOE=document.getElementById('oe-pick');
+    var choiceOE=selOE?selOE.dataset.v:'odd';
+    var playerW=wc();
+    var numOE;
+    if(playerW){
+      if(choiceOE==='odd'){var odds=[1,3,5,7,9,11,13,15,17,19];numOE=odds[rnd(0,odds.length-1)];}
+      else{var evens=[2,4,6,8,10,12,14,16,18,20];numOE=evens[rnd(0,evens.length-1)];}
+    } else {
+      if(choiceOE==='odd'){var evens2=[2,4,6,8,10,12,14,16,18,20];numOE=evens2[rnd(0,evens2.length-1)];}
+      else{var odds2=[1,3,5,7,9,11,13,15,17,19];numOE=odds2[rnd(0,odds2.length-1)];}
     }
-    // Draw 10 random numbers from 1-20
+    var isOddOE=numOE%2===1;
+    var oenEl=document.getElementById('oe-num');
+    if(oenEl){
+      oenEl.style.transform='scale(0)';
+      setTimeout(function(){
+        oenEl.textContent=numOE;
+        oenEl.style.color=playerW?'#4ade80':'#e74c3c';
+        oenEl.style.transform='scale(1.2)';
+        setTimeout(function(){oenEl.style.transform='scale(1)';},150);
+      },300);
+    }
+    var payoutOE=playerW?Math.floor(bet*1.95):0;
+    setTimeout(function(){
+      finishGame(playerW,payoutOE,bet,g.id);
+      showResult(playerW,playerW?(isOddOE?'ODD':'EVEN')+' '+numOE+'! +'+fmt(payoutOE):(isOddOE?'ODD':'EVEN')+' '+numOE+' — Lost','You: '+choiceOE.toUpperCase());
+      enablePlayBtn();
+    },600);
+    return;
+  }
+
+  // ── LUCKY NUMBER ──
+  if(t==='lucky'){
+    var guessEl=$('lucky-inp');
+    var guess=parseInt(guessEl?guessEl.value:3)||3;
+    var max=g.max||5;
+    // True random draw - win only if guess matches AND house allows
+    var draw=rnd(1,max);
+    var isMatch=(draw===guess);
+    var pw=(isMatch&&Math.random()<0.85)||(Math.random()<0.02);
+    if(pw) draw=guess;
+    else if(isMatch){draw=draw>=max?draw-1:draw+1;} // move away from guess on loss
+    var lrEl=document.getElementById('lucky-res');
+    if(lrEl){
+      lrEl.style.transform='scale(0)';
+      setTimeout(function(){
+        lrEl.textContent=draw;
+        lrEl.style.color=pw?'#f6c90e':'#e74c3c';
+        lrEl.style.transform='scale(1.3)';
+        setTimeout(function(){lrEl.style.transform='scale(1)';},200);
+      },300);
+    }
+    var payoutL=pw?Math.floor(bet*(g.mult||4)):0;
+    setTimeout(function(){
+      finishGame(pw,payoutL,bet,g.id);
+      showResult(pw,pw?'🍀 LUCKY '+draw+'! +'+fmt(payoutL):'Drew '+draw+' — Lost','You picked: '+guess);
+      enablePlayBtn();
+    },700);
+    return;
+  }
+
+  // ── KENO ──
+  if(t==='keno'){
+    if(!gState.kenoPicks||gState.kenoPicks.length===0){
+      creditWin(bet);
+      var krAlert=document.getElementById('keno-res');
+      if(krAlert){krAlert.textContent='⚠️ Pick numbers first!';krAlert.style.color='#e74c3c';}
+      enablePlayBtn();return;
+    }
     var drawn=[];
     while(drawn.length<10){var k=rnd(1,20);if(drawn.indexOf(k)<0)drawn.push(k);}
-    var myPicks=gState.kenoPicks||[];
-    // Count how many of player's picks are in drawn numbers
+    var myPicks=gState.kenoPicks.slice();
     var hits=myPicks.filter(function(n){return drawn.indexOf(n)>=0;}).length;
-    // Payout table: 0 hits=0x, 1=0x, 2=0.5x, 3=2x, 4=5x, 5=10x
     var kenoMults=[0,0,0.5,2,5,10];
     var km=kenoMults[Math.min(hits,kenoMults.length-1)]||0;
-    won=km>0;
-    payout=won?Math.floor(bet*km):0;
-    // Highlight drawn numbers (orange) and player's hits (green)
+    var wonK=km>0;
+    var payoutK=wonK?Math.floor(bet*km):0;
     document.querySelectorAll('#keno-grid button').forEach(function(b){
-      var num3=parseInt(b.textContent);
-      var isDrawn=drawn.indexOf(num3)>=0;
-      var isPick=myPicks.indexOf(num3)>=0;
-      if(isDrawn&&isPick){
-        // HIT - player picked this drawn number
-        b.style.background='rgba(74,222,128,0.3)';
-        b.style.borderColor='#4ade80';
-        b.style.color='#4ade80';
-        b.style.transform='scale(1.1)';
-      } else if(isDrawn){
-        // Drawn but not picked
-        b.style.background='rgba(246,201,0,0.15)';
-        b.style.borderColor='#f6c90e55';
-        b.style.color='#f6c90e';
-      } else if(isPick){
-        // Player picked but not drawn - miss
-        b.style.background='rgba(231,76,60,0.15)';
-        b.style.borderColor='#e74c3c55';
-        b.style.color='#e74c3c';
-      }
+      var num=parseInt(b.textContent);
+      var isD=drawn.indexOf(num)>=0,isP=myPicks.indexOf(num)>=0;
+      if(isD&&isP){b.style.background='rgba(74,222,128,0.35)';b.style.color='#4ade80';b.style.borderColor='#4ade80';b.style.transform='scale(1.12)';}
+      else if(isD){b.style.background='rgba(246,201,0,0.15)';b.style.color='#f6c90e';}
+      else if(isP){b.style.background='rgba(231,76,60,0.15)';b.style.color='#e74c3c';}
     });
-    var kr=document.getElementById('keno-res');
-    if(kr){
-      kr.textContent=hits+'/'+myPicks.length+' hits! × '+km+'x';
-      kr.style.color=won?'#4ade80':'#e74c3c';
-    }
-    finishGame(won,payout,bet,g.id);
-    showResult(won,
-      won?hits+' hits! × '+km+'x = +'+fmt(payout):hits+' hits — Lost',
-      'Your picks: '+myPicks.join(', ')+' | Drawn: '+drawn.slice(0,8).join(', ')+'...'
-    );
-    // Clear picks for next round
+    var krEl=document.getElementById('keno-res');
+    if(krEl){krEl.textContent=hits+'/'+myPicks.length+' hits × '+km+'x';krEl.style.color=wonK?'#4ade80':'#e74c3c';}
     gState.kenoPicks=[];
+    finishGame(wonK,payoutK,bet,g.id);
+    showResult(wonK,wonK?hits+' hits! +'+fmt(payoutK):hits+' hits — Lost','Need 3+ to win. Picks:'+myPicks.join(','));
     enablePlayBtn();
     return;
   }
 
+  // ── COLOR PREDICT / COLOR BALL ──
   if(t==='colorpick'||t==='colorball'){
+    var selC=document.getElementById('cp-pick');
+    var choiceC=selC?selC.dataset.v:'Red';
+    var playerW=wc();
     var cols=['Red','Blue','Green'];
-    var playerWins7=wc();
-    var drawn2;
-    if(playerWins7){drawn2=choice7;}
-    else{var otherCols=cols.filter(function(c){return c!==choice7;});drawn2=pickArr(otherCols);}
-    won=playerWins7;
-    var sel7=document.getElementById('cp-pick');
-    var choice7=sel7?sel7.dataset.v:'Red';
-    won=wc()?drawn2===choice7:false;
-    payout=won?Math.floor(bet*2.7):0;
-    var cb=document.getElementById('cball');
-    var emoji={Red:'🔴',Blue:'🔵',Green:'🟢'};
-    var payout7=won?Math.floor(bet*2.7):0;
-    if(cb){setTimeout(function(){cb.textContent=emoji[drawn2]||'🔵';},300);}
-    setTimeout(function(){finishGame(won,payout7,bet,g.id);showResult(won,won?drawn2+'! ✓ +'+fmt(payout7):drawn2+' — Lost!','You: '+choice7+' | Result: '+drawn2);enablePlayBtn();},500);
+    var drawnC=playerW?choiceC:pickArr(cols.filter(function(c){return c!==choiceC;}));
+    var emojiC={Red:'🔴',Blue:'🔵',Green:'🟢'};
+    var cbEl=document.getElementById('cball');
+    if(cbEl){
+      cbEl.style.transform='scale(0)';
+      setTimeout(function(){
+        cbEl.textContent=emojiC[drawnC]||'🔵';
+        cbEl.style.transform='scale(1.2)';
+        cbEl.style.filter='drop-shadow(0 0 16px '+(playerW?'#4ade80':'#e74c3c')+')';
+        setTimeout(function(){cbEl.style.transform='scale(1)';},200);
+      },350);
+    }
+    var payoutC=playerW?Math.floor(bet*2.7):0;
+    setTimeout(function(){
+      finishGame(playerW,payoutC,bet,g.id);
+      showResult(playerW,playerW?drawnC+'! ✓ +'+fmt(payoutC):drawnC+' — Lost!','You: '+choiceC+' | Result: '+drawnC);
+      enablePlayBtn();
+    },750);
     return;
   }
 
-  // Default fallback
-  payout=won?Math.floor(bet*2):0;
-  finishGame(won,payout,bet,g.id);
-  showResult(won,won?'Win! +'+fmt(payout):'Lost!','');
+  // ── DEFAULT fallback ──
+  var playerW=wc();
+  var payout=playerW?Math.floor(bet*2):0;
+  finishGame(playerW,payout,bet,g.id);
+  showResult(playerW,playerW?'Win! +'+fmt(payout):'Lost!','');
   enablePlayBtn();
 }
 
