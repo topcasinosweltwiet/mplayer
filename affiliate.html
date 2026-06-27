@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>2xWin — Partner Panel</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#050a18;--bg2:#0a1525;--card:#0d1f3c;
+  --border:#1a3a7c;--border2:rgba(255,255,255,0.08);
+  --hdr:#0d1f3c;--accent:#4ade80;--accent2:#f6c90e;
+  --txt:#e0e8ff;--txt2:#4a6ab0;--red:#e74c3c;--blue:#3b82f6;
+}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;}
+
+/* ── AUTH ── */
+#p-auth{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at top,#0d2460 0%,#050a18 60%);}
+.auth-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+.auth-logo{font-size:28px;font-weight:900;color:#fff;text-align:center;margin-bottom:4px;}
+.auth-logo span{color:var(--accent2);}
+.auth-sub{text-align:center;font-size:12px;color:var(--txt2);margin-bottom:2rem;letter-spacing:1px;text-transform:uppercase;}
+.auth-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--accent);font-weight:700;margin:0 auto 1.5rem;display:flex;justify-content:center;}
+.af{margin-bottom:14px;}
+.af label{font-size:11px;font-weight:700;color:var(--txt2);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;}
+.af input{width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:rgba(255,255,255,0.04);color:var(--txt);font-size:14px;outline:none;transition:border-color 0.2s;}
+.af input:focus{border-color:var(--accent);}
+.auth-btn{width:100%;padding:13px;background:var(--accent);color:#000;border:none;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;margin-top:8px;transition:opacity 0.2s;}
+.auth-btn:hover{opacity:0.9;}
+.aerr{background:rgba(231,76,60,0.1);color:var(--red);border:1px solid rgba(231,76,60,0.2);border-radius:8px;padding:9px 12px;font-size:13px;margin-top:10px;display:none;}
+
+/* ── HEADER ── */
+#p-main{display:none;}
+.aff-header{background:var(--hdr);border-bottom:1px solid var(--border);padding:0 1.5rem;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.aff-logo{font-size:20px;font-weight:900;color:#fff;}
+.aff-logo span{color:var(--accent2);}
+.aff-badge{background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:3px 12px;font-size:11px;color:var(--accent);font-weight:700;}
+.aff-user{display:flex;align-items:center;gap:10px;}
+.aff-username{font-size:13px;font-weight:700;color:var(--txt);}
+.logout-btn{padding:6px 14px;background:rgba(231,76,60,0.1);color:var(--red);border:1px solid rgba(231,76,60,0.3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;}
+
+/* ── LAYOUT ── */
+.aff-wrap{max-width:900px;margin:0 auto;padding:1.5rem 1rem 3rem;}
+
+/* ── STAT CARDS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:1.5rem;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;}
+.stat-val{font-size:24px;font-weight:900;color:var(--txt);margin-bottom:4px;}
+.stat-lbl{font-size:11px;color:var(--txt2);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;}
+.stat-card.green .stat-val{color:var(--accent);}
+.stat-card.yellow .stat-val{color:var(--accent2);}
+.stat-card.blue .stat-val{color:var(--blue);}
+.stat-card.red .stat-val{color:var(--red);}
+
+/* ── PROMO CODE BOX ── */
+.promo-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem;}
+.section-title{font-size:14px;font-weight:800;color:var(--txt);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.promo-code-display{background:var(--bg);border:2px dashed var(--accent);border-radius:12px;padding:18px;text-align:center;margin-bottom:14px;}
+.promo-code-val{font-size:32px;font-weight:900;color:var(--accent);letter-spacing:6px;font-family:monospace;margin-bottom:8px;}
+.promo-code-sub{font-size:12px;color:var(--txt2);}
+.copy-btn{padding:10px 24px;background:var(--accent);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;transition:opacity 0.2s;}
+.copy-btn:hover{opacity:0.85;}
+.promo-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;}
+.promo-stat{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
+.promo-stat-val{font-size:16px;font-weight:800;color:var(--txt);}
+.promo-stat-lbl{font-size:10px;color:var(--txt2);margin-top:2px;}
+
+/* ── PLAYERS TABLE ── */
+.section-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem;}
+.player-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border2);}
+.player-row:last-child{border-bottom:none;}
+.player-name{font-size:13px;font-weight:700;color:var(--txt);}
+.player-meta{font-size:11px;color:var(--txt2);margin-top:2px;}
+.player-dep{font-size:13px;font-weight:800;color:var(--accent);}
+
+/* ── EARNINGS ── */
+.earn-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border2);}
+.earn-row:last-child{border-bottom:none;}
+.earn-type{font-size:12px;font-weight:700;color:var(--txt);}
+.earn-meta{font-size:11px;color:var(--txt2);margin-top:2px;}
+.earn-amt{font-size:14px;font-weight:900;}
+.earn-amt.green{color:var(--accent);}
+.earn-amt.yellow{color:var(--accent2);}
+
+/* ── WITHDRAWAL ── */
+.wd-info{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--txt2);line-height:1.6;}
+.wd-info strong{color:var(--txt);}
+.wd-pending{background:rgba(246,201,0,0.08);border:1px solid rgba(246,201,0,0.25);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--accent2);}
+
+/* ── COMMISSION BADGE ── */
+.comm-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(246,201,0,0.1);border:1px solid rgba(246,201,0,0.3);border-radius:20px;padding:4px 14px;font-size:13px;color:var(--accent2);font-weight:800;}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:2rem;color:var(--txt2);font-size:13px;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;background:var(--bg);border-radius:12px;padding:4px;margin-bottom:1.5rem;}
+.tab{flex:1;padding:10px;border:none;background:transparent;color:var(--txt2);font-size:13px;font-weight:700;cursor:pointer;border-radius:8px;transition:all 0.2s;}
+.tab.active{background:var(--card);color:var(--txt);border:1px solid var(--border);}
+
+/* ── LOADING ── */
+.spinner{display:flex;align-items:center;justify-content:center;padding:2rem;color:var(--txt2);font-size:13px;}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="p-auth">
+  <div class="auth-box">
+    <div class="auth-logo">2x<span>Win</span></div>
+    <div class="auth-sub">Partner Panel</div>
+    <div class="auth-badge">🤝 Affiliate Login</div>
+    <div class="af"><label>Username</label><input type="text" id="aff-user" placeholder="Your partner username"/></div>
+    <div class="af"><label>Password</label><input type="password" id="aff-pass" placeholder="Your password"/></div>
+    <div class="aerr" id="aff-err"></div>
+    <button class="auth-btn" id="aff-login-btn">Login to Partner Panel</button>
+  </div>
+</div>
+
+<!-- MAIN PANEL -->
+<div id="p-main">
+  <!-- Header -->
+  <div class="aff-header">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="aff-logo">2x<span>Win</span></div>
+      <div class="aff-badge">Partner</div>
+    </div>
+    <div class="aff-user">
+      <div class="aff-username" id="aff-display-name"></div>
+      <button class="logout-btn" id="aff-logout">Logout</button>
+    </div>
+  </div>
+
+  <div class="aff-wrap">
+
+    <!-- Stats -->
+    <div class="stats-grid" id="aff-stats">
+      <div class="stat-card blue"><div class="stat-val" id="st-players">0</div><div class="stat-lbl">Total Players</div></div>
+      <div class="stat-card green"><div class="stat-val" id="st-deposits">Rs. 0</div><div class="stat-lbl">Total Deposits</div></div>
+      <div class="stat-card yellow"><div class="stat-val" id="st-earned">Rs. 0</div><div class="stat-lbl">Total Earned</div></div>
+      <div class="stat-card red"><div class="stat-val" id="st-pending">Rs. 0</div><div class="stat-lbl">Pending Payout</div></div>
+    </div>
+
+    <!-- Promo Code -->
+    <div class="promo-box">
+      <div class="section-title">🎟️ Your Promo Code</div>
+      <div class="promo-code-display">
+        <div class="promo-code-val" id="aff-code">——</div>
+        <div class="promo-code-sub">Share this code with players to earn commission</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;">
+        <div id="last-refresh" style="font-size:10px;color:var(--txt2);">Auto-refreshes every 30s</div>
+        <button onclick="loadAffStats();document.getElementById('last-refresh').textContent='Updated: '+new Date().toLocaleTimeString();" style="padding:4px 12px;background:rgba(74,222,128,0.1);color:var(--accent);border:1px solid rgba(74,222,128,0.3);border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;">↻ Refresh Now</button>
+      </div>
+      </div>
+      <div style="text-align:center;margin-bottom:14px;">
+        <button class="copy-btn" id="copy-code-btn">📋 Copy Code</button>
+      </div>
+      <div class="promo-stats">
+        <div class="promo-stat"><div class="promo-stat-val" id="ps-uses">0</div><div class="promo-stat-lbl">Times Used</div></div>
+        <div class="promo-stat"><div class="promo-stat-val" id="ps-comm">0%</div><div class="promo-stat-lbl">Commission Rate</div></div>
+        <div class="promo-stat"><div class="promo-stat-val" id="ps-next">Sat</div><div class="promo-stat-lbl">Next Payout</div></div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" id="tab-players" onclick="showTab('players')">👥 My Players</button>
+      <button class="tab" id="tab-earnings" onclick="showTab('earnings')">💰 Earnings</button>
+      <button class="tab" id="tab-wd" onclick="showTab('wd')">💸 Withdrawals</button>
+    </div>
+
+    <!-- Players Tab -->
+    <div class="section-box" id="tab-players-pane">
+      <div class="section-title">👥 Players Who Used Your Code</div>
+      <div id="aff-players-list"><div class="spinner">Loading...</div></div>
+    </div>
+
+    <!-- Earnings Tab -->
+    <div class="section-box" id="tab-earnings-pane" style="display:none;">
+      <div class="section-title">💰 Earning History</div>
+      <div id="aff-earnings-list"><div class="spinner">Loading...</div></div>
+    </div>
+
+    <!-- Withdrawal Tab -->
+    <div class="section-box" id="tab-wd-pane" style="display:none;">
+      <div class="section-title">💸 Commission Withdrawal</div>
+      <div class="wd-info">
+        <strong>Auto Payout Every Saturday</strong><br/>
+        Your earned commission is automatically paid every Saturday.<br/>
+        Next payout: <strong id="next-sat-date">—</strong><br/>
+        Commission Rate: <span class="comm-badge" id="wd-comm-rate">0%</span>
+      </div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:8px;">Pending Payout</div>
+        <div style="font-size:28px;font-weight:900;color:var(--accent2);" id="wd-pending-amt">Rs. 0</div>
+      </div>
+      <div class="wd-info" style="margin-bottom:12px;">
+        <strong>Your Wallet:</strong> <span id="wd-wallet-info">Not set — contact admin</span>
+      </div>
+      <!-- Commission Formula -->
+      <div class="wd-info" style="margin-bottom:12px;border-color:rgba(74,222,128,0.25);">
+        <strong style="color:var(--accent);">Commission Formula:</strong><br/>
+        ✅ <strong>+25%</strong> of what your players <strong>lose</strong><br/>
+        ❌ <strong>−30%</strong> of what your players <strong>win</strong><br/>
+        <span style="color:var(--txt2);font-size:11px;">Minimum withdrawal: <strong>Rs. 5,000</strong> or <strong>$30 USD</strong></span>
+      </div>
+      <div id="aff-wd-history" style="margin-top:14px;"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+var FB = 'https://topcasinos-b75b3-default-rtdb.asia-southeast1.firebasedatabase.app';
+var affData = null, affKey = null;
+
+function fbGet(p){return fetch(FB+p+'.json').then(function(r){return r.json();});}
+function fbUpdate(p,d){return fetch(FB+p+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(function(r){return r.json();});}
+function fbPush(p,d){return fetch(FB+p+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(function(r){return r.json();});}
+function fmt(n){return 'Rs. '+(Number(n)||0).toLocaleString('en-NP');}
+
+function nextSaturday(){
+  var d=new Date();
+  var day=d.getDay(); // 0=Sun,6=Sat
+  var diff=(6-day+7)%7||7;
+  d.setDate(d.getDate()+diff);
+  return d.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+}
+
+// ── LOGIN ──
+document.getElementById('aff-login-btn').onclick = function(){
+  var user=(document.getElementById('aff-user').value||'').trim();
+  var pass=(document.getElementById('aff-pass').value||'').trim();
+  var err=document.getElementById('aff-err');
+  err.style.display='none';
+  if(!user||!pass){err.textContent='Enter username and password.';err.style.display='block';return;}
+  var btn=document.getElementById('aff-login-btn');
+  btn.textContent='Logging in...';btn.disabled=true;
+  fbGet('/affiliates').then(function(data){
+    if(!data){err.textContent='Invalid credentials.';err.style.display='block';btn.textContent='Login to Partner Panel';btn.disabled=false;return;}
+    var found=null, foundKey=null;
+    Object.entries(data).forEach(function(e){
+      if((e[1].username||'').toLowerCase()===user.toLowerCase()&&e[1].password===pass){
+        found=e[1]; foundKey=e[0];
+      }
+    });
+    if(!found){err.textContent='Invalid username or password.';err.style.display='block';btn.textContent='Login to Partner Panel';btn.disabled=false;return;}
+    if(found.disabled){err.textContent='This account has been disabled. Contact admin.';err.style.display='block';btn.textContent='Login to Partner Panel';btn.disabled=false;return;}
+    affData=found; affKey=foundKey;
+    sessionStorage.setItem('aff_key',foundKey);
+    sessionStorage.setItem('aff_data',JSON.stringify(found));
+    loadPanel();
+  }).catch(function(e){err.textContent='Error: '+e.message;err.style.display='block';btn.textContent='Login to Partner Panel';btn.disabled=false;});
+};
+
+document.getElementById('aff-pass').onkeydown=function(e){if(e.key==='Enter')document.getElementById('aff-login-btn').click();};
+
+// ── LOGOUT ──
+document.getElementById('aff-logout').onclick=function(){
+  sessionStorage.clear();
+  affData=null;affKey=null;
+  if(window._affRefreshTimer){clearInterval(window._affRefreshTimer);window._affRefreshTimer=null;}
+  document.getElementById('p-main').style.display='none';
+  document.getElementById('p-auth').style.display='flex';
+};
+
+// ── LOAD PANEL ──
+function loadPanel(){
+  document.getElementById('p-auth').style.display='none';
+  document.getElementById('p-main').style.display='block';
+  document.getElementById('aff-display-name').textContent=affData.username||'Partner';
+  document.getElementById('aff-code').textContent=affData.promoCode||'—';
+  document.getElementById('ps-comm').textContent=(affData.commissionRate||0)+'%';
+  document.getElementById('wd-comm-rate').textContent=(affData.commissionRate||0)+'%';
+  document.getElementById('next-sat-date').textContent=nextSaturday();
+  document.getElementById('ps-next').textContent='Saturday';
+  document.getElementById('wd-wallet-info').textContent=affData.walletInfo||'Not set — contact admin';
+  document.getElementById('copy-code-btn').onclick=function(){
+    navigator.clipboard.writeText(affData.promoCode||'').then(function(){
+      document.getElementById('copy-code-btn').textContent='✓ Copied!';
+      setTimeout(function(){document.getElementById('copy-code-btn').textContent='📋 Copy Code';},2000);
+    });
+  };
+  loadAffStats();
+  // Auto-refresh every 30 seconds
+  if(window._affRefreshTimer) clearInterval(window._affRefreshTimer);
+  window._affRefreshTimer = setInterval(function(){
+    loadAffStats();
+    // Update last refreshed time
+    var el=document.getElementById('last-refresh');
+    if(el) el.textContent='Last updated: '+new Date().toLocaleTimeString();
+  }, 30000);
+}
+
+// ── LOAD STATS ──
+function loadAffStats(){
+  var code=affData.promoCode||'';
+  var commRate=(affData.commissionRate||0)/100;
+  // Show loading pulse on stat cards
+  ['st-players','st-deposits','st-earned','st-pending'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.style.opacity='0.5';
+  });
+  Promise.all([
+    fbGet('/players'),
+    fbGet('/playerCryptoDeposits'),
+    fbGet('/affiliateEarnings/'+affKey),
+    fbGet('/affiliateWithdrawals/'+affKey)
+  ]).then(function(res){
+    var players=res[0]||{}, deps=res[1]||{}, earnings=res[2]||{}, wds=res[3]||{};
+    // Find players who used this promo code
+    var myPlayers=Object.entries(players).filter(function(e){return e[1].promoCode===code;});
+    var myPlayerKeys=myPlayers.map(function(e){return e[0];});
+    // Calculate total deposits from my players
+    var totalDep=0;
+    var myDeps=Object.values(deps).filter(function(d){
+      return myPlayerKeys.indexOf(d.playerKey)>=0 && d.status==='approved';
+    });
+    myDeps.forEach(function(d){totalDep+=(d.creditedAmount||0);});
+    // Total earned
+    var totalEarned=0, pendingPayout=0;
+    if(Object.keys(earnings).length){
+      Object.values(earnings).forEach(function(e){
+        totalEarned+=(e.amount||0);
+        if(e.status==='pending')pendingPayout+=(e.amount||0);
+      });
+    } else {
+      // Calculate: 25% of losses - 30% of wins
+      totalEarned=Math.max(0,Math.floor(totalLost*0.25)-Math.floor(totalWon*0.30));
+      pendingPayout=totalEarned;
+    }
+    // Subtract paid withdrawals
+    Object.values(wds).forEach(function(w){
+      if(w.status==='paid')pendingPayout-=(w.amount||0);
+    });
+    pendingPayout=Math.max(0,pendingPayout);
+    // Update stats
+    document.getElementById('st-players').textContent=myPlayers.length;
+    document.getElementById('st-deposits').textContent=fmt(totalDep);
+    document.getElementById('st-earned').textContent=fmt(totalEarned);
+    document.getElementById('st-pending').textContent=fmt(pendingPayout);
+    document.getElementById('ps-uses').textContent=myPlayers.length;
+    document.getElementById('wd-pending-amt').textContent=fmt(pendingPayout);
+    // Restore opacity
+    ['st-players','st-deposits','st-earned','st-pending'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el)el.style.opacity='1';
+    });
+    // Render players list
+    renderPlayers(myPlayers, deps, myPlayerKeys, commRate);
+    // Render earnings
+    renderEarnings(myDeps, commRate);
+    // Render withdrawals
+    renderWithdrawals(wds, pendingPayout);
+  }).catch(function(e){console.error(e);});
+}
+
+function renderPlayers(myPlayers, deps, myPlayerKeys, commRate){
+  var wrap=document.getElementById('aff-players-list');
+  if(!myPlayers.length){wrap.innerHTML='<div class="empty">No players yet. Share your promo code!</div>';return;}
+  var html=myPlayers.map(function(e){
+    var key=e[0],pl=e[1];
+    var playerDeps=Object.values(deps||{}).filter(function(d){return d.playerKey===key&&d.status==='approved';});
+    var totalDep=playerDeps.reduce(function(s,d){return s+(d.creditedAmount||0);},0);
+    var earned=Math.floor(totalDep*commRate);
+    return '<div class="player-row">'+
+      '<div>'+
+        '<div class="player-name">'+maskUsername(pl.username||'Player')+'</div>'+
+        '<div class="player-meta">Joined: '+new Date(pl.createdAt||Date.now()).toLocaleDateString()+' · '+playerDeps.length+' deposit(s)</div>'+
+      '</div>'+
+      '<div style="text-align:right;">'+
+        '<div class="player-dep">'+fmt(totalDep)+'</div>'+
+        '<div style="font-size:11px;color:var(--accent);margin-top:2px;">+'+fmt(earned)+' earned</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  wrap.innerHTML=html;
+}
+
+function renderEarnings(myDeps, commRate){
+  var wrap=document.getElementById('aff-earnings-list');
+  if(!myDeps.length){wrap.innerHTML='<div class="empty">No earnings yet.</div>';return;}
+  var sorted=myDeps.slice().sort(function(a,b){return new Date(b.time)-new Date(a.time);});
+  var html=sorted.slice(0,30).map(function(d){
+    var earned=Math.floor((d.creditedAmount||0)*commRate);
+    return '<div class="earn-row">'+
+      '<div>'+
+        '<div class="earn-type">'+d.section+' Deposit</div>'+
+        '<div class="earn-meta">'+new Date(d.time).toLocaleDateString()+' · Player deposit: '+fmt(d.creditedAmount||0)+'</div>'+
+      '</div>'+
+      '<div class="earn-amt green">+'+fmt(earned)+'</div>'+
+    '</div>';
+  }).join('');
+  wrap.innerHTML=html;
+}
+
+function renderWithdrawals(wds, pending){
+  var wrap=document.getElementById('aff-wd-history');
+  if(!Object.keys(wds).length){wrap.innerHTML='<div class="empty" style="padding:1rem 0;">No withdrawals yet. Auto-paid every Saturday.</div>';return;}
+  var html='<div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:8px;">Payout History</div>'+
+    Object.values(wds).sort(function(a,b){return new Date(b.time)-new Date(a.time);}).map(function(w){
+      var isPaid=w.status==='paid';
+      return '<div class="earn-row">'+
+        '<div>'+
+          '<div class="earn-type">'+(isPaid?'✓ Paid':'⏳ Pending')+' — Auto Saturday Payout</div>'+
+          '<div class="earn-meta">'+new Date(w.time).toLocaleDateString()+'</div>'+
+        '</div>'+
+        '<div class="earn-amt '+(isPaid?'green':'yellow')+'">'+fmt(w.amount)+'</div>'+
+      '</div>';
+    }).join('');
+  wrap.innerHTML=html;
+}
+
+function maskUsername(name){
+  if(!name||name.length<=3)return '***';
+  return name[0]+name[1]+'***'+name[name.length-1];
+}
+
+function showTab(tab){
+  ['players','earnings','wd'].forEach(function(t){
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+    document.getElementById('tab-'+t+'-pane').style.display=t===tab?'':'none';
+  });
+}
+
+window.showTab = showTab;
+
+// ── AUTO-LOGIN ──
+(function(){
+  var sk=sessionStorage.getItem('aff_key');
+  var sd=sessionStorage.getItem('aff_data');
+  if(sk&&sd){
+    try{
+      affKey=sk; affData=JSON.parse(sd);
+      // Re-fetch fresh data
+      fbGet('/affiliates/'+affKey).then(function(fresh){
+        if(fresh&&!fresh.disabled){affData=fresh;loadPanel();}
+        else{sessionStorage.clear();}
+      }).catch(function(){loadPanel();});
+    }catch(e){sessionStorage.clear();}
+  }
+})();
+</script>
+</body>
+</html>
