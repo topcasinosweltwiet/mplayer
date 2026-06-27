@@ -347,9 +347,10 @@ function loadAffStats(){
       if(el)el.style.opacity='1';
     });
     // Render players list
+    gState._txnsData=txns;
     renderPlayers(myPlayers, deps, myPlayerKeys, commRate);
     // Render earnings
-    renderEarnings(myDeps, commRate);
+    renderEarnings(myDeps, commRate, txns, myPlayerKeys);
     // Render withdrawals
     renderWithdrawals(wds, pendingPayout);
   }).catch(function(e){console.error(e);});
@@ -358,39 +359,91 @@ function loadAffStats(){
 function renderPlayers(myPlayers, deps, myPlayerKeys, commRate){
   var wrap=document.getElementById('aff-players-list');
   if(!myPlayers.length){wrap.innerHTML='<div class="empty">No players yet. Share your promo code!</div>';return;}
+  var txns=gState._txnsData||{};
   var html=myPlayers.map(function(e){
     var key=e[0],pl=e[1];
     var playerDeps=Object.values(deps||{}).filter(function(d){return d.playerKey===key&&d.status==='approved';});
     var totalDep=playerDeps.reduce(function(s,d){return s+(d.creditedAmount||0);},0);
-    var earned=Math.floor(totalDep*commRate);
+    // Player game stats
+    var pWon=0,pLost=0;
+    Object.values(txns).forEach(function(t){
+      if(t.playerKey===key||(t.promoCode&&t.promoCode===code&&t.playerKey===key)){
+        if(t.type==='win')pWon+=(t.amount||0);
+        else if(t.type==='loss')pLost+=(t.amount||0);
+      }
+    });
+    var myEarned=Math.max(0,Math.floor(pLost*0.25)-Math.floor(pWon*0.30));
     return '<div class="player-row">'+
       '<div>'+
         '<div class="player-name">'+maskUsername(pl.username||'Player')+'</div>'+
         '<div class="player-meta">Joined: '+new Date(pl.createdAt||Date.now()).toLocaleDateString()+' · '+playerDeps.length+' deposit(s)</div>'+
+        '<div style="font-size:10px;margin-top:3px;">'+
+          '<span style="color:#e74c3c;">Lost: '+fmt(pLost)+'</span> · '+
+          '<span style="color:#4ade80;">Won: '+fmt(pWon)+'</span>'+
+        '</div>'+
       '</div>'+
       '<div style="text-align:right;">'+
         '<div class="player-dep">'+fmt(totalDep)+'</div>'+
-        '<div style="font-size:11px;color:var(--accent);margin-top:2px;">+'+fmt(earned)+' earned</div>'+
+        '<div style="font-size:11px;color:var(--accent);margin-top:2px;">+'+fmt(myEarned)+' commission</div>'+
       '</div>'+
     '</div>';
   }).join('');
   wrap.innerHTML=html;
 }
 
-function renderEarnings(myDeps, commRate){
+function renderEarnings(myDeps, commRate, txns, myPlayerKeys){
   var wrap=document.getElementById('aff-earnings-list');
-  if(!myDeps.length){wrap.innerHTML='<div class="empty">No earnings yet.</div>';return;}
-  var sorted=myDeps.slice().sort(function(a,b){return new Date(b.time)-new Date(a.time);});
-  var html=sorted.slice(0,30).map(function(d){
-    var earned=Math.floor((d.creditedAmount||0)*commRate);
-    return '<div class="earn-row">'+
-      '<div>'+
-        '<div class="earn-type">'+d.section+' Deposit</div>'+
-        '<div class="earn-meta">'+new Date(d.time).toLocaleDateString()+' · Player deposit: '+fmt(d.creditedAmount||0)+'</div>'+
-      '</div>'+
-      '<div class="earn-amt green">+'+fmt(earned)+'</div>'+
-    '</div>';
-  }).join('');
+  txns=txns||{};
+  // Build earnings from game transactions
+  var myCode=affData&&affData.promoCode;
+  var gameLosses=Object.values(txns).filter(function(t){
+    var match=(t.promoCode&&t.promoCode===myCode)||myPlayerKeys.indexOf(t.playerKey)>=0;
+    return match&&t.type==='loss';
+  }).sort(function(a,b){return new Date(b.time)-new Date(a.time);});
+  var gameWins=Object.values(txns).filter(function(t){
+    var match=(t.promoCode&&t.promoCode===myCode)||myPlayerKeys.indexOf(t.playerKey)>=0;
+    return match&&t.type==='win';
+  });
+  var totalLostAmt=gameLosses.reduce(function(s,t){return s+(t.amount||0);},0);
+  var totalWonAmt=gameWins.reduce(function(s,t){return s+(t.amount||0);},0);
+  var net=Math.max(0,Math.floor(totalLostAmt*0.25)-Math.floor(totalWonAmt*0.30));
+  
+  var html='<div style="background:var(--bg);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;">'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'+
+      '<span style="color:var(--txt2);">Player total losses</span>'+
+      '<span style="color:#e74c3c;font-weight:700;">'+fmt(totalLostAmt)+'</span>'+
+    '</div>'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'+
+      '<span style="color:var(--txt2);">Your 25% of losses</span>'+
+      '<span style="color:var(--accent);font-weight:700;">+'+fmt(Math.floor(totalLostAmt*0.25))+'</span>'+
+    '</div>'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'+
+      '<span style="color:var(--txt2);">Player total wins</span>'+
+      '<span style="color:#4ade80;font-weight:700;">'+fmt(totalWonAmt)+'</span>'+
+    '</div>'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'+
+      '<span style="color:var(--txt2);">Minus 30% of wins</span>'+
+      '<span style="color:#e74c3c;font-weight:700;">-'+fmt(Math.floor(totalWonAmt*0.30))+'</span>'+
+    '</div>'+
+    '<div style="height:1px;background:var(--border);margin:8px 0;"></div>'+
+    '<div style="display:flex;justify-content:space-between;">'+
+      '<span style="color:var(--txt);font-weight:800;">Your Commission</span>'+
+      '<span style="color:var(--accent-2,#f6c90e);font-weight:900;font-size:14px;">'+fmt(net)+'</span>'+
+    '</div>'+
+  '</div>'+
+  // Recent game transactions
+  (gameLosses.length?
+    '<div style="font-size:11px;color:var(--txt2);margin-bottom:8px;font-weight:700;">Recent player losses (your 25%):</div>'+
+    gameLosses.slice(0,20).map(function(t){
+      return '<div class="earn-row">'+
+        '<div>'+
+          '<div class="earn-type">'+( t.game||'Game')+' — Player Lost</div>'+
+          '<div class="earn-meta">'+new Date(t.time).toLocaleDateString()+'</div>'+
+        '</div>'+
+        '<div class="earn-amt green">+'+fmt(Math.floor((t.amount||0)*0.25))+'</div>'+
+      '</div>';
+    }).join('')
+  :'<div class="empty">No game transactions yet.</div>');
   wrap.innerHTML=html;
 }
 

@@ -38,7 +38,16 @@ function creditWin(payout){
   ub();
 }
 function recordTxn(type,amount,gameId){
-  fbPush('/gameTxns',{playerKey:CK,type:type,amount:amount,game:gameId||'',time:new Date().toISOString()});
+  if(!CK)return;
+  var promoCode=(CD&&CD.promoCode)||null;
+  fbPush('/gameTxns',{
+    playerKey:CK,
+    promoCode:promoCode,
+    type:type,
+    amount:amount,
+    game:gameId||'',
+    time:new Date().toISOString()
+  });
 }
 function finishGame(won,payout,bet,gameId){
   if(!CK)return;
