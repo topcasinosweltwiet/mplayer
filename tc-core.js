@@ -269,7 +269,7 @@ function startSession(k, playerData) {
   ptimer = setInterval(function() {
     if (!CK) { clearInterval(ptimer); return; }
     fbGet('/players/' + CK).then(function(d) { if (d) { CD = d; ub(); } });
-  }, 10000);
+  }, 5000);
 }
 
 function doLogout() {
@@ -531,7 +531,14 @@ function saveKYC() {
 // ── NOTIFICATIONS ──
 function startNotifPoll() {
   if (ntimer) clearInterval(ntimer);
-  ntimer = setInterval(function() { if (CK) { checkNotifCount(); checkSupportUnread(); } }, 7000);
+  ntimer = setInterval(function() { 
+    if (CK) { 
+      checkNotifCount(); 
+      checkSupportUnread(); 
+      // Refresh balance from server every 7 seconds
+      fbGet('/players/'+CK).then(function(d){if(d){CD=d;ub();}}).catch(function(){});
+    } 
+  }, 7000);
   checkNotifCount();
   checkSupportUnread();
 }
